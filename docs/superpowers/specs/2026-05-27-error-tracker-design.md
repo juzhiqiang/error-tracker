@@ -36,6 +36,7 @@ D:\myProject\
 | 数据库 | PostgreSQL 16 + Drizzle ORM |
 | 对象存储 | MinIO（存录屏文件） |
 | SDK 打包 | `bun build`，browser ESM + node CJS 双产物 |
+| Web Vitals | `web-vitals`（Google 官方，与 PageSpeed Insights 数据一致） |
 | 代码规范 | TypeScript strict + ESLint + Prettier |
 
 ---
@@ -93,6 +94,7 @@ init({
 | `EventQueue` | 待上报队列，上限 50 条，满时丢弃最旧 |
 | `Fingerprint` | 基于 error.message + 调用栈生成错误指纹 |
 | `HttpTransport` | fetch fire-and-forget；卸载时用 `fetch keepalive` |
+| `performance` | 调用 `web-vitals` 采集 LCP/FID/CLS/INP/TTFB，上报 rating 分级 |
 
 ### 自动捕获 — 浏览器
 
@@ -102,7 +104,7 @@ init({
 - `popstate / hashchange` — 路由跳转 Breadcrumb
 - `fetch / XMLHttpRequest` patch — 网络请求 Breadcrumb
 - `console.error/warn` patch — 控制台日志 Breadcrumb
-- `PerformanceObserver` — LCP、FID、CLS、TTFB
+- `web-vitals`（Google 官方库）— LCP、FID、CLS、INP、TTFB，自动处理边界情况和分级
 
 ### 自动捕获 — Node.js
 
@@ -204,7 +206,7 @@ POST /ingest/:projectId
 | `/issues` | 错误列表 | 标题、次数、影响用户、最近时间、状态 |
 | `/issues/:id` | 错误详情 | Stack Trace、Breadcrumbs 时间线、用户/环境信息 |
 | `/issues/:id/replay` | 录屏回放 | rrweb-player 内嵌 |
-| `/performance` | 性能概览 | LCP/FID/CLS 趋势、接口 P50/P95 |
+| `/performance` | 性能概览 | LCP/FID/CLS/INP/TTFB 趋势、接口 P50/P95，按 good/needs-improvement/poor 分级展示 |
 | `/settings` | 项目设置 | DSN Token、采样率、告警规则 |
 
 ---
