@@ -132,9 +132,38 @@ class ReplayPlugin {
 
 ### 去重 & 限流
 
-- 相同指纹 5s 内只上报一次（内存 Map + TTL）
-- 队列满时丢弃最旧，不阻塞主线程
-- `visibilitychange` 切后台时立即 flush 队列
+**两层去重：**
+
+**Layer 1 — SDK 端（防客户端刷屏）**
+
+内存 Map TTL，相同指纹 5s 内只上报一次：
+
+```typescript
+// SDK 端指纹：djb2(error.name + error.message + 前3帧 function@filename)，不含行列号
+// 5s TTL，相同指纹直接丢弃，不发请求
+```
+
+**Layer 2 — 服务端聚合（跨用户、跨构建版本合并为同一 Issue）**
+
+服务端指纹不含行列号，使同一 bug 在不同构建版本下指纹一致：
+
+```typescript
+serverFingerprint = sha1(level + message + 前3帧 function@filename（只取文件名）)
+```
+
+UPSERT 时已解决的 issue 若再次出现自动重新打开：
+
+```sql
+INSERT INTO issues (project_id, fingerprint, title, ...)
+ON CONFLICT (project_id, fingerprint) DO UPDATE SET
+  last_seen = now(),
+  count = issues.count + 1,
+  status = CASE WHEN issues.status = 'resolved' THEN 'unresolved' ELSE issues.status END
+```
+
+**其他限流：**
+- 队列满（50 条）时丢弃最旧事件（非阻塞）
+- `visibilitychange` 切后台时立即 flush 队列（比 beforeunload 更可靠）
 
 ---
 

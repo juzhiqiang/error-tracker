@@ -1,0 +1,48 @@
+{
+  "name": "@error-tracker/sdk",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "browser": "./dist/browser/index.js",
+      "import": "./dist/browser/index.js",
+      "require": "./dist/node/node.js"
+    },
+    "./node": {
+      "import": "./dist/node/node.js",
+      "require": "./dist/node/node.js"
+    },
+    "./plugins/replay": {
+      "browser": "./dist/browser/plugins/replay/index.js",
+      "import": "./dist/browser/plugins/replay/index.js"
+    }
+  },
+  "scripts": {
+    "build": "bun run build:browser && bun run build:node && bun run build:replay",
+    "build:browser": "bun build src/index.ts --outdir dist/browser --target browser --format esm --sourcemap --external react",
+    "build:node": "bun build src/node.ts --outdir dist/node --target node --format cjs --sourcemap --external react",
+    "build:replay": "bun build src/plugins/replay/index.ts --outdir dist/browser/plugins/replay --target browser --format esm --sourcemap --external react",
+    "dev": "bun run build --watch",
+    "test": "bun test",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "web-vitals": "^4.0.0",
+    "rrweb": "^2.0.0-alpha.20"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.15",
+    "bun-types": "^1.3.14",
+    "typescript": "^5.7.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}
