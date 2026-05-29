@@ -1,11 +1,15 @@
 import { Controller, Get, Patch, Param, Query, Body, UseGuards } from '@nestjs/common'
 import { IssuesService } from './issues.service'
+import { EventsService } from '../events/events.service'
 import { SessionGuard } from '../../common/guards/session.guard'
 
 @Controller('api/issues')
 @UseGuards(SessionGuard)
 export class IssuesController {
-  constructor(private readonly issuesService: IssuesService) {}
+  constructor(
+    private readonly issuesService: IssuesService,
+    private readonly eventsService: EventsService,
+  ) {}
 
   @Get()
   list(@Query() query: Record<string, string>) {
@@ -22,6 +26,11 @@ export class IssuesController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.issuesService.findById(id)
+  }
+
+  @Get(':id/events')
+  events(@Param('id') id: string) {
+    return this.eventsService.listByIssue(id)
   }
 
   @Patch(':id')
