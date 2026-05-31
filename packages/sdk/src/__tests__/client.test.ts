@@ -18,6 +18,19 @@ describe('ErrorTrackerClient', () => {
     expect(fetchMock().mock.calls).toHaveLength(1)
   })
 
+  it('captureException returns the queued event id', async () => {
+    const client = new ErrorTrackerClient({
+      dsn: 'http://localhost:3002/ingest/p1/t1',
+    })
+
+    const eventId = client.captureException(new Error('track replay id'))
+    await client.flush()
+    await new Promise((r) => setTimeout(r, 10))
+
+    const body = JSON.parse(fetchMock().mock.calls[0][1]?.body as string)
+    expect(eventId).toBe(body.events[0].eventId)
+  })
+
   it('respects sampleRate 0 (never send)', async () => {
     const client = new ErrorTrackerClient({
       dsn: 'http://localhost:3002/ingest/p1/t1',

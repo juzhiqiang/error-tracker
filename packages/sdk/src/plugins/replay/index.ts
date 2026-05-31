@@ -36,12 +36,12 @@ export class ReplayPlugin implements Integration {
 
     const origCapture = client.captureException.bind(client)
     client.captureException = (error: Error, extra?: Record<string, unknown>) => {
-      origCapture(error, extra)
+      const eventId = origCapture(error, extra)
       const events = this.buffer.drain()
-      if (events.length > 0) {
-        const eventId = (extra?.eventId as string | undefined) ?? Date.now().toString()
+      if (eventId && events.length > 0) {
         uploadReplay(this.dsnBase, eventId, events)
       }
+      return eventId
     }
   }
 

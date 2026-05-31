@@ -30,7 +30,8 @@ export class CleanupProcessor extends WorkerHost {
         WHERE e.project_id = ${project.id}
           AND e.timestamp < now() - interval '${sql.raw(days + ' days')}'
       `)
-      for (const r of oldReplays as unknown as { storage_url: string }[]) {
+      const replayRows = (oldReplays as unknown as { rows?: { storage_url: string }[] }).rows ?? []
+      for (const r of replayRows) {
         await this.minio.upload(r.storage_url, '').catch(() => {})
       }
 

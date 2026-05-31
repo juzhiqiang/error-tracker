@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common'
 import { eq } from 'drizzle-orm'
 import { SourceMapConsumer } from 'source-map'
 import { DB } from '../../db/db.module'
-import { events, sourceMaps } from '../../db/schema'
+import { events, replays, sourceMaps } from '../../db/schema'
 import { MinioService } from '../sourcemaps/minio.service'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../db/schema'
@@ -40,6 +40,27 @@ export class EventsService {
       .orderBy(events.timestamp)
       .limit(limit)
       .offset((page - 1) * limit)
+  }
+
+  async findReplayByEventId(eventId: string): Promise<{ events: unknown[] }> {
+    const [replay] = await this.db.select().from(replays).where(eq(replays.eventId, eventId)).limit(1)
+    if (!replay) {
+      const [event] = await this.db.select({ projectId: events.projectId }).from(events).where(eq(events.id, eventId)).limit(1)
+      if (!event) return { events: [] }
+      return this.loadReplay(`replays/${event.projectId}/${eventId}.json`)
+    }
+
+    return this.loadReplay(replay.storageUrl)
+  }
+
+  private async loadReplay(storageUrl: string): Promise<{ events: unknown[] }> {
+    try {
+      const rawReplay = await this.minio.getObject(storageUrl)
+      const events = JSON.parse(rawReplay)
+      return { events: Array.isArray(events) ? events : [] }
+    } catch {
+      return { events: [] }
+    }
   }
 
   private async resolveStackTrace(projectId: string, release: string, frames: StackFrame[]) {

@@ -11,4 +11,9 @@ export class EventsController {
   findOne(@Param('id') id: string) {
     return this.eventsService.findById(id)
   }
+
+  @Get(':id/replay')
+  replay(@Param('id') id: string) {
+    return this.eventsService.findReplayByEventId(id)
+  }
 }

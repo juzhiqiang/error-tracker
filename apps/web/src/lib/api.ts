@@ -21,6 +21,7 @@ export const api = {
   },
   events: {
     get: (id: string) => apiFetch<unknown>(`/api/events/${id}`),
+    replay: (id: string) => apiFetch<{ events: unknown[] }>(`/api/events/${id}/replay`),
   },
   stats: {
     issues: (projectId: string) => apiFetch<unknown[]>(`/api/stats/issues?projectId=${projectId}`),

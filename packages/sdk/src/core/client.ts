@@ -26,11 +26,11 @@ export class ErrorTrackerClient {
     })
   }
 
-  captureException(error: Error, extra?: Record<string, unknown>): void {
-    if (Math.random() > this.options.sampleRate) return
+  captureException(error: Error, extra?: Record<string, unknown>): string | null {
+    if (Math.random() > this.options.sampleRate) return null
 
     const fingerprint = clientFingerprint(error)
-    if (!this.dedupe.shouldSend(fingerprint)) return
+    if (!this.dedupe.shouldSend(fingerprint)) return null
 
     let event: ErrorEvent = {
       eventId: randomId(),
@@ -48,11 +48,12 @@ export class ErrorTrackerClient {
 
     if (this.options.beforeSend) {
       const result = this.options.beforeSend(event)
-      if (result === null) return
+      if (result === null) return null
       event = result
     }
 
     this.queue.enqueue(event)
+    return event.eventId
   }
 
   captureMessage(message: string, level: ErrorEvent['level'] = 'info'): void {

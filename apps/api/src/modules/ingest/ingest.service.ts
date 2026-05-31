@@ -2,9 +2,10 @@ import { Injectable, Inject } from '@nestjs/common'
 import { InjectQueue } from '@nestjs/bullmq'
 import { Queue } from 'bullmq'
 import { createHash } from 'crypto'
-import { sql } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { DB } from '../../db/db.module'
-import { events, performanceMetrics } from '../../db/schema'
+import { events, performanceMetrics, replays } from '../../db/schema'
+import { MinioService } from '../sourcemaps/minio.service'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../db/schema'
 
@@ -14,6 +15,7 @@ interface StackFrame {
   lineno?: number
   colno?: number
 }
+
 interface IncomingEvent {
   eventId: string
   timestamp: number
@@ -44,6 +46,7 @@ export class IngestService {
   constructor(
     @Inject(DB) private db: PostgresJsDatabase<typeof schema>,
     @InjectQueue('events') private eventsQueue: Queue,
+    private readonly minio: MinioService,
   ) {}
 
   async ingestEvent(projectId: string, payload: IncomingEvent): Promise<void> {
@@ -60,7 +63,9 @@ export class IngestService {
       RETURNING id
     `)
 
-    const issueId = (result as unknown as { id: string }[])[0]?.id
+    const issueId =
+      (result as unknown as { rows?: { id: string }[] }).rows?.[0]?.id ??
+      (result as unknown as { id: string }[])[0]?.id
 
     await this.db.insert(events).values({
       id: payload.eventId,
@@ -93,6 +98,24 @@ export class IngestService {
         timestamp: new Date(m.timestamp),
       })),
     )
+  }
+
+  async ingestReplay(projectId: string, eventId: string, rrwebEvents: unknown[]): Promise<void> {
+    if (!rrwebEvents?.length) return
+
+    const key = `replays/${projectId}/${eventId}.json`
+    await this.minio.upload(key, JSON.stringify(rrwebEvents), 'application/json')
+
+    const timestamps = rrwebEvents as { timestamp?: number }[]
+    const first = timestamps[0]?.timestamp ?? 0
+    const last = timestamps[timestamps.length - 1]?.timestamp ?? first
+    const duration = Math.max(0, last - first)
+
+    const [event] = await this.db.select({ id: events.id }).from(events).where(eq(events.id, eventId)).limit(1)
+    await this.db
+      .insert(replays)
+      .values({ eventId: event ? eventId : null, storageUrl: key, duration })
+      .onConflictDoNothing()
   }
 
   private computeServerFingerprint(event: IncomingEvent): string {

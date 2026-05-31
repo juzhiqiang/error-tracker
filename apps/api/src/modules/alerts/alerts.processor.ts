@@ -30,7 +30,7 @@ export class AlertsProcessor extends WorkerHost {
       WHERE issue_id = ${issueId}
         AND timestamp >= now() - interval '10 minutes'
     `)
-    const recentCount = Number((result as unknown as { recentCount: string }[])[0]?.recentCount ?? 0)
+    const recentCount = Number((result as unknown as { rows?: { recentCount: string }[] }).rows?.[0]?.recentCount ?? 0)
 
     const shouldAlert = isNew || recentCount >= (project.alertThreshold ?? 50)
     if (!shouldAlert) return

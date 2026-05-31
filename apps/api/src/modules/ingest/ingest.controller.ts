@@ -24,8 +24,8 @@ export class IngestController {
   @Post(':projectId/:token/replay')
   @UseGuards(DsnAuthGuard)
   @HttpCode(202)
-  async ingestReplay(@Param('projectId') _projectId: string, @Body() _body: { eventId: string; events: unknown[] }) {
-    // MinIO 上传在 Task P2-05 实现
+  async ingestReplay(@Param('projectId') projectId: string, @Body() body: { eventId: string; events: unknown[] }) {
+    await this.ingestService.ingestReplay(projectId, body.eventId, body.events)
     return { ok: true }
   }
 }
