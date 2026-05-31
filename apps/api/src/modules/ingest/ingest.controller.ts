@@ -1,6 +1,7 @@
 import { Controller, Post, Param, Body, UseGuards, HttpCode } from '@nestjs/common'
 import { DsnAuthGuard } from '../../common/guards/dsn-auth.guard'
 import { IngestService } from './ingest.service'
+import { validateIngestBody, validateReplayBody } from './ingest.validation'
 
 @Controller('ingest')
 export class IngestController {
@@ -10,8 +11,9 @@ export class IngestController {
   @UseGuards(DsnAuthGuard)
   @HttpCode(202)
   async ingest(@Param('projectId') projectId: string, @Body() body: { events: unknown[]; sentAt: string }) {
-    const errorEvents = (body.events ?? []).filter((e: unknown) => (e as { type?: string }).type !== 'performance')
-    const perfEvents = (body.events ?? []).filter((e: unknown) => (e as { type?: string }).type === 'performance')
+    const validated = validateIngestBody(body)
+    const errorEvents = validated.events.filter((e: unknown) => (e as { type?: string }).type !== 'performance')
+    const perfEvents = validated.events.filter((e: unknown) => (e as { type?: string }).type === 'performance')
 
     await Promise.all([
       ...errorEvents.map((e) => this.ingestService.ingestEvent(projectId, e as never)),
@@ -25,7 +27,8 @@ export class IngestController {
   @UseGuards(DsnAuthGuard)
   @HttpCode(202)
   async ingestReplay(@Param('projectId') projectId: string, @Body() body: { eventId: string; events: unknown[] }) {
-    await this.ingestService.ingestReplay(projectId, body.eventId, body.events)
+    const validated = validateReplayBody(body)
+    await this.ingestService.ingestReplay(projectId, validated.eventId, validated.events)
     return { ok: true }
   }
 }

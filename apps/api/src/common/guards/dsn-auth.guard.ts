@@ -11,8 +11,12 @@ export class DsnAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest()
-    const token = req.params.token as string
+    const token = (req.headers['x-error-tracker-token'] as string | undefined) ?? (req.params.token as string | undefined)
     const projectId = req.params.projectId as string
+
+    if (!token) {
+      throw new UnauthorizedException('Invalid DSN token')
+    }
 
     const [project] = await this.db.select().from(projects).where(eq(projects.dsnToken, token)).limit(1)
 
