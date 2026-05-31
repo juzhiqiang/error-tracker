@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common'
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common'
+import { S3Client, PutObjectCommand, GetObjectCommand, CreateBucketCommand, HeadBucketCommand } from '@aws-sdk/client-s3'
 
 @Injectable()
-export class MinioService {
+export class MinioService implements OnModuleInit {
+  private readonly logger = new Logger(MinioService.name)
   private readonly s3: S3Client
   private readonly bucket: string
 
@@ -17,6 +18,19 @@ export class MinioService {
       },
       forcePathStyle: true,
     })
+  }
+
+  async onModuleInit(): Promise<void> {
+    try {
+      await this.s3.send(new HeadBucketCommand({ Bucket: this.bucket }))
+    } catch {
+      try {
+        await this.s3.send(new CreateBucketCommand({ Bucket: this.bucket }))
+        this.logger.log(`Created bucket: ${this.bucket}`)
+      } catch (err) {
+        this.logger.warn(`Bucket init failed (continue): ${(err as Error).message}`)
+      }
+    }
   }
 
   async upload(key: string, body: Buffer | string, contentType = 'application/octet-stream'): Promise<string> {
