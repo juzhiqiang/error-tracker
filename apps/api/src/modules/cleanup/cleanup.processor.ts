@@ -32,7 +32,7 @@ export class CleanupProcessor extends WorkerHost {
       `)
       const replayRows = (oldReplays as unknown as { rows?: { storage_url: string }[] }).rows ?? []
       for (const r of replayRows) {
-        await this.minio.upload(r.storage_url, '').catch(() => {})
+        await this.minio.deleteObject(r.storage_url).catch(() => {})
       }
 
       await this.db.execute(sql`

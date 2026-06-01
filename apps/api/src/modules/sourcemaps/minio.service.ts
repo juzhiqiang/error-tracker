@@ -1,5 +1,12 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common'
-import { S3Client, PutObjectCommand, GetObjectCommand, CreateBucketCommand, HeadBucketCommand } from '@aws-sdk/client-s3'
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  CreateBucketCommand,
+  HeadBucketCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3'
 
 @Injectable()
 export class MinioService implements OnModuleInit {
@@ -48,5 +55,9 @@ export class MinioService implements OnModuleInit {
   async getObject(key: string): Promise<string> {
     const res = await this.s3.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }))
     return res.Body!.transformToString()
+  }
+
+  async deleteObject(key: string): Promise<void> {
+    await this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }))
   }
 }

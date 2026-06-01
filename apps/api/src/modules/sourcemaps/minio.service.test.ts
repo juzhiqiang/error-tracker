@@ -7,6 +7,7 @@ mock.module('@aws-sdk/client-s3', () => {
   class CreateBucketCommand {}
   class PutObjectCommand {}
   class GetObjectCommand {}
+  class DeleteObjectCommand {}
 
   class S3Client {
     async send(command: object) {
@@ -16,7 +17,7 @@ mock.module('@aws-sdk/client-s3', () => {
     }
   }
 
-  return { S3Client, HeadBucketCommand, CreateBucketCommand, PutObjectCommand, GetObjectCommand }
+  return { S3Client, HeadBucketCommand, CreateBucketCommand, PutObjectCommand, GetObjectCommand, DeleteObjectCommand }
 })
 
 describe('MinioService', () => {
@@ -31,5 +32,14 @@ describe('MinioService', () => {
     await service.onModuleInit()
 
     expect(sentCommands).toEqual(['HeadBucketCommand', 'CreateBucketCommand'])
+  })
+
+  it('deletes objects by key', async () => {
+    const { MinioService } = await import('./minio.service')
+    const service = new MinioService()
+
+    await service.deleteObject('replays/project-1/event-1.json')
+
+    expect(sentCommands).toEqual(['DeleteObjectCommand'])
   })
 })

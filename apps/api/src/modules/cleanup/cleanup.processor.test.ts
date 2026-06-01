@@ -3,7 +3,7 @@ import { CleanupProcessor } from './cleanup.processor'
 
 describe('CleanupProcessor', () => {
   it('uses raw SQL rows when clearing old replay objects', async () => {
-    const uploads: string[] = []
+    const deleted: string[] = []
     const db = {
       select: () => ({
         from: () => [{ id: 'project-1', retentionDays: 30 }],
@@ -11,8 +11,8 @@ describe('CleanupProcessor', () => {
       execute: mock(async () => ({ rows: [{ storage_url: 'replays/project-1/event-1.json' }] })),
     }
     const minio = {
-      upload: mock(async (key: string) => {
-        uploads.push(key)
+      deleteObject: mock(async (key: string) => {
+        deleted.push(key)
         return key
       }),
     }
@@ -20,6 +20,6 @@ describe('CleanupProcessor', () => {
 
     await processor.process({ name: 'daily-cleanup' } as never)
 
-    expect(uploads).toEqual(['replays/project-1/event-1.json'])
+    expect(deleted).toEqual(['replays/project-1/event-1.json'])
   })
 })
