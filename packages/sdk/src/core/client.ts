@@ -21,9 +21,18 @@ export class ErrorTrackerClient {
     this.dedupe = new DedupeFilter(5000)
     this.transport = new HttpTransport(options.dsn)
     this.scope = new Scope()
-    this.queue = new EventQueue(50, async (events) => {
-      this.transport.send(events)
-    })
+    this.queue = new EventQueue(
+      options.queue?.maxSize ?? 50,
+      async (events) => {
+        await this.transport.send(events)
+      },
+      {
+        maxRetries: options.queue?.maxRetries,
+        retryDelayMs: options.queue?.retryDelayMs,
+        persist: options.queue?.persist,
+        persistenceKey: options.queue?.persistenceKey,
+      },
+    )
   }
 
   captureException(error: Error, extra?: Record<string, unknown>): string | null {

@@ -63,6 +63,13 @@ export interface SdkOptions {
   environment?: string
   release?: string
   sampleRate?: number
+  queue?: {
+    maxSize?: number
+    maxRetries?: number
+    retryDelayMs?: number
+    persist?: boolean
+    persistenceKey?: string
+  }
   integrations?: Integration[]
   beforeSend?: (event: ErrorEvent) => ErrorEvent | null
 }
