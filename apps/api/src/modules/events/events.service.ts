@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { SourceMapConsumer } from 'source-map'
 import { DB } from '../../db/db.module'
 import { events, replays, sourceMaps } from '../../db/schema'
@@ -67,7 +67,18 @@ export class EventsService {
     return Promise.all(
       frames.map(async (frame) => {
         try {
-          const [sm] = await this.db.select().from(sourceMaps).where(eq(sourceMaps.projectId, projectId)).limit(1)
+          const sourceMapFilename = sourceMapNameForFrame(frame.filename)
+          const [sm] = await this.db
+            .select()
+            .from(sourceMaps)
+            .where(
+              and(
+                eq(sourceMaps.projectId, projectId),
+                eq(sourceMaps.release, release),
+                eq(sourceMaps.filename, sourceMapFilename),
+              ),
+            )
+            .limit(1)
 
           if (!sm) return frame
 
@@ -94,4 +105,9 @@ export class EventsService {
       }),
     )
   }
+}
+
+function sourceMapNameForFrame(filename: string): string {
+  const leaf = filename.split(/[\\/]/).pop() ?? filename
+  return leaf.endsWith('.map') ? leaf : `${leaf}.map`
 }
