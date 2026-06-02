@@ -19,9 +19,9 @@
 
 ## 步骤
 
-- [ ] 写 MinIO deleteObject 测试。
-- [ ] 写 cleanup 使用 deleteObject 的失败测试。
-- [ ] 实现 `deleteObject()`。
-- [ ] 修改 cleanup processor。
-- [ ] 运行 `cd apps/api && bun test src/modules/sourcemaps/minio.service.test.ts src/modules/cleanup/cleanup.processor.test.ts`。
-- [ ] 提交：`feat: 硬化 replay 清理生命周期`
+- [x] 写 MinIO deleteObject 测试。
+- [x] 写 cleanup 使用 deleteObject 的失败测试。
+- [x] 实现 `deleteObject()`。
+- [x] 修改 cleanup processor。
+- [x] 运行 `cd apps/api && bun test src/modules/sourcemaps/minio.service.test.ts src/modules/cleanup/cleanup.processor.test.ts`。
+- [x] 提交：`feat: 硬化 replay 清理生命周期`

@@ -11,6 +11,7 @@ import { SourceMapsModule } from './modules/sourcemaps/sourcemaps.module'
 import { AlertsModule } from './modules/alerts/alerts.module'
 import { CleanupModule } from './modules/cleanup/cleanup.module'
 import { AuthModule } from './modules/auth/auth.module'
+import { HealthModule } from './modules/health/health.module'
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { AuthModule } from './modules/auth/auth.module'
     AlertsModule,
     CleanupModule,
     AuthModule,
+    HealthModule,
   ],
 })
 export class AppModule implements OnModuleInit {

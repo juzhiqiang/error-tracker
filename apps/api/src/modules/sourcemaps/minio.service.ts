@@ -57,6 +57,10 @@ export class MinioService implements OnModuleInit {
     return res.Body!.transformToString()
   }
 
+  async headBucket(): Promise<void> {
+    await this.s3.send(new HeadBucketCommand({ Bucket: this.bucket }))
+  }
+
   async deleteObject(key: string): Promise<void> {
     await this.s3.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }))
   }

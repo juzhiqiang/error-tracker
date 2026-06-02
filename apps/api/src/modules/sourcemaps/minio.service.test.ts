@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, mock } from 'bun:test'
 
 const sentCommands: string[] = []
+let failHeadBucket = false
 
 mock.module('@aws-sdk/client-s3', () => {
   class HeadBucketCommand {}
@@ -12,7 +13,7 @@ mock.module('@aws-sdk/client-s3', () => {
   class S3Client {
     async send(command: object) {
       sentCommands.push(command.constructor.name)
-      if (command instanceof HeadBucketCommand) throw new Error('NoSuchBucket')
+      if (command instanceof HeadBucketCommand && failHeadBucket) throw new Error('NoSuchBucket')
       return {}
     }
   }
@@ -23,12 +24,14 @@ mock.module('@aws-sdk/client-s3', () => {
 describe('MinioService', () => {
   afterEach(() => {
     sentCommands.length = 0
+    failHeadBucket = false
   })
 
   it('creates the bucket on startup when it does not exist', async () => {
     const { MinioService } = await import('./minio.service')
     const service = new MinioService()
 
+    failHeadBucket = true
     await service.onModuleInit()
 
     expect(sentCommands).toEqual(['HeadBucketCommand', 'CreateBucketCommand'])
@@ -41,5 +44,14 @@ describe('MinioService', () => {
     await service.deleteObject('replays/project-1/event-1.json')
 
     expect(sentCommands).toEqual(['DeleteObjectCommand'])
+  })
+
+  it('checks the configured bucket', async () => {
+    const { MinioService } = await import('./minio.service')
+    const service = new MinioService()
+
+    await service.headBucket()
+
+    expect(sentCommands).toEqual(['HeadBucketCommand'])
   })
 })

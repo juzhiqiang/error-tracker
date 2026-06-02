@@ -22,11 +22,11 @@
 
 ## 步骤
 
-- [ ] 写 HealthService 全部 healthy 测试。
-- [ ] 写 DB 失败返回 unhealthy 测试。
-- [ ] 实现 HealthService。
-- [ ] 实现 HealthController。
-- [ ] 在 AppModule 注册 HealthModule。
-- [ ] 运行 `cd apps/api && bun test src/modules/health/health.service.test.ts`。
-- [ ] 运行 `cd apps/api && bun run build`。
-- [ ] 提交：`feat: 添加 API 健康检查`
+- [x] 写 HealthService 全部 healthy 测试。
+- [x] 写 DB 失败返回 unhealthy 测试。
+- [x] 实现 HealthService。
+- [x] 实现 HealthController。
+- [x] 在 AppModule 注册 HealthModule。
+- [x] 运行 `cd apps/api && bun test src/modules/health/health.service.test.ts`。
+- [x] 运行 `cd apps/api && bun run build`。
+- [x] 提交：`feat: 添加 API 健康检查`
