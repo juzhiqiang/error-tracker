@@ -18,7 +18,7 @@
 
 ## 步骤
 
-- [ ] 新增 backup/restore runbook。
-- [ ] 更新 enterprise readiness 中的 minimum production 边界。
-- [ ] 运行文档关键字检查。
-- [ ] 提交：`docs: 添加备份恢复 runbook`
+- [x] 新增 backup/restore runbook。
+- [x] 更新 enterprise readiness 中的 minimum production 边界。
+- [x] 运行文档关键字检查。
+- [x] 提交：`docs: 添加备份恢复 runbook`
