@@ -24,7 +24,11 @@ describe('IngestService', () => {
     })
 
     expect(insertedValues[0]).toMatchObject({ id: 'event-1', issueId: 'issue-1' })
-    expect(queue.add.mock.calls[0]).toEqual(['check-alert', { projectId: 'project-1', issueId: 'issue-1' }])
+    expect(queue.add.mock.calls[0]).toEqual([
+      'check-alert',
+      { projectId: 'project-1', issueId: 'issue-1' },
+      { attempts: 3, backoff: { type: 'exponential', delay: 5000 }, removeOnComplete: true, removeOnFail: false },
+    ])
   })
 
   it('scrubs sensitive event fields before inserting events', async () => {

@@ -3,23 +3,27 @@ import { BadRequestException } from '@nestjs/common'
 import { IngestController } from './ingest.controller'
 import type { IngestService } from './ingest.service'
 import type { IngestLimitsService } from './ingest.limits'
+import type { MetricsService } from '../observability/metrics.service'
 
 describe('IngestController', () => {
   it('rejects invalid ingest bodies before calling the service', async () => {
     const ingestEvent = mock(async () => undefined)
     const ingestPerformance = mock(async () => undefined)
     const limits = createLimits()
-    const controller = new IngestController({ ingestEvent, ingestPerformance } as unknown as IngestService, limits)
+    const metrics = createMetrics()
+    const controller = new IngestController({ ingestEvent, ingestPerformance } as unknown as IngestService, limits, metrics)
 
     await expect(controller.ingest('project-1', { events: 'not-array' } as never)).rejects.toThrow(BadRequestException)
     expect(ingestEvent.mock.calls).toHaveLength(0)
     expect(ingestPerformance.mock.calls).toHaveLength(0)
+    expect(metrics.calls).toEqual([['rejected', 'validation_failed']])
   })
 
   it('forwards replay payloads to the ingest service', async () => {
     const ingestReplay = mock(async () => undefined)
     const limits = createLimits()
-    const controller = new IngestController({ ingestReplay } as unknown as IngestService, limits)
+    const metrics = createMetrics()
+    const controller = new IngestController({ ingestReplay } as unknown as IngestService, limits, metrics)
     const replayEvents = [{ timestamp: 1000, type: 2, data: { href: 'http://localhost' } }]
 
     await controller.ingestReplay('project-1', { eventId: 'event-1', events: replayEvents })
@@ -30,7 +34,8 @@ describe('IngestController', () => {
   it('checks body size, rate limit, and daily quota before ingesting events', async () => {
     const ingestEvent = mock(async () => undefined)
     const limits = createLimits()
-    const controller = new IngestController({ ingestEvent } as unknown as IngestService, limits)
+    const metrics = createMetrics()
+    const controller = new IngestController({ ingestEvent } as unknown as IngestService, limits, metrics)
     const body = {
       events: [
         {
@@ -50,6 +55,7 @@ describe('IngestController', () => {
       ['rate', 'project-1'],
       ['quota', 'project-1', 1],
     ])
+    expect(metrics.calls).toEqual([['accepted']])
   })
 })
 
@@ -61,4 +67,13 @@ function createLimits() {
     assertRequestAllowed: (projectId: string) => calls.push(['rate', projectId]),
     assertDailyQuota: (projectId: string, eventCount: number) => calls.push(['quota', projectId, eventCount]),
   } as unknown as IngestLimitsService & { calls: unknown[][] }
+}
+
+function createMetrics() {
+  const calls: unknown[][] = []
+  return {
+    calls,
+    recordIngestAccepted: () => calls.push(['accepted']),
+    recordIngestRejected: (reason: string) => calls.push(['rejected', reason]),
+  } as unknown as MetricsService & { calls: unknown[][] }
 }

@@ -6,7 +6,17 @@ describe('HealthService', () => {
     const db = { execute: mock(async () => ({ rows: [{ ok: 1 }] })) }
     const queue = { waitUntilReady: mock(async () => ({})) }
     const minio = { headBucket: mock(async () => {}) }
-    const service = new HealthService(db as never, queue as never, minio as never)
+    const metrics = {
+      queueCounts: mock(async () => ({ events: { failed: 0 }, cleanup: { failed: 0 } })),
+      ingestMetrics: mock(() => ({
+        accepted: 1,
+        rejected: 0,
+        rateLimited: 0,
+        payloadTooLarge: 0,
+        validationFailed: 0,
+      })),
+    }
+    const service = new HealthService(db as never, queue as never, minio as never, metrics as never)
 
     const report = await service.check()
 
@@ -15,6 +25,14 @@ describe('HealthService', () => {
     expect(report.checks.db.status).toBe('ok')
     expect(report.checks.redis.status).toBe('ok')
     expect(report.checks.minio.status).toBe('ok')
+    expect(report.queues).toEqual({ events: { failed: 0 }, cleanup: { failed: 0 } })
+    expect(report.ingest).toEqual({
+      accepted: 1,
+      rejected: 0,
+      rateLimited: 0,
+      payloadTooLarge: 0,
+      validationFailed: 0,
+    })
     expect(db.execute).toHaveBeenCalledTimes(1)
     expect(queue.waitUntilReady).toHaveBeenCalledTimes(1)
     expect(minio.headBucket).toHaveBeenCalledTimes(1)
@@ -24,7 +42,11 @@ describe('HealthService', () => {
     const db = { execute: mock(async () => { throw new Error('database unavailable') }) }
     const queue = { waitUntilReady: mock(async () => ({})) }
     const minio = { headBucket: mock(async () => {}) }
-    const service = new HealthService(db as never, queue as never, minio as never)
+    const metrics = {
+      queueCounts: mock(async () => ({ events: { failed: 0 }, cleanup: { failed: 0 } })),
+      ingestMetrics: mock(() => ({ accepted: 0, rejected: 1 })),
+    }
+    const service = new HealthService(db as never, queue as never, minio as never, metrics as never)
 
     const report = await service.check()
 

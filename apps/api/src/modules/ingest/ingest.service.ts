@@ -84,7 +84,7 @@ export class IngestService {
       release: payload.release,
     })
 
-    await this.eventsQueue.add('check-alert', { projectId, issueId })
+    await this.eventsQueue.add('check-alert', { projectId, issueId }, this.alertJobOptions())
   }
 
   async ingestPerformance(projectId: string, metrics: PerformancePayload[]): Promise<void> {
@@ -126,5 +126,14 @@ export class IngestService {
       .update(`${event.level}:${event.message}:${frameKey}`)
       .digest('hex')
       .slice(0, 16)
+  }
+
+  private alertJobOptions() {
+    return {
+      attempts: 3,
+      backoff: { type: 'exponential' as const, delay: 5000 },
+      removeOnComplete: true,
+      removeOnFail: false,
+    }
   }
 }

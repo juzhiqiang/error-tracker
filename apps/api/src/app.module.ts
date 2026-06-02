@@ -12,6 +12,7 @@ import { AlertsModule } from './modules/alerts/alerts.module'
 import { CleanupModule } from './modules/cleanup/cleanup.module'
 import { AuthModule } from './modules/auth/auth.module'
 import { HealthModule } from './modules/health/health.module'
+import { ObservabilityModule } from './modules/observability/observability.module'
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { HealthModule } from './modules/health/health.module'
     AlertsModule,
     CleanupModule,
     AuthModule,
+    ObservabilityModule,
     HealthModule,
   ],
 })
@@ -45,7 +47,10 @@ export class AppModule implements OnModuleInit {
       {},
       {
         repeat: { pattern: '0 2 * * *' },
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 5000 },
         removeOnComplete: true,
+        removeOnFail: false,
         jobId: 'daily-cleanup-recurring',
       },
     )

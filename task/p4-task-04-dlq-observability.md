@@ -22,10 +22,10 @@
 
 ## 步骤
 
-- [ ] 写 queue counts 测试。
-- [ ] 实现 metrics service。
-- [ ] 将 queue counts 接入 health report。
-- [ ] 为 BullMQ add 配置 attempts/backoff/removeOnFail。
-- [ ] 运行 `cd apps/api && bun test src/modules/observability/metrics.service.test.ts src/modules/health/health.service.test.ts`。
-- [ ] 运行 `cd apps/api && bun run lint`。
-- [ ] 提交：`feat: 增加队列可观测与失败保留`
+- [x] 写 queue counts 测试。
+- [x] 实现 metrics service。
+- [x] 将 queue counts 接入 health report。
+- [x] 为 BullMQ add 配置 attempts/backoff/removeOnFail。
+- [x] 运行 `cd apps/api && bun test src/modules/observability/metrics.service.test.ts src/modules/health/health.service.test.ts`。
+- [x] 运行 `cd apps/api && bun run lint`。
+- [x] 提交：`feat: 增加队列可观测与失败保留`

@@ -6,6 +6,7 @@ import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import { DB } from '../../db/db.module'
 import * as schema from '../../db/schema'
 import { MinioService } from '../sourcemaps/minio.service'
+import { IngestMetrics, MetricsService, QueueCountsReport } from '../observability/metrics.service'
 
 export type HealthCheckStatus = 'ok' | 'error'
 
@@ -23,6 +24,8 @@ export interface HealthReport {
     redis: HealthCheckResult
     minio: HealthCheckResult
   }
+  queues: QueueCountsReport
+  ingest: IngestMetrics
 }
 
 @Injectable()
@@ -31,10 +34,11 @@ export class HealthService {
     @Inject(DB) private readonly db: PostgresJsDatabase<typeof schema>,
     @InjectQueue('cleanup') private readonly cleanupQueue: Queue,
     private readonly minio: MinioService,
+    private readonly metrics: MetricsService,
   ) {}
 
   async check(): Promise<HealthReport> {
-    const [api, db, redis, minio] = await Promise.all([
+    const [api, db, redis, minio, queues] = await Promise.all([
       this.measure(async () => {}),
       this.measure(async () => {
         await this.db.execute(sql`select 1`)
@@ -45,12 +49,15 @@ export class HealthService {
       this.measure(async () => {
         await this.minio.headBucket()
       }),
+      this.metrics.queueCounts(),
     ])
 
     const checks = { api, db, redis, minio }
     return {
       ok: Object.values(checks).every((check) => check.status === 'ok'),
       checks,
+      queues,
+      ingest: this.metrics.ingestMetrics(),
     }
   }
 

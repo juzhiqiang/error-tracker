@@ -5,9 +5,10 @@ import { IngestService } from './ingest.service'
 import { DsnAuthGuard } from '../../common/guards/dsn-auth.guard'
 import { SourceMapsModule } from '../sourcemaps/sourcemaps.module'
 import { IngestLimitsService } from './ingest.limits'
+import { ObservabilityModule } from '../observability/observability.module'
 
 @Module({
-  imports: [BullModule.registerQueue({ name: 'events' }), SourceMapsModule],
+  imports: [BullModule.registerQueue({ name: 'events' }), SourceMapsModule, ObservabilityModule],
   controllers: [IngestController],
   providers: [IngestService, DsnAuthGuard, IngestLimitsService],
 })
