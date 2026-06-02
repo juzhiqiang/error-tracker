@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common'
+import { Controller, Get, Post, Body, UseGuards, Param } from '@nestjs/common'
 import { ProjectsService } from './projects.service'
 import { SessionGuard } from '../../common/guards/session.guard'
 
@@ -15,5 +15,10 @@ export class ProjectsController {
   @Post()
   create(@Body() body: { name: string; slug: string }) {
     return this.projectsService.create(body)
+  }
+
+  @Post(':id/rotate-token')
+  rotateToken(@Param('id') id: string) {
+    return this.projectsService.rotateToken(id)
   }
 }

@@ -20,10 +20,10 @@
 
 ## 步骤
 
-- [ ] 写 rotate token 服务测试。
-- [ ] 写旧 token 失效的 guard 测试。
-- [ ] 实现 `ProjectsService.rotateToken(projectId)`。
-- [ ] 添加 `POST /api/projects/:id/rotate-token`。
-- [ ] 运行 `cd apps/api && bun test src/modules/projects/projects.service.test.ts src/common/guards/dsn-auth.guard.test.ts`。
-- [ ] 运行 `cd apps/api && bun run lint`。
-- [ ] 提交：`feat: 支持项目 token 轮换`
+- [x] 写 rotate token 服务测试。
+- [x] 写旧 token 失效的 guard 测试。
+- [x] 实现 `ProjectsService.rotateToken(projectId)`。
+- [x] 添加 `POST /api/projects/:id/rotate-token`。
+- [x] 运行 `cd apps/api && bun test src/modules/projects/projects.service.test.ts src/common/guards/dsn-auth.guard.test.ts`。
+- [x] 运行 `cd apps/api && bun run lint`。
+- [x] 提交：`feat: 支持项目 token 轮换`
