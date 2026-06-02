@@ -278,3 +278,13 @@ init({ dsn: process.env.ERROR_TRACKER_DSN })
 4. 进入详情确认 Stack Trace 和 Breadcrumbs
 5. 触发带录屏的错误，确认 `/issues/:id/replay` 可播放
 6. 访问 `/performance` 确认 LCP/CLS 数据
+
+---
+
+## Enterprise Readiness
+
+当前版本定位为 **Enterprise MVP for internal evaluation and controlled self-hosted pilots**，不应称为“满足绝大多数企业级生产使用”。
+
+Plan 3 已补强 ingest 校验、SDK 队列可靠性、source map 精准匹配、replay 清理生命周期和 `/health` 健康检查。完整企业级生产部署仍需 Organization / Team / RBAC、SSO/SAML/OIDC、Audit log、PII scrubber、token rotation、项目级配额、HA/备份恢复、队列 DLQ、source map artifact 校验等能力。
+
+企业级能力矩阵和后续路线图见：`docs/enterprise-readiness.md`。

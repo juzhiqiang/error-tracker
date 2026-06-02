@@ -18,6 +18,6 @@
 
 ## 步骤
 
-- [ ] 更新 `AGENTS.md` 或新增 docs，说明当前 enterprise-ready 边界。
-- [ ] 在 README/设计文档中加入 “Enterprise readiness matrix”。
-- [ ] 提交：`docs: 补充企业级能力边界`
+- [x] 更新 `AGENTS.md` 或新增 docs，说明当前 enterprise-ready 边界。
+- [x] 在 README/设计文档中加入 “Enterprise readiness matrix”。
+- [x] 提交：`docs: 补充企业级能力边界`
