@@ -21,10 +21,10 @@
 
 ## 步骤
 
-- [ ] 写 env path resolve 与 required env 测试。
-- [ ] 实现 `loadLocalEnv()` 与 `validateApiEnv()`。
-- [ ] 在 `main.ts` 启动前调用。
-- [ ] 在 `auth.ts` 复用 env helper。
-- [ ] 运行 `cd apps/api && bun test src/config/env.test.ts`。
-- [ ] 运行 `cd apps/api && bun run build`。
-- [ ] 提交：`feat: 添加 API 启动配置校验`
+- [x] 写 env path resolve 与 required env 测试。
+- [x] 实现 `loadLocalEnv()` 与 `validateApiEnv()`。
+- [x] 在 `main.ts` 启动前调用。
+- [x] 在 `auth.ts` 复用 env helper。
+- [x] 运行 `cd apps/api && bun test src/config/env.test.ts`。
+- [x] 运行 `cd apps/api && bun run build`。
+- [x] 提交：`feat: 添加 API 启动配置校验`
