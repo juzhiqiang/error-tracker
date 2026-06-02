@@ -17,9 +17,9 @@
 
 ## 步骤
 
-- [ ] 写失败测试：同一项目两个 release/source map，只使用匹配 release 的 map。
-- [ ] 写失败测试：filename 不匹配时不反解。
-- [ ] 实现 frame filename 归一化，优先匹配 `source_maps.filename`。
-- [ ] 运行 `cd apps/api && bun test src/modules/events/events.service.test.ts`。
-- [ ] 运行 `cd apps/api && bun run lint`。
-- [ ] 提交：`feat: 精准匹配 source map`
+- [x] 写失败测试：同一项目两个 release/source map，只使用匹配 release 的 map。
+- [x] 写失败测试：filename 不匹配时不反解。
+- [x] 实现 frame filename 归一化，优先匹配 `source_maps.filename`。
+- [x] 运行 `cd apps/api && bun test src/modules/events/events.service.test.ts`。
+- [x] 运行 `cd apps/api && bun run lint`。
+- [x] 提交：`feat: 精准匹配 source map`

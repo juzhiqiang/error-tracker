@@ -23,11 +23,11 @@
 
 ## 步骤
 
-- [ ] 写 DsnAuthGuard header token 失败测试。
-- [ ] 修改 guard 从 `req.params.token` 或 `req.headers['x-error-tracker-token']` 读取 token。
-- [ ] 写 ingest validation 失败测试：missing events、events > 50、invalid eventId、invalid performance metric。
-- [ ] 实现 `validateIngestBody()` 和 `validateReplayBody()`，失败抛 `BadRequestException`。
-- [ ] 在 controller 调用 validation，再调用 service。
-- [ ] 运行 `cd apps/api && bun test src/modules/ingest/ingest.validation.test.ts src/modules/ingest/ingest.controller.test.ts src/common/guards/dsn-auth.guard.test.ts`。
-- [ ] 运行 `cd apps/api && bun run lint`。
-- [ ] 提交：`feat: 增强 ingest payload 防护`
+- [x] 写 DsnAuthGuard header token 失败测试。
+- [x] 修改 guard 从 `req.params.token` 或 `req.headers['x-error-tracker-token']` 读取 token。
+- [x] 写 ingest validation 失败测试：missing events、events > 50、invalid eventId、invalid performance metric。
+- [x] 实现 `validateIngestBody()` 和 `validateReplayBody()`，失败抛 `BadRequestException`。
+- [x] 在 controller 调用 validation，再调用 service。
+- [x] 运行 `cd apps/api && bun test src/modules/ingest/ingest.validation.test.ts src/modules/ingest/ingest.controller.test.ts src/common/guards/dsn-auth.guard.test.ts`。
+- [x] 运行 `cd apps/api && bun run lint`。
+- [x] 提交：`feat: 增强 ingest payload 防护`
