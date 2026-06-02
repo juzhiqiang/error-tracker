@@ -20,10 +20,10 @@
 
 ## 步骤
 
-- [ ] 写递归 scrubber 测试。
-- [ ] 写 IngestService 入库前 scrub 测试。
-- [ ] 实现 `scrubPii()`。
-- [ ] 在 `ingestEvent()` 中 scrub user/request/breadcrumbs/tags。
-- [ ] 运行 `cd apps/api && bun test src/modules/ingest/pii-scrubber.test.ts src/modules/ingest/ingest.service.test.ts`。
-- [ ] 运行 `cd apps/api && bun run lint`。
-- [ ] 提交：`feat: 添加服务端 PII 清理`
+- [x] 写递归 scrubber 测试。
+- [x] 写 IngestService 入库前 scrub 测试。
+- [x] 实现 `scrubPii()`。
+- [x] 在 `ingestEvent()` 中 scrub user/request/breadcrumbs/tags。
+- [x] 运行 `cd apps/api && bun test src/modules/ingest/pii-scrubber.test.ts src/modules/ingest/ingest.service.test.ts`。
+- [x] 运行 `cd apps/api && bun run lint`。
+- [x] 提交：`feat: 添加服务端 PII 清理`

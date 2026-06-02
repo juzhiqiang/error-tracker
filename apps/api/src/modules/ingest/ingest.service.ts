@@ -8,6 +8,7 @@ import { events, performanceMetrics, replays } from '../../db/schema'
 import { MinioService } from '../sourcemaps/minio.service'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../db/schema'
+import { scrubPii } from './pii-scrubber'
 
 interface StackFrame {
   function: string
@@ -75,10 +76,10 @@ export class IngestService {
       level: payload.level,
       message: payload.message,
       stacktrace: payload.stacktrace ?? null,
-      breadcrumbs: payload.breadcrumbs ?? null,
-      request: payload.request ?? null,
-      user: payload.user ?? null,
-      tags: payload.tags ?? null,
+      breadcrumbs: payload.breadcrumbs ? scrubPii(payload.breadcrumbs) : null,
+      request: payload.request ? scrubPii(payload.request) : null,
+      user: payload.user ? scrubPii(payload.user) : null,
+      tags: payload.tags ? scrubPii(payload.tags) : null,
       environment: payload.environment,
       release: payload.release,
     })
