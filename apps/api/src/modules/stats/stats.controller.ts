@@ -1,9 +1,10 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common'
 import { StatsService } from './stats.service'
 import { SessionGuard } from '../../common/guards/session.guard'
+import { ProjectAccessGuard } from '../access/project-access.guard'
 
 @Controller('api/stats')
-@UseGuards(SessionGuard)
+@UseGuards(SessionGuard, ProjectAccessGuard)
 export class StatsController {
   constructor(private readonly statsService: StatsService) {}
 

@@ -1,7 +1,34 @@
 import { pgTable, text, integer, timestamp, jsonb, serial, uuid, unique } from 'drizzle-orm/pg-core'
+import { user } from './auth-schema'
+
+export const organizations = pgTable('organizations', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  slug: text('slug').notNull().unique(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
+export const organizationMembers = pgTable(
+  'organization_members',
+  {
+    id: serial('id').primaryKey(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    role: text('role', { enum: ['owner', 'admin', 'member', 'viewer'] }).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    organizationUserUnique: unique('organization_members_org_user_unique').on(table.organizationId, table.userId),
+  }),
+)
 
 export const projects = pgTable('projects', {
   id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: uuid('organization_id').references(() => organizations.id),
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
   dsnToken: text('dsn_token').notNull().unique(),
@@ -10,6 +37,24 @@ export const projects = pgTable('projects', {
   retentionDays: integer('retention_days').default(30),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
+
+export const projectMembers = pgTable(
+  'project_members',
+  {
+    id: serial('id').primaryKey(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    role: text('role', { enum: ['owner', 'admin', 'member', 'viewer'] }).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    projectUserUnique: unique('project_members_project_user_unique').on(table.projectId, table.userId),
+  }),
+)
 
 export const issues = pgTable(
   'issues',

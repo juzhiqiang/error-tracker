@@ -26,11 +26,11 @@
 
 ## 步骤
 
-- [ ] 写 AccessControlService 允许/拒绝测试。
-- [ ] 写 ProjectAccessGuard projectId/role 测试。
-- [ ] 扩展 schema。
-- [ ] 实现 access module/service/guard/decorator。
-- [ ] 接入 stats、sourcemaps、issues list、project token rotation。
-- [ ] 运行 `cd apps/api && bun test src/modules/access/access-control.service.test.ts src/modules/access/project-access.guard.test.ts`。
-- [ ] 运行 `cd apps/api && bun run lint`。
-- [ ] 提交：`feat: 添加项目级 RBAC`
+- [x] 写 AccessControlService 允许/拒绝测试。
+- [x] 写 ProjectAccessGuard projectId/role 测试。
+- [x] 扩展 schema。
+- [x] 实现 access module/service/guard/decorator。
+- [x] 接入 stats、sourcemaps、issues list、project token rotation。
+- [x] 运行 `cd apps/api && bun test src/modules/access/access-control.service.test.ts src/modules/access/project-access.guard.test.ts`。
+- [x] 运行 `cd apps/api && bun run lint`。
+- [x] 提交：`feat: 添加项目级 RBAC`

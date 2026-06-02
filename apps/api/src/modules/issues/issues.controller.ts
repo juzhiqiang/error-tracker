@@ -2,6 +2,7 @@ import { Controller, Get, Patch, Param, Query, Body, UseGuards } from '@nestjs/c
 import { IssuesService } from './issues.service'
 import { EventsService } from '../events/events.service'
 import { SessionGuard } from '../../common/guards/session.guard'
+import { ProjectAccessGuard } from '../access/project-access.guard'
 
 @Controller('api/issues')
 @UseGuards(SessionGuard)
@@ -12,6 +13,7 @@ export class IssuesController {
   ) {}
 
   @Get()
+  @UseGuards(ProjectAccessGuard)
   list(@Query() query: Record<string, string>) {
     return this.issuesService.list({
       projectId: query.projectId,

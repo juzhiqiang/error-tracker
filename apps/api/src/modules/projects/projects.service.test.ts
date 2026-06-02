@@ -2,6 +2,27 @@ import { describe, expect, it, mock } from 'bun:test'
 import { ProjectsService } from './projects.service'
 
 describe('ProjectsService', () => {
+  it('adds the creator as project owner when creating a project', async () => {
+    const insertedValues: Record<string, unknown>[] = []
+    const createdProject = { id: 'project-1', name: 'App' }
+    const db = {
+      insert: () => ({
+        values: (values: Record<string, unknown>) => {
+          insertedValues.push(values)
+          if (insertedValues.length === 1) {
+            return { returning: mock(async () => [createdProject]) }
+          }
+          return { onConflictDoNothing: mock(async () => undefined) }
+        },
+      }),
+    }
+    const service = new ProjectsService(db as never)
+
+    await expect(service.create({ name: 'App', slug: 'app' }, 'user-1')).resolves.toEqual([createdProject])
+
+    expect(insertedValues[1]).toEqual({ projectId: 'project-1', userId: 'user-1', role: 'owner' })
+  })
+
   it('rotates a project DSN token and returns the updated project', async () => {
     const updatedProject = { id: 'project-1', dsnToken: 'new-token' }
     const setValues: Record<string, unknown>[] = []

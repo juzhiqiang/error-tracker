@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common'
 import { randomBytes } from 'crypto'
 import { eq } from 'drizzle-orm'
 import { DB } from '../../db/db.module'
-import { projects } from '../../db/schema'
+import { projectMembers, projects } from '../../db/schema'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../db/schema'
 
@@ -14,9 +14,16 @@ export class ProjectsService {
     return this.db.select().from(projects).orderBy(projects.createdAt)
   }
 
-  create(body: { name: string; slug: string }) {
+  async create(body: { name: string; slug: string }, ownerUserId?: string) {
     const dsnToken = randomBytes(20).toString('hex')
-    return this.db.insert(projects).values({ name: body.name, slug: body.slug, dsnToken }).returning()
+    const created = await this.db.insert(projects).values({ name: body.name, slug: body.slug, dsnToken }).returning()
+    if (ownerUserId && created[0]?.id) {
+      await this.db
+        .insert(projectMembers)
+        .values({ projectId: created[0].id, userId: ownerUserId, role: 'owner' })
+        .onConflictDoNothing()
+    }
+    return created
   }
 
   rotateToken(projectId: string) {
