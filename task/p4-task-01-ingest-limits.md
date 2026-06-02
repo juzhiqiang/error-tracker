@@ -21,9 +21,9 @@
 
 ## 步骤
 
-- [ ] 写 body size、rate limit、daily quota 失败测试。
-- [ ] 实现 `IngestLimitsService` 或等价限流 helper。
-- [ ] 在 `IngestController` 调用限流与配额检查。
-- [ ] 运行 `cd apps/api && bun test src/modules/ingest/ingest.limits.test.ts src/modules/ingest/ingest.controller.test.ts`。
-- [ ] 运行 `cd apps/api && bun run lint`。
-- [ ] 提交：`feat: 添加 ingest 限流配额`
+- [x] 写 body size、rate limit、daily quota 失败测试。
+- [x] 实现 `IngestLimitsService` 或等价限流 helper。
+- [x] 在 `IngestController` 调用限流与配额检查。
+- [x] 运行 `cd apps/api && bun test src/modules/ingest/ingest.limits.test.ts src/modules/ingest/ingest.controller.test.ts`。
+- [x] 运行 `cd apps/api && bun run lint`。
+- [x] 提交：`feat: 添加 ingest 限流配额`
