@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable, PayloadTooLargeException } from '@nestjs/common'
+import { HttpException, HttpStatus, Inject, Injectable, Optional, PayloadTooLargeException } from '@nestjs/common'
 
 export type IngestBodyKind = 'ingest' | 'replay'
 
@@ -9,6 +9,8 @@ export interface IngestLimitsOptions {
   maxRequestsPerWindow?: number
   dailyEventQuota?: number
 }
+
+export const INGEST_LIMITS_OPTIONS = Symbol('INGEST_LIMITS_OPTIONS')
 
 interface WindowCounter {
   resetAt: number
@@ -25,7 +27,7 @@ export class IngestLimitsService {
   private readonly requestWindows = new Map<string, WindowCounter>()
   private readonly dailyUsage = new Map<string, WindowCounter>()
 
-  constructor(options: IngestLimitsOptions = {}) {
+  constructor(@Optional() @Inject(INGEST_LIMITS_OPTIONS) options: IngestLimitsOptions = {}) {
     this.maxIngestBytes = options.maxIngestBytes ?? Number(process.env.INGEST_MAX_BODY_BYTES ?? 512 * 1024)
     this.maxReplayBytes = options.maxReplayBytes ?? Number(process.env.REPLAY_MAX_BODY_BYTES ?? 5 * 1024 * 1024)
     this.rateLimitWindowMs = options.rateLimitWindowMs ?? Number(process.env.INGEST_RATE_WINDOW_MS ?? 60_000)

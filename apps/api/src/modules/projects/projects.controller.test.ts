@@ -1,4 +1,5 @@
 import { describe, expect, it, mock } from 'bun:test'
+import { GUARDS_METADATA } from '@nestjs/common/constants'
 
 mock.module('../../common/guards/session.guard', () => ({
   SessionGuard: class SessionGuard {},
@@ -41,5 +42,14 @@ describe('ProjectsController audit logging', () => {
         },
       ],
     ])
+  })
+
+  it('runs the session guard before project access on token rotation', async () => {
+    const { ProjectsController } = await import('./projects.controller')
+    const guards = Reflect.getMetadata(GUARDS_METADATA, ProjectsController.prototype.rotateToken) as Array<{
+      name: string
+    }>
+
+    expect(guards.map((guard) => guard.name)).toEqual(['SessionGuard', 'ProjectAccessGuard'])
   })
 })

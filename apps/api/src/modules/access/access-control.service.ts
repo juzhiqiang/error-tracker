@@ -21,7 +21,9 @@ export class AccessControlService {
         AND p.id = ${projectId}
     `)
 
-    const rows = (result as unknown as { rows?: { role: ProjectRole }[] }).rows ?? []
+    const rows = Array.isArray(result)
+      ? (result as unknown as { role: ProjectRole }[])
+      : ((result as unknown as { rows?: { role: ProjectRole }[] }).rows ?? [])
     return rows.some((row) => requiredRoles.includes(row.role))
   }
 }

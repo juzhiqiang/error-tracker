@@ -17,7 +17,7 @@ export class IssuesController {
   ) {}
 
   @Get()
-  @UseGuards(ProjectAccessGuard)
+  @UseGuards(SessionGuard, ProjectAccessGuard)
   list(@Query() query: Record<string, string>) {
     return this.issuesService.list({
       projectId: query.projectId,

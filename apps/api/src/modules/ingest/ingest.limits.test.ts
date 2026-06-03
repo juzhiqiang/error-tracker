@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { HttpException, HttpStatus, PayloadTooLargeException } from '@nestjs/common'
+import { Test } from '@nestjs/testing'
 import { IngestLimitsService } from './ingest.limits'
 
 describe('IngestLimitsService', () => {
@@ -45,5 +46,13 @@ describe('IngestLimitsService', () => {
       expect(err).toBeInstanceOf(HttpException)
       expect((err as HttpException).getStatus()).toBe(HttpStatus.TOO_MANY_REQUESTS)
     }
+  })
+
+  it('can be constructed by Nest without an explicit options provider', async () => {
+    const moduleRef = await Test.createTestingModule({
+      providers: [IngestLimitsService],
+    }).compile()
+
+    expect(moduleRef.get(IngestLimitsService)).toBeInstanceOf(IngestLimitsService)
   })
 })

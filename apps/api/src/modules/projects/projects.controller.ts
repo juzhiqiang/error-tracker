@@ -39,7 +39,7 @@ export class ProjectsController {
 
   @Post(':id/rotate-token')
   @ProjectRoles('owner', 'admin')
-  @UseGuards(ProjectAccessGuard)
+  @UseGuards(SessionGuard, ProjectAccessGuard)
   async rotateToken(@Param('id') id: string, @Req() req: SessionRequest) {
     const updated = await this.projectsService.rotateToken(id)
     const project = updated[0]

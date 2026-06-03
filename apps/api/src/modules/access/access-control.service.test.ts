@@ -15,4 +15,11 @@ describe('AccessControlService', () => {
 
     await expect(service.canAccessProject('user-1', 'project-1', ['owner', 'admin'])).resolves.toBe(false)
   })
+
+  it('allows access when the raw SQL driver returns rows as an array', async () => {
+    const db = { execute: mock(async () => [{ role: 'owner' }]) }
+    const service = new AccessControlService(db as never)
+
+    await expect(service.canAccessProject('user-1', 'project-1', ['owner', 'admin'])).resolves.toBe(true)
+  })
 })
