@@ -24,10 +24,10 @@
 
 ## 步骤
 
-- [ ] 写 AuditLogService record/list 测试。
-- [ ] 扩展 schema。
-- [ ] 实现 audit module/service/controller。
-- [ ] 在项目创建、token rotation、issue 状态、source map 上传/删除记录审计。
-- [ ] 运行 `cd apps/api && bun test src/modules/audit/audit-log.service.test.ts`。
-- [ ] 运行 `cd apps/api && bun run lint`。
-- [ ] 提交：`feat: 添加审计日志`
+- [x] 写 AuditLogService record/list 测试。
+- [x] 扩展 schema。
+- [x] 实现 audit module/service/controller。
+- [x] 在项目创建、token rotation、issue 状态、source map 上传/删除记录审计。
+- [x] 运行 `cd apps/api && bun test src/modules/audit/audit-log.service.test.ts`。
+- [x] 运行 `cd apps/api && bun run lint`。
+- [x] 提交：`feat: 添加审计日志`

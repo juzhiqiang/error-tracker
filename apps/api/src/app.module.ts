@@ -13,6 +13,7 @@ import { CleanupModule } from './modules/cleanup/cleanup.module'
 import { AuthModule } from './modules/auth/auth.module'
 import { HealthModule } from './modules/health/health.module'
 import { ObservabilityModule } from './modules/observability/observability.module'
+import { AuditLogModule } from './modules/audit/audit-log.module'
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { ObservabilityModule } from './modules/observability/observability.modul
     CleanupModule,
     AuthModule,
     ObservabilityModule,
+    AuditLogModule,
     HealthModule,
   ],
 })

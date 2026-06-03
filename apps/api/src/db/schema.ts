@@ -38,6 +38,17 @@ export const projects = pgTable('projects', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
+export const auditLogs = pgTable('audit_logs', {
+  id: serial('id').primaryKey(),
+  actorUserId: text('actor_user_id').references(() => user.id, { onDelete: 'set null' }),
+  projectId: uuid('project_id').references(() => projects.id),
+  action: text('action').notNull(),
+  targetType: text('target_type').notNull(),
+  targetId: text('target_id'),
+  metadata: jsonb('metadata'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+})
+
 export const projectMembers = pgTable(
   'project_members',
   {

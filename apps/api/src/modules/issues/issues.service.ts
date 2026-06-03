@@ -58,6 +58,7 @@ export class IssuesService {
   }
 
   async updateStatus(id: string, status: 'resolved' | 'ignored' | 'unresolved') {
-    await this.db.update(issues).set({ status }).where(eq(issues.id, id))
+    const [issue] = await this.db.update(issues).set({ status }).where(eq(issues.id, id)).returning()
+    return issue ?? null
   }
 }
