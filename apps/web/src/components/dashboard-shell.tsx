@@ -1,12 +1,20 @@
 'use client'
 
 import type { ReactNode } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Activity, Bug, CircleDot, LayoutDashboard, Settings, ShieldCheck } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { Activity, BookOpen, Bug, CircleDot, LayoutDashboard, LogOut, Settings, ShieldCheck } from 'lucide-react'
 import { LanguageToggle } from '@/components/language-toggle'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { authClient } from '@/lib/auth-client'
 import { useI18n } from '@/lib/i18n'
+import {
+  dashboardUtilityNav,
+  getSessionDisplayName,
+  getSessionInitials,
+  type SessionUserSummary,
+} from '@/lib/session-ui'
 
 const navItems = [
   { href: '/', labelKey: 'nav.overview', icon: LayoutDashboard },
@@ -15,9 +23,25 @@ const navItems = [
   { href: '/settings', labelKey: 'nav.settings', icon: Settings },
 ]
 
-export function DashboardShell({ email, children }: { email?: string | null; children: ReactNode }) {
+export function DashboardShell({ user, children }: { user?: SessionUserSummary | null; children: ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
   const { t } = useI18n()
+  const [signingOut, setSigningOut] = useState(false)
+  const displayName = getSessionDisplayName(user, t('app.signedInUser'))
+  const initials = getSessionInitials(user)
+  const email = user?.email ?? t('app.signedInUser')
+
+  async function handleSignOut() {
+    setSigningOut(true)
+    try {
+      await authClient.signOut()
+      router.push('/login')
+      router.refresh()
+    } finally {
+      setSigningOut(false)
+    }
+  }
 
   return (
     <div className="min-h-screen lg:flex">
@@ -57,13 +81,43 @@ export function DashboardShell({ email, children }: { email?: string | null; chi
             })}
           </nav>
 
+          <div className="border-t border-line px-3 py-3">
+            {dashboardUtilityNav.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="app-button flex min-h-[44px] shrink-0 items-center gap-3 px-3 text-sm font-medium text-slate-400 hover:bg-slate-900 hover:text-slate-100 lg:w-full"
+              >
+                <BookOpen className="h-4 w-4" />
+                <span>{t(item.labelKey)}</span>
+              </Link>
+            ))}
+          </div>
+
           <div className="mt-auto hidden border-t border-line p-4 lg:block">
-            <div className="app-panel-muted p-3">
+            <div className="app-panel-muted space-y-3 p-3">
               <div className="flex items-center gap-2 text-xs font-medium text-emerald-200">
                 <CircleDot className="h-3.5 w-3.5 fill-emerald-400 text-emerald-400" />
                 {t('app.liveIngestion')}
               </div>
-              <div className="mt-2 truncate text-xs text-slate-500">{email || t('app.signedInUser')}</div>
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-700 bg-slate-900 text-xs font-semibold text-slate-200">
+                  {initials}
+                </span>
+                <div className="min-w-0">
+                  <div className="truncate text-xs font-medium text-slate-200">{displayName}</div>
+                  <div className="truncate text-xs text-slate-500">{email}</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className="app-button inline-flex min-h-[40px] w-full items-center justify-center gap-2 border border-slate-700 px-3 text-sm text-slate-300 hover:bg-slate-900 hover:text-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <LogOut className="h-4 w-4" />
+                {signingOut ? t('nav.signingOut') : t('nav.signOut')}
+              </button>
             </div>
           </div>
         </div>
@@ -74,12 +128,36 @@ export function DashboardShell({ email, children }: { email?: string | null; chi
           <div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-between gap-3">
             <div className="text-xs text-slate-500">{t('app.topbar')}</div>
             <div className="flex items-center gap-3">
+              <Link
+                href="/welcome"
+                title={t('nav.productTour')}
+                className="app-button inline-flex items-center justify-center gap-2 border border-slate-700 bg-slate-950/70 px-3 text-sm font-medium text-slate-300 hover:bg-slate-900 hover:text-slate-50"
+              >
+                <BookOpen className="h-4 w-4" />
+                <span className="hidden sm:inline">{t('nav.productTour')}</span>
+              </Link>
               <LanguageToggle compact />
               <ThemeToggle compact />
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />
                 {t('app.apiConnected')}
               </div>
+              <div className="hidden min-w-0 items-center gap-2 rounded-md border border-slate-700 bg-slate-950/70 px-2.5 py-1.5 md:flex">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-800 text-[11px] font-semibold text-slate-200">
+                  {initials}
+                </span>
+                <span className="max-w-40 truncate text-xs font-medium text-slate-300">{displayName}</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                title={t('nav.signOut')}
+                className="app-button inline-flex items-center justify-center gap-2 border border-slate-700 bg-slate-950/70 px-3 text-sm font-medium text-slate-300 hover:bg-slate-900 hover:text-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">{signingOut ? t('nav.signingOut') : t('nav.signOut')}</span>
+              </button>
             </div>
           </div>
         </div>

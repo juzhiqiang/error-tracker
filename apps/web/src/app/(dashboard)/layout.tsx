@@ -7,5 +7,5 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const session = await getServerSession()
   if (!session) redirect('/login')
 
-  return <DashboardShell email={session.user.email}>{children}</DashboardShell>
+  return <DashboardShell user={session.user}>{children}</DashboardShell>
 }
