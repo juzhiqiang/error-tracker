@@ -20,6 +20,12 @@ docker exec error-tracker-pg pg_dump -U tracker -d error_tracker -Fc -f /tmp/err
 docker cp error-tracker-pg:/tmp/error_tracker.dump .\backups\error_tracker-YYYYMMDD-HHMM.dump
 ```
 
+Repeatable script:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/ops/backup-postgres.ps1
+```
+
 Verify the backup file exists and is non-empty:
 
 ```powershell
@@ -36,6 +42,12 @@ Restore into a new database first. Do not overwrite production until the restore
 docker exec error-tracker-pg createdb -U tracker error_tracker_restore
 docker cp .\backups\error_tracker-YYYYMMDD-HHMM.dump error-tracker-pg:/tmp/error_tracker.dump
 docker exec error-tracker-pg pg_restore -U tracker -d error_tracker_restore --clean --if-exists /tmp/error_tracker.dump
+```
+
+Repeatable script:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/ops/restore-postgres.ps1 -BackupFile .\backups\error_tracker-YYYYMMDD-HHMMSS.dump
 ```
 
 Smoke checks after restore:
@@ -59,6 +71,12 @@ mc alias set error-tracker http://localhost:9011 tracker tracker123
 mc mirror error-tracker/error-tracker .\backups\minio\error-tracker-YYYYMMDD-HHMM
 ```
 
+Repeatable script, using a temporary Dockerized MinIO client:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/ops/backup-minio.ps1
+```
+
 For production, prefer object storage with versioning and lifecycle policies. If using MinIO, mirror to separate storage daily and before migrations that touch replay/source map metadata.
 
 ## MinIO Restore
@@ -69,6 +87,12 @@ Restore into an empty bucket or a staging bucket first:
 mc alias set error-tracker http://localhost:9011 tracker tracker123
 mc mb error-tracker/error-tracker-restore
 mc mirror .\backups\minio\error-tracker-YYYYMMDD-HHMM error-tracker/error-tracker-restore
+```
+
+Repeatable script, using a temporary Dockerized MinIO client:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/ops/restore-minio.ps1 -BackupDir .\backups\minio\error-tracker-YYYYMMDD-HHMMSS
 ```
 
 After validation, point `MINIO_BUCKET` to the restored bucket or mirror objects back to the production bucket.
@@ -105,6 +129,8 @@ If a queue has failed jobs:
 4. Record the incident in the deployment notes.
 
 ## Restore Drill Checklist
+
+Use `scripts/ops/backup-postgres.ps1`, `scripts/ops/restore-postgres.ps1`, `scripts/ops/backup-minio.ps1`, and `scripts/ops/restore-minio.ps1` for repeatable drills. Record each completed drill in `docs/operations/restore-drill-report.md`.
 
 - [ ] Restore PostgreSQL backup into a staging database.
 - [ ] Run row-count smoke checks.
