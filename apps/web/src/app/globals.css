@@ -721,6 +721,22 @@ textarea {
     pointer-events: none;
   }
 
+  .welcome-scene::before {
+    content: '';
+    position: absolute;
+    inset: 8% 2% 12% 44%;
+    border-radius: 999px;
+    background:
+      radial-gradient(circle at 24% 34%, rgba(42, 196, 255, 0.22), transparent 28%),
+      radial-gradient(circle at 68% 46%, rgba(126, 87, 255, 0.24), transparent 34%),
+      radial-gradient(circle at 52% 76%, rgba(28, 232, 158, 0.12), transparent 30%);
+    filter: blur(10px);
+    mix-blend-mode: screen;
+    opacity: 0.74;
+    transform: translate3d(0, 0, 0);
+    animation: welcome-aurora-drift 9s ease-in-out infinite;
+  }
+
   .welcome-grid-plane {
     position: absolute;
     inset: 15% -12% -18% 34%;
@@ -749,10 +765,79 @@ textarea {
     animation: welcome-scan 5.6s ease-in-out infinite;
   }
 
+  .welcome-particle-field {
+    position: absolute;
+    inset: 9% -4% 8% 38%;
+    z-index: 2;
+    opacity: 1;
+    filter: drop-shadow(0 0 22px rgba(42, 196, 255, 0.26));
+    mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 82%, transparent 100%);
+  }
+
+  .welcome-particle-field::before {
+    content: '';
+    position: absolute;
+    inset: 12% 0 10% 6%;
+    background:
+      linear-gradient(118deg, transparent 0%, transparent 34%, rgba(42, 196, 255, 0.2) 34.4%, transparent 35.4%, transparent 100%),
+      linear-gradient(151deg, transparent 0%, transparent 55%, rgba(126, 87, 255, 0.18) 55.4%, transparent 56.4%, transparent 100%),
+      linear-gradient(24deg, transparent 0%, transparent 64%, rgba(28, 232, 158, 0.14) 64.4%, transparent 65.2%, transparent 100%);
+    opacity: 0.68;
+    transform: translate3d(0, 0, 0);
+    animation: welcome-signal-beam 8.4s ease-in-out infinite;
+  }
+
+  .welcome-particle {
+    position: absolute;
+    left: var(--particle-x);
+    top: var(--particle-y);
+    display: block;
+    width: calc(var(--particle-size) + 2px);
+    height: calc(var(--particle-size) + 2px);
+    border-radius: 999px;
+    background: currentColor;
+    box-shadow:
+      0 0 16px currentColor,
+      0 0 48px currentColor;
+    opacity: 0.46;
+    transform: translate3d(0, 0, 0) scale(0.82);
+    animation: welcome-particle-drift var(--particle-duration) ease-in-out var(--particle-delay) infinite both;
+  }
+
+  .welcome-particle::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 96px;
+    height: 1px;
+    background: linear-gradient(90deg, currentColor, transparent);
+    opacity: 0.34;
+    transform: rotate(-24deg);
+    transform-origin: left center;
+  }
+
+  .welcome-particle.cyan {
+    color: rgba(42, 196, 255, 0.88);
+  }
+
+  .welcome-particle.violet {
+    color: rgba(126, 87, 255, 0.82);
+  }
+
+  .welcome-particle.emerald {
+    color: rgba(28, 232, 158, 0.78);
+  }
+
+  .welcome-particle:nth-child(3n + 2) {
+    animation-name: welcome-particle-drift-alt;
+  }
+
   .welcome-command {
     position: absolute;
     top: 15%;
     right: max(24px, calc((100vw - 1500px) / 2));
+    z-index: 4;
     width: min(520px, 42vw);
     border: 1px solid rgba(105, 116, 178, 0.36);
     border-radius: 8px;
@@ -823,6 +908,7 @@ textarea {
     position: absolute;
     right: max(36px, calc((100vw - 1500px) / 2 + 110px));
     bottom: 12%;
+    z-index: 4;
     display: grid;
     grid-template-columns: auto 1fr;
     gap: 12px;
@@ -1097,6 +1183,199 @@ textarea {
     color: rgb(var(--ink-subtle-rgb));
     font-size: 13px;
   }
+
+  html[data-theme='light'] .welcome-page {
+    background:
+      radial-gradient(circle at var(--mx) var(--my), rgba(79, 70, 229, 0.12), transparent 34%),
+      radial-gradient(circle at 78% 18%, rgba(3, 105, 161, 0.12), transparent 30%),
+      linear-gradient(rgba(99, 102, 241, 0.075) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(3, 105, 161, 0.055) 1px, transparent 1px),
+      linear-gradient(180deg, #f8fbff 0%, #eef4fb 48%, #f7f9fd 100%);
+    background-size: 100% 100%, 100% 100%, 42px 42px, 42px 42px, 100% 100%;
+    color: rgb(var(--ink-rgb));
+  }
+
+  html[data-theme='light'] .welcome-nav {
+    border-bottom-color: rgba(148, 163, 184, 0.42);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 251, 255, 0.78)),
+      radial-gradient(circle at 50% 0%, rgba(79, 70, 229, 0.1), transparent 44%);
+    box-shadow:
+      0 16px 46px rgba(15, 23, 42, 0.09),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.82);
+  }
+
+  html[data-theme='light'] .welcome-brand,
+  html[data-theme='light'] .welcome-brand-text,
+  html[data-theme='light'] .welcome-hero h1,
+  html[data-theme='light'] .welcome-section-heading h2,
+  html[data-theme='light'] .welcome-start-copy h2 {
+    color: rgb(var(--ink-strong-rgb));
+  }
+
+  html[data-theme='light'] .welcome-nav-links,
+  html[data-theme='light'] .welcome-nav-actions {
+    border-color: rgba(148, 163, 184, 0.42);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(241, 245, 249, 0.72)),
+      radial-gradient(circle at 100% 0%, rgba(79, 70, 229, 0.08), transparent 48%);
+    box-shadow:
+      0 12px 30px rgba(15, 23, 42, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.94);
+  }
+
+  html[data-theme='light'] .welcome-nav-links a,
+  html[data-theme='light'] .welcome-icon-button {
+    color: rgb(var(--ink-muted-rgb)) !important;
+  }
+
+  html[data-theme='light'] .welcome-nav-links a:hover,
+  html[data-theme='light'] .welcome-nav-links a:focus-visible,
+  html[data-theme='light'] .welcome-icon-button:hover {
+    background: rgba(79, 70, 229, 0.09) !important;
+    color: rgb(var(--ink-strong-rgb)) !important;
+    box-shadow: inset 0 0 0 1px rgba(79, 70, 229, 0.14);
+  }
+
+  html[data-theme='light'] .welcome-user-chip,
+  html[data-theme='light'] .welcome-kicker,
+  html[data-theme='light'] .welcome-stack-strip span {
+    border-color: rgba(148, 163, 184, 0.42);
+    background: rgba(255, 255, 255, 0.72);
+    color: rgb(var(--primary-rgb));
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  }
+
+  html[data-theme='light'] .welcome-user-meta span,
+  html[data-theme='light'] .welcome-user-meta em {
+    color: rgb(var(--ink-subtle-rgb));
+  }
+
+  html[data-theme='light'] .welcome-user-meta strong {
+    color: rgb(var(--ink-rgb));
+  }
+
+  html[data-theme='light'] .welcome-nav-cta {
+    border-color: rgba(79, 70, 229, 0.28);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(238, 242, 255, 0.86)),
+      radial-gradient(circle at 0% 0%, rgba(79, 70, 229, 0.14), transparent 52%);
+    color: rgb(var(--primary-soft-ink-rgb));
+    box-shadow:
+      0 12px 28px rgba(15, 23, 42, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.98);
+  }
+
+  html[data-theme='light'] .welcome-hero-copy > p,
+  html[data-theme='light'] .welcome-section-heading p,
+  html[data-theme='light'] .welcome-start-copy p,
+  html[data-theme='light'] .welcome-stack-strip span,
+  html[data-theme='light'] .welcome-code-panel pre,
+  html[data-theme='light'] .welcome-terminal div div {
+    color: rgb(var(--ink-muted-rgb));
+  }
+
+  html[data-theme='light'] .welcome-scene::before {
+    opacity: 0.42;
+    mix-blend-mode: multiply;
+  }
+
+  html[data-theme='light'] .welcome-grid-plane {
+    border-color: rgba(148, 163, 184, 0.34);
+    background:
+      linear-gradient(rgba(79, 70, 229, 0.12) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(3, 105, 161, 0.1) 1px, transparent 1px);
+    box-shadow:
+      inset 0 0 90px rgba(3, 105, 161, 0.08),
+      0 0 80px rgba(79, 70, 229, 0.08);
+    opacity: 0.54;
+  }
+
+  html[data-theme='light'] .welcome-scanline {
+    background: linear-gradient(180deg, transparent, rgba(79, 70, 229, 0.14), transparent);
+    opacity: 0.32;
+  }
+
+  html[data-theme='light'] .welcome-particle-field {
+    opacity: 0.68;
+    filter: drop-shadow(0 0 18px rgba(3, 105, 161, 0.16));
+  }
+
+  html[data-theme='light'] .welcome-particle-field::before {
+    opacity: 0.38;
+  }
+
+  html[data-theme='light'] .welcome-command,
+  html[data-theme='light'] .welcome-feature,
+  html[data-theme='light'] .welcome-context-card,
+  html[data-theme='light'] .welcome-code-panel,
+  html[data-theme='light'] .welcome-map,
+  html[data-theme='light'] .welcome-root-view,
+  html[data-theme='light'] .welcome-terminal {
+    border-color: rgba(148, 163, 184, 0.46);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(248, 250, 252, 0.66));
+    box-shadow:
+      0 22px 58px rgba(15, 23, 42, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.94);
+  }
+
+  html[data-theme='light'] .welcome-command-header,
+  html[data-theme='light'] .welcome-code-title,
+  html[data-theme='light'] .welcome-step,
+  html[data-theme='light'] .welcome-feature h3,
+  html[data-theme='light'] .welcome-context-card h3,
+  html[data-theme='light'] .welcome-command .text-slate-100 {
+    color: rgb(var(--ink-rgb)) !important;
+  }
+
+  html[data-theme='light'] .welcome-command .text-slate-500,
+  html[data-theme='light'] .welcome-signal-row .font-mono {
+    color: rgb(var(--ink-subtle-rgb)) !important;
+  }
+
+  html[data-theme='light'] .welcome-command-header,
+  html[data-theme='light'] .welcome-code-title {
+    border-bottom-color: rgba(148, 163, 184, 0.38);
+  }
+
+  html[data-theme='light'] .welcome-signal-row {
+    border-color: rgba(148, 163, 184, 0.38);
+    background: rgba(255, 255, 255, 0.58);
+    opacity: 0.78;
+  }
+
+  html[data-theme='light'] .welcome-signal-row.active {
+    border-color: rgba(3, 105, 161, 0.42);
+    background: rgba(224, 242, 254, 0.62);
+    box-shadow: 0 0 30px rgba(3, 105, 161, 0.12);
+  }
+
+  html[data-theme='light'] .welcome-signal-icon,
+  html[data-theme='light'] .welcome-feature-icon,
+  html[data-theme='light'] .welcome-step span {
+    border-color: rgba(3, 105, 161, 0.22);
+    background: rgba(224, 242, 254, 0.64);
+  }
+
+  html[data-theme='light'] .welcome-map {
+    background:
+      linear-gradient(rgba(148, 163, 184, 0.2) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(3, 105, 161, 0.08) 1px, transparent 1px),
+      rgba(255, 255, 255, 0.58);
+    background-size: 38px 38px;
+  }
+
+  html[data-theme='light'] .welcome-node {
+    border-color: rgba(148, 163, 184, 0.46);
+    background: rgba(255, 255, 255, 0.76);
+    color: rgb(var(--ink-rgb));
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  }
+
+  html[data-theme='light'] .welcome-footer {
+    border-top-color: rgba(148, 163, 184, 0.36);
+    color: rgb(var(--ink-subtle-rgb));
+  }
 }
 
 @keyframes panel-enter {
@@ -1138,6 +1417,60 @@ textarea {
   58%,
   100% {
     transform: translateY(100vh);
+  }
+}
+
+@keyframes welcome-aurora-drift {
+  0%,
+  100% {
+    opacity: 0.58;
+    transform: translate3d(0, 0, 0) scale(0.98);
+  }
+  50% {
+    opacity: 0.82;
+    transform: translate3d(-24px, -14px, 0) scale(1.04);
+  }
+}
+
+@keyframes welcome-particle-drift {
+  0%,
+  100% {
+    opacity: 0.24;
+    transform: translate3d(0, 0, 0) scale(0.72);
+  }
+  28% {
+    opacity: 0.95;
+  }
+  56% {
+    opacity: 0.52;
+    transform: translate3d(28px, -34px, 0) scale(1.18);
+  }
+}
+
+@keyframes welcome-particle-drift-alt {
+  0%,
+  100% {
+    opacity: 0.18;
+    transform: translate3d(0, 0, 0) scale(0.68);
+  }
+  36% {
+    opacity: 0.84;
+  }
+  64% {
+    opacity: 0.46;
+    transform: translate3d(-24px, -26px, 0) scale(1.08);
+  }
+}
+
+@keyframes welcome-signal-beam {
+  0%,
+  100% {
+    opacity: 0.36;
+    transform: translate3d(-18px, 10px, 0);
+  }
+  45% {
+    opacity: 0.76;
+    transform: translate3d(18px, -16px, 0);
   }
 }
 
@@ -1282,6 +1615,30 @@ textarea {
     inset: 28% -32% -12% 6%;
   }
 
+  .welcome-scene::before {
+    inset: 14% -18% 18% 18%;
+    opacity: 0.42;
+  }
+
+  .welcome-particle-field {
+    inset: 20% -16% 22% -4%;
+    opacity: 0.52;
+    mask-image: linear-gradient(90deg, transparent 0%, #000 18%, #000 74%, transparent 100%);
+  }
+
+  .welcome-particle-field::before {
+    opacity: 0.28;
+  }
+
+  .welcome-particle:nth-child(n + 11) {
+    display: none;
+  }
+
+  .welcome-particle::after {
+    width: 46px;
+    opacity: 0.16;
+  }
+
   .welcome-section {
     padding: 62px 16px;
   }
@@ -1334,5 +1691,13 @@ textarea {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .welcome-scene::before {
+    opacity: 0.34;
+  }
+
+  .welcome-particle {
+    opacity: 0.28;
   }
 }

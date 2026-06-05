@@ -1,5 +1,6 @@
 'use client'
 
+import type { CSSProperties, PointerEvent } from 'react'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
@@ -23,6 +24,7 @@ import {
 import { LanguageToggle } from '@/components/language-toggle'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { useI18n } from '@/lib/i18n'
+import { createSignalParticles } from '@/lib/welcome-particles'
 import {
   getSessionDisplayName,
   getSessionInitials,
@@ -74,6 +76,8 @@ const consoleKeys = [
   'welcome.console.context',
 ]
 
+const signalParticles = createSignalParticles()
+
 export function WelcomeContent({ user }: { user?: SessionUserSummary | null }) {
   const { t } = useI18n()
   const [activeSignal, setActiveSignal] = useState(0)
@@ -89,7 +93,7 @@ export function WelcomeContent({ user }: { user?: SessionUserSummary | null }) {
     return () => window.clearInterval(timer)
   }, [])
 
-  function moveScene(event: React.PointerEvent<HTMLElement>) {
+  function moveScene(event: PointerEvent<HTMLElement>) {
     const rect = event.currentTarget.getBoundingClientRect()
     const x = ((event.clientX - rect.left) / rect.width) * 100
     const y = ((event.clientY - rect.top) / rect.height) * 100
@@ -278,6 +282,7 @@ function SignalScene({ activeSignal }: { activeSignal: number }) {
     <div className="welcome-scene" aria-hidden="true">
       <div className="welcome-grid-plane" />
       <div className="welcome-scanline" />
+      <SignalParticleField />
       <div className="welcome-command">
         <div className="welcome-command-header">
           <span>{t('welcome.hero.live')}</span>
@@ -308,6 +313,26 @@ function SignalScene({ activeSignal }: { activeSignal: number }) {
           ))}
         </div>
       </div>
+    </div>
+  )
+}
+
+function SignalParticleField() {
+  return (
+    <div className="welcome-particle-field">
+      {signalParticles.map((particle) => (
+        <span
+          key={particle.id}
+          className={`welcome-particle ${particle.tone}`}
+          style={{
+            '--particle-x': `${particle.x}%`,
+            '--particle-y': `${particle.y}%`,
+            '--particle-size': `${particle.size}px`,
+            '--particle-delay': `${particle.delayMs}ms`,
+            '--particle-duration': `${particle.durationMs}ms`,
+          } as CSSProperties}
+        />
+      ))}
     </div>
   )
 }
