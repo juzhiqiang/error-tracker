@@ -7,6 +7,7 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "turbo run test",
+    "e2e": "powershell -ExecutionPolicy Bypass -File scripts/e2e/start-stack.ps1",
     "services:up": "docker compose up -d",
     "services:down": "docker compose down",
     "services:reset": "docker compose down -v && docker compose up -d"

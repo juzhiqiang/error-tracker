@@ -6,6 +6,8 @@ dist/
 .turbo/
 .next/
 .next-dev/
+playwright-report/
+test-results/
 .tmp/
 *.tsbuildinfo
 
