@@ -10,7 +10,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { authClient } from '@/lib/auth-client'
 import { useI18n } from '@/lib/i18n'
 import {
-  dashboardUtilityNav,
+  dashboardTopbarActions,
   getSessionDisplayName,
   getSessionInitials,
   type SessionUserSummary,
@@ -81,19 +81,6 @@ export function DashboardShell({ user, children }: { user?: SessionUserSummary |
             })}
           </nav>
 
-          <div className="border-t border-line px-3 py-3">
-            {dashboardUtilityNav.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="app-button flex min-h-[44px] shrink-0 items-center gap-3 px-3 text-sm font-medium text-slate-400 hover:bg-slate-900 hover:text-slate-100 lg:w-full"
-              >
-                <BookOpen className="h-4 w-4" />
-                <span>{t(item.labelKey)}</span>
-              </Link>
-            ))}
-          </div>
-
           <div className="mt-auto hidden border-t border-line p-4 lg:block">
             <div className="app-panel-muted space-y-3 p-3">
               <div className="flex items-center gap-2 text-xs font-medium text-emerald-200">
@@ -128,14 +115,17 @@ export function DashboardShell({ user, children }: { user?: SessionUserSummary |
           <div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-between gap-3">
             <div className="text-xs text-slate-500">{t('app.topbar')}</div>
             <div className="flex items-center gap-3">
-              <Link
-                href="/welcome"
-                title={t('nav.productTour')}
-                className="app-button inline-flex items-center justify-center gap-2 border border-slate-700 bg-slate-950/70 px-3 text-sm font-medium text-slate-300 hover:bg-slate-900 hover:text-slate-50"
-              >
-                <BookOpen className="h-4 w-4" />
-                <span className="hidden sm:inline">{t('nav.productTour')}</span>
-              </Link>
+              {dashboardTopbarActions.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  title={t(item.labelKey)}
+                  className="app-button inline-flex items-center justify-center gap-2 border border-slate-700 bg-slate-950/70 px-3 text-sm font-medium text-slate-300 hover:bg-slate-900 hover:text-slate-50"
+                >
+                  <BookOpen className="h-4 w-4" />
+                  <span className="hidden sm:inline">{t(item.labelKey)}</span>
+                </Link>
+              ))}
               <LanguageToggle compact />
               <ThemeToggle compact />
               <div className="flex items-center gap-2 text-xs text-slate-500">

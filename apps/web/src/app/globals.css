@@ -505,55 +505,61 @@ textarea {
     min-width: 0;
     align-items: center;
     justify-content: flex-end;
-    gap: 10px;
+    gap: 4px;
+    border: 1px solid rgba(105, 116, 178, 0.38);
+    border-radius: 13px;
+    background:
+      linear-gradient(180deg, rgba(15, 19, 34, 0.9), rgba(7, 9, 17, 0.74)),
+      radial-gradient(circle at 100% 0%, rgba(94, 92, 255, 0.15), transparent 46%);
+    padding: 3px;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.075),
+      0 16px 38px rgba(0, 0, 0, 0.2);
   }
 
   .welcome-nav-tools {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 2px;
   }
 
   .welcome-icon-button {
-    min-height: 44px;
-    width: 44px;
-    border-color: rgba(105, 116, 178, 0.42) !important;
-    background: rgba(9, 12, 23, 0.82) !important;
+    min-height: 42px;
+    height: 42px;
+    width: 42px;
+    border-color: transparent !important;
+    border-radius: 9px !important;
+    background: transparent !important;
     padding: 0 !important;
     color: rgb(var(--slate-300-rgb)) !important;
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.08),
-      0 10px 26px rgba(0, 0, 0, 0.18);
+    box-shadow: none !important;
   }
 
   .welcome-icon-button:hover {
-    border-color: rgba(153, 171, 255, 0.7) !important;
-    background: rgba(18, 23, 42, 0.92) !important;
+    border-color: transparent !important;
+    background: rgba(94, 92, 255, 0.16) !important;
     color: #fff !important;
   }
 
   .welcome-user-chip {
     display: flex;
-    min-height: 48px;
+    height: 42px;
+    min-height: 42px;
     min-width: 0;
-    max-width: 250px;
+    max-width: 226px;
     align-items: center;
-    gap: 10px;
-    border: 1px solid rgba(105, 116, 178, 0.42);
-    border-radius: 10px;
-    background:
-      linear-gradient(180deg, rgba(18, 23, 42, 0.9), rgba(9, 12, 23, 0.72)),
-      radial-gradient(circle at 0% 0%, rgba(94, 92, 255, 0.16), transparent 48%);
-    padding: 7px 11px;
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.075),
-      0 14px 32px rgba(0, 0, 0, 0.18);
+    gap: 9px;
+    border: 0;
+    border-radius: 9px;
+    background: rgba(94, 92, 255, 0.09);
+    padding: 4px 9px 4px 6px;
+    box-shadow: inset 0 0 0 1px rgba(153, 171, 255, 0.08);
   }
 
   .welcome-user-avatar {
     display: flex;
-    height: 32px;
-    width: 32px;
+    height: 30px;
+    width: 30px;
     flex: 0 0 auto;
     align-items: center;
     justify-content: center;
@@ -567,13 +573,13 @@ textarea {
   .welcome-user-meta {
     display: grid;
     min-width: 0;
-    gap: 1px;
+    gap: 0;
   }
 
   .welcome-user-meta span {
     color: rgb(var(--slate-500-rgb));
-    font-size: 11px;
-    line-height: 1.1;
+    font-size: 10px;
+    line-height: 1;
   }
 
   .welcome-user-meta strong {
@@ -581,7 +587,7 @@ textarea {
     color: rgb(var(--slate-100-rgb));
     font-size: 12px;
     font-weight: 750;
-    line-height: 1.15;
+    line-height: 1.12;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -589,24 +595,24 @@ textarea {
   .welcome-user-meta em {
     overflow: hidden;
     color: rgb(var(--slate-500-rgb));
-    font-size: 11px;
+    font-size: 10.5px;
     font-style: normal;
-    line-height: 1.15;
+    line-height: 1.12;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .welcome-nav-cta {
-    min-height: 48px;
-    border: 1px solid rgba(153, 171, 255, 0.54);
-    border-radius: 10px;
+    min-height: 42px;
+    height: 42px;
+    border: 1px solid rgba(153, 171, 255, 0.36);
+    border-radius: 9px;
     background:
-      linear-gradient(135deg, rgba(31, 38, 68, 0.95), rgba(15, 20, 38, 0.9)),
+      linear-gradient(135deg, rgba(34, 42, 76, 0.96), rgba(18, 24, 45, 0.9)),
       radial-gradient(circle at 0% 0%, rgba(94, 92, 255, 0.24), transparent 48%);
     color: #eef4ff;
     box-shadow:
       0 0 0 1px rgba(94, 92, 255, 0.08),
-      0 18px 38px rgba(0, 0, 0, 0.26),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
 
@@ -1236,7 +1242,11 @@ textarea {
 
   .welcome-nav-actions {
     flex: 0 0 auto;
-    gap: 7px;
+    gap: 0;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    box-shadow: none;
   }
 
   .welcome-nav-tools,
@@ -1245,6 +1255,7 @@ textarea {
   }
 
   .welcome-nav-cta {
+    height: 44px;
     min-height: 44px;
     padding-inline: 10px;
   }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test'
 import {
-  dashboardUtilityNav,
+  dashboardSidebarUtilityNav,
+  dashboardTopbarActions,
   getSessionDisplayName,
   getSessionInitials,
   getWelcomePrimaryAction,
@@ -27,7 +28,8 @@ describe('session UI helpers', () => {
     expect(getWelcomePrimaryAction(null)).toEqual({ href: '/login', labelKey: 'welcome.nav.signIn' })
   })
 
-  it('keeps product tour reachable from the authenticated console', () => {
-    expect(dashboardUtilityNav).toContainEqual({ href: '/welcome', labelKey: 'nav.productTour' })
+  it('keeps product tour out of the content sidebar and reachable from the top bar', () => {
+    expect(dashboardSidebarUtilityNav).not.toContainEqual({ href: '/welcome', labelKey: 'nav.productTour' })
+    expect(dashboardTopbarActions).toContainEqual({ href: '/welcome', labelKey: 'nav.productTour' })
   })
 })

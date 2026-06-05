@@ -3,7 +3,9 @@ export interface SessionUserSummary {
   email?: string | null
 }
 
-export const dashboardUtilityNav = [{ href: '/welcome', labelKey: 'nav.productTour' }] as const
+export const dashboardSidebarUtilityNav = [] as const
+
+export const dashboardTopbarActions = [{ href: '/welcome', labelKey: 'nav.productTour' }] as const
 
 export function getSessionDisplayName(user: SessionUserSummary | null | undefined, fallback = 'Error Tracker') {
   const name = user?.name?.trim()
