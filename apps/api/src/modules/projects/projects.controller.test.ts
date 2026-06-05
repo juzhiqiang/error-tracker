@@ -6,6 +6,21 @@ mock.module('../../common/guards/session.guard', () => ({
 }))
 
 describe('ProjectsController audit logging', () => {
+  it('passes the session user id when listing projects', async () => {
+    const projectsService = {
+      list: mock(async () => []),
+      create: mock(async () => []),
+      rotateToken: mock(async () => []),
+    }
+    const audit = { record: mock(async () => undefined) }
+    const { ProjectsController } = await import('./projects.controller')
+    const controller = new ProjectsController(projectsService as never, audit as never)
+
+    await controller.list({ session: { user: { id: 'user-1' } } })
+
+    expect(projectsService.list.mock.calls[0]).toEqual(['user-1'])
+  })
+
   it('records project creation and token rotation audit events', async () => {
     const project = { id: 'project-1', name: 'App' }
     const projectsService = {

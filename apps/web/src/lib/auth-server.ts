@@ -7,10 +7,9 @@ export interface ServerSession {
   session: { id: string; userId: string }
 }
 
-// 服务端读取 session：转发浏览器 cookie 给 API 的 better-auth get-session 端点
 export async function getServerSession(): Promise<ServerSession | null> {
-  const h = await headers()
-  const cookie = h.get('cookie') ?? ''
+  const requestHeaders = await headers()
+  const cookie = requestHeaders.get('cookie') ?? ''
   try {
     const res = await fetch(`${API}/api/auth/get-session`, {
       headers: { cookie },

@@ -16,7 +16,7 @@ export class StatsService {
         AND last_seen >= now() - interval '${sql.raw(days + ' days')}'
       GROUP BY 1 ORDER BY 1
     `)
-    return (result as unknown as { rows?: unknown[] }).rows ?? []
+    return sqlRows(result)
   }
 
   async performanceSummary(projectId: string) {
@@ -27,6 +27,11 @@ export class StatsService {
         AND timestamp >= now() - interval '24 hours'
       GROUP BY name, rating ORDER BY name, rating
     `)
-    return (result as unknown as { rows?: unknown[] }).rows ?? []
+    return sqlRows(result)
   }
+}
+
+function sqlRows(result: unknown): unknown[] {
+  if (Array.isArray(result)) return result
+  return (result as { rows?: unknown[] } | null)?.rows ?? []
 }

@@ -16,8 +16,8 @@ export class ProjectsController {
   ) {}
 
   @Get()
-  list() {
-    return this.projectsService.list()
+  list(@Req() req: SessionRequest) {
+    return this.projectsService.list(req.session?.user?.id)
   }
 
   @Post()

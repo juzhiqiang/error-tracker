@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp, jsonb, serial, uuid, unique } from 'drizzle-orm/pg-core'
+import { pgTable, text, integer, timestamp, jsonb, serial, uuid, unique, index } from 'drizzle-orm/pg-core'
 import { user } from './auth-schema'
 
 export const organizations = pgTable('organizations', {
@@ -64,6 +64,32 @@ export const projectMembers = pgTable(
   },
   (table) => ({
     projectUserUnique: unique('project_members_project_user_unique').on(table.projectId, table.userId),
+  }),
+)
+
+export const projectInvitations = pgTable(
+  'project_invitations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id),
+    email: text('email').notNull(),
+    role: text('role', { enum: ['owner', 'admin', 'member', 'viewer'] }).notNull(),
+    tokenHash: text('token_hash').notNull(),
+    status: text('status', { enum: ['pending', 'accepted', 'revoked', 'expired'] })
+      .notNull()
+      .default('pending'),
+    invitedByUserId: text('invited_by_user_id').references(() => user.id, { onDelete: 'set null' }),
+    acceptedByUserId: text('accepted_by_user_id').references(() => user.id, { onDelete: 'set null' }),
+    expiresAt: timestamp('expires_at').notNull(),
+    acceptedAt: timestamp('accepted_at'),
+    revokedAt: timestamp('revoked_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    tokenHashUnique: unique('project_invitations_token_hash_unique').on(table.tokenHash),
+    projectStatusIdx: index('project_invitations_project_status_idx').on(table.projectId, table.status),
   }),
 )
 

@@ -2,6 +2,23 @@ import { describe, expect, it, mock } from 'bun:test'
 import { ProjectsService } from './projects.service'
 
 describe('ProjectsService', () => {
+  it('lists only projects available to the current user', async () => {
+    const project = { id: 'project-1', name: 'App', slug: 'app' }
+    const db = { execute: mock(async () => ({ rows: [project] })) }
+    const service = new ProjectsService(db as never)
+
+    await expect(service.list('user-1')).resolves.toEqual([project])
+    expect(db.execute).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns no projects when list is called without a user id', async () => {
+    const db = { execute: mock(async () => ({ rows: [{ id: 'project-1' }] })) }
+    const service = new ProjectsService(db as never)
+
+    await expect(service.list()).resolves.toEqual([])
+    expect(db.execute).not.toHaveBeenCalled()
+  })
+
   it('adds the creator as project owner when creating a project', async () => {
     const insertedValues: Record<string, unknown>[] = []
     const createdProject = { id: 'project-1', name: 'App' }

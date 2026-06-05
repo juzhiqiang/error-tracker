@@ -5,6 +5,7 @@ dist/
 *.log
 .turbo/
 .next/
+.tmp/
 *.tsbuildinfo
 
 next-env.d.ts
