@@ -5,6 +5,7 @@ dist/
 *.log
 .turbo/
 .next/
+.next-dev/
 .tmp/
 *.tsbuildinfo
 
