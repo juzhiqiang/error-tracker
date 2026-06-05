@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import {
+  ArrowRight,
   CheckCircle2,
   Clipboard,
   Clock3,
@@ -24,13 +26,7 @@ import { PageHeader, Panel } from '@/components/panel'
 import { API_BASE, api, type Project, type ProjectInvitation, type ProjectMember, type ProjectRole } from '@/lib/api'
 import { formatFullDateTime } from '@/lib/format'
 import { useI18n } from '@/lib/i18n'
-
-const setupSteps = [
-  'settings.step.install',
-  'settings.step.init',
-  'settings.step.sourcemap',
-  'settings.step.webhook',
-]
+import { sdkSetupGuide } from '@/lib/sdk-docs'
 
 const roleOptions: ProjectRole[] = ['owner', 'admin', 'member', 'viewer']
 type SettingsTab = 'access' | 'members'
@@ -421,16 +417,17 @@ export default function SettingsPage() {
               </Panel>
 
               <section className="grid gap-3 md:grid-cols-2">
-                {setupSteps.map((item, index) => (
-                  <div key={item} className="app-panel flex min-h-[64px] items-center gap-3 p-4">
+                {sdkSetupGuide.map((item, index) => (
+                  <Link key={item.href} href={item.href} className="app-panel flex min-h-[64px] items-center gap-3 p-4 no-underline hover:-translate-y-0.5">
                     <div className="flex h-9 w-9 items-center justify-center rounded-md border border-success/35 bg-success/10 text-emerald-300">
                       <CheckCircle2 className="h-4 w-4" />
                     </div>
-                    <div>
-                      <div className="text-sm font-medium text-slate-100">{t(item)}</div>
-                      <div className="mt-1 text-xs text-slate-500">{t('settings.step', { index: index + 1 })}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-slate-100">{t(item.labelKey)}</div>
+                      <div className="mt-1 text-xs text-slate-500">{t(item.stepKey, { index: index + 1 })}</div>
                     </div>
-                  </div>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-slate-500" />
+                  </Link>
                 ))}
               </section>
                 </>
