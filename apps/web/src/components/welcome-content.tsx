@@ -102,34 +102,37 @@ export function WelcomeContent({ user }: { user?: SessionUserSummary | null }) {
   return (
     <main className="welcome-page min-h-screen overflow-hidden bg-background text-slate-100">
       <nav className="welcome-nav">
-        <Link href="/welcome" className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-md bg-primary text-white shadow-lg shadow-primary/25">
+        <Link href="/welcome" className="welcome-brand">
+          <span className="welcome-brand-mark">
             <ShieldCheck className="h-5 w-5" />
           </span>
-          <span className="text-sm font-semibold text-slate-50">Error Tracker</span>
+          <span className="welcome-brand-text">Error Tracker</span>
         </Link>
-        <div className="hidden items-center gap-6 text-sm text-slate-400 md:flex">
-          <a href="#signals" className="hover:text-slate-100">{t('welcome.nav.signals')}</a>
-          <a href="#context" className="hover:text-slate-100">{t('welcome.nav.context')}</a>
-          <a href="#start" className="hover:text-slate-100">{t('welcome.nav.setup')}</a>
+        <div className="welcome-nav-links">
+          <a href="#signals">{t('welcome.nav.signals')}</a>
+          <a href="#context">{t('welcome.nav.context')}</a>
+          <a href="#start">{t('welcome.nav.setup')}</a>
         </div>
-        <div className="flex items-center gap-2">
-          <LanguageToggle compact />
-          <ThemeToggle compact />
+        <div className="welcome-nav-actions">
+          <div className="welcome-nav-tools">
+            <LanguageToggle compact className="welcome-icon-button" />
+            <ThemeToggle compact className="welcome-icon-button" />
+          </div>
           {user && (
-            <div className="hidden min-w-0 items-center gap-2 rounded-md border border-slate-700 bg-slate-950/70 px-2.5 py-1.5 lg:flex">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-800 text-[11px] font-semibold text-slate-200">
+            <div className="welcome-user-chip">
+              <span className="welcome-user-avatar">
                 {initials}
               </span>
-              <span className="min-w-0">
-                <span className="block text-[11px] leading-3 text-slate-500">{t('welcome.nav.signedIn')}</span>
-                <span className="block max-w-44 truncate text-xs font-medium text-slate-200">{displayName}</span>
-                {email && email !== displayName && <span className="block max-w-44 truncate text-[11px] text-slate-500">{email}</span>}
+              <span className="welcome-user-meta">
+                <span>{t('welcome.nav.signedIn')}</span>
+                <strong>{displayName}</strong>
+                {email && email !== displayName && <em>{email}</em>}
               </span>
             </div>
           )}
-          <Link href={primaryAction.href} className="app-button hidden items-center gap-2 border border-slate-700 px-3 text-sm text-slate-200 hover:bg-slate-900 sm:inline-flex">
+          <Link href={primaryAction.href} className="app-button welcome-nav-cta inline-flex items-center justify-center gap-2 px-4 text-sm font-semibold">
             {t(primaryAction.labelKey)}
+            <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </nav>

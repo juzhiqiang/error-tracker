@@ -405,16 +405,217 @@ textarea {
     position: sticky;
     top: 0;
     z-index: 40;
-    display: flex;
-    min-height: 72px;
+    display: grid;
+    min-height: 80px;
+    grid-template-columns: minmax(220px, 1fr) auto minmax(440px, 1fr);
     align-items: center;
-    justify-content: space-between;
     gap: 16px;
     border-bottom: 1px solid rgba(105, 116, 178, 0.24);
-    background: rgba(5, 5, 7, 0.74);
-    padding: 0 24px;
-    box-shadow: 0 20px 80px rgba(0, 0, 0, 0.28);
-    backdrop-filter: blur(20px) saturate(1.18);
+    background:
+      linear-gradient(180deg, rgba(10, 10, 14, 0.94), rgba(5, 6, 11, 0.78)),
+      radial-gradient(circle at 50% 0%, rgba(94, 92, 255, 0.18), transparent 42%);
+    padding: 0 clamp(16px, 2.4vw, 40px);
+    box-shadow:
+      0 18px 60px rgba(0, 0, 0, 0.34),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.035);
+    backdrop-filter: blur(22px) saturate(1.18);
+  }
+
+  .welcome-brand {
+    display: inline-flex;
+    min-height: 48px;
+    width: fit-content;
+    align-items: center;
+    gap: 12px;
+    color: #f8fafc;
+    text-decoration: none;
+  }
+
+  .welcome-brand-mark {
+    position: relative;
+    display: flex;
+    height: 42px;
+    width: 42px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(153, 171, 255, 0.38);
+    border-radius: 10px;
+    background:
+      linear-gradient(145deg, rgba(112, 116, 255, 0.98), rgba(78, 72, 255, 0.9)),
+      radial-gradient(circle at 30% 16%, rgba(255, 255, 255, 0.42), transparent 40%);
+    color: #fff;
+    box-shadow:
+      0 0 24px rgba(94, 92, 255, 0.36),
+      0 14px 34px rgba(78, 72, 255, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.34);
+  }
+
+  .welcome-brand-mark::after {
+    content: '';
+    position: absolute;
+    inset: -7px;
+    z-index: -1;
+    border-radius: 14px;
+    background: radial-gradient(circle, rgba(94, 92, 255, 0.32), transparent 68%);
+  }
+
+  .welcome-brand-text {
+    font-size: 15px;
+    font-weight: 750;
+    letter-spacing: 0;
+  }
+
+  .welcome-nav-links {
+    display: inline-flex;
+    align-items: center;
+    justify-self: center;
+    gap: 3px;
+    border: 1px solid rgba(105, 116, 178, 0.28);
+    border-radius: 12px;
+    background: rgba(10, 13, 24, 0.68);
+    padding: 4px;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.055),
+      0 10px 30px rgba(0, 0, 0, 0.22);
+  }
+
+  .welcome-nav-links a {
+    display: inline-flex;
+    min-height: 36px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    padding: 0 15px;
+    color: rgb(var(--slate-400-rgb));
+    font-size: 14px;
+    font-weight: 650;
+    text-decoration: none;
+    transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .welcome-nav-links a:hover,
+  .welcome-nav-links a:focus-visible {
+    background: rgba(94, 92, 255, 0.14);
+    color: rgb(var(--slate-100-rgb));
+    box-shadow: inset 0 0 0 1px rgba(153, 171, 255, 0.12);
+  }
+
+  .welcome-nav-actions {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .welcome-nav-tools {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .welcome-icon-button {
+    min-height: 44px;
+    width: 44px;
+    border-color: rgba(105, 116, 178, 0.42) !important;
+    background: rgba(9, 12, 23, 0.82) !important;
+    padding: 0 !important;
+    color: rgb(var(--slate-300-rgb)) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 10px 26px rgba(0, 0, 0, 0.18);
+  }
+
+  .welcome-icon-button:hover {
+    border-color: rgba(153, 171, 255, 0.7) !important;
+    background: rgba(18, 23, 42, 0.92) !important;
+    color: #fff !important;
+  }
+
+  .welcome-user-chip {
+    display: flex;
+    min-height: 48px;
+    min-width: 0;
+    max-width: 250px;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid rgba(105, 116, 178, 0.42);
+    border-radius: 10px;
+    background:
+      linear-gradient(180deg, rgba(18, 23, 42, 0.9), rgba(9, 12, 23, 0.72)),
+      radial-gradient(circle at 0% 0%, rgba(94, 92, 255, 0.16), transparent 48%);
+    padding: 7px 11px;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.075),
+      0 14px 32px rgba(0, 0, 0, 0.18);
+  }
+
+  .welcome-user-avatar {
+    display: flex;
+    height: 32px;
+    width: 32px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: linear-gradient(145deg, rgba(64, 72, 116, 0.96), rgba(35, 42, 70, 0.96));
+    color: rgb(var(--primary-soft-ink-rgb));
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .welcome-user-meta {
+    display: grid;
+    min-width: 0;
+    gap: 1px;
+  }
+
+  .welcome-user-meta span {
+    color: rgb(var(--slate-500-rgb));
+    font-size: 11px;
+    line-height: 1.1;
+  }
+
+  .welcome-user-meta strong {
+    overflow: hidden;
+    color: rgb(var(--slate-100-rgb));
+    font-size: 12px;
+    font-weight: 750;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .welcome-user-meta em {
+    overflow: hidden;
+    color: rgb(var(--slate-500-rgb));
+    font-size: 11px;
+    font-style: normal;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .welcome-nav-cta {
+    min-height: 48px;
+    border: 1px solid rgba(153, 171, 255, 0.54);
+    border-radius: 10px;
+    background:
+      linear-gradient(135deg, rgba(31, 38, 68, 0.95), rgba(15, 20, 38, 0.9)),
+      radial-gradient(circle at 0% 0%, rgba(94, 92, 255, 0.24), transparent 48%);
+    color: #eef4ff;
+    box-shadow:
+      0 0 0 1px rgba(94, 92, 255, 0.08),
+      0 18px 38px rgba(0, 0, 0, 0.26),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  .welcome-nav-cta:hover {
+    border-color: rgba(196, 210, 255, 0.78);
+    background:
+      linear-gradient(135deg, rgba(45, 52, 92, 0.98), rgba(19, 25, 48, 0.94)),
+      radial-gradient(circle at 0% 0%, rgba(94, 92, 255, 0.32), transparent 52%);
+    color: #fff;
   }
 
   .welcome-hero {
@@ -973,6 +1174,18 @@ textarea {
 }
 
 @media (max-width: 1180px) {
+  .welcome-nav {
+    grid-template-columns: minmax(180px, 1fr) minmax(0, auto);
+  }
+
+  .welcome-nav-links {
+    display: none;
+  }
+
+  .welcome-user-chip {
+    max-width: 220px;
+  }
+
   .welcome-command {
     opacity: 0.72;
     right: 24px;
@@ -996,8 +1209,44 @@ textarea {
 
 @media (max-width: 760px) {
   .welcome-nav {
+    display: flex;
     min-height: 64px;
+    justify-content: space-between;
+    gap: 10px;
     padding: 0 14px;
+  }
+
+  .welcome-brand {
+    min-width: 0;
+    gap: 10px;
+  }
+
+  .welcome-brand-mark {
+    height: 38px;
+    width: 38px;
+    border-radius: 9px;
+  }
+
+  .welcome-brand-text {
+    overflow: hidden;
+    max-width: 118px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .welcome-nav-actions {
+    flex: 0 0 auto;
+    gap: 7px;
+  }
+
+  .welcome-nav-tools,
+  .welcome-user-chip {
+    display: none;
+  }
+
+  .welcome-nav-cta {
+    min-height: 44px;
+    padding-inline: 10px;
   }
 
   .welcome-hero {

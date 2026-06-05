@@ -7,7 +7,7 @@ import { useI18n } from '@/lib/i18n'
 const STORAGE_KEY = 'error-tracker-theme'
 type Theme = 'light' | 'dark'
 
-export function ThemeToggle({ compact = false }: { compact?: boolean }) {
+export function ThemeToggle({ compact = false, className = '' }: { compact?: boolean; className?: string }) {
   const { t } = useI18n()
   const [theme, setTheme] = useState<Theme>('dark')
 
@@ -35,7 +35,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
       onClick={toggleTheme}
       aria-pressed={isDark}
       title={label}
-      className="app-button inline-flex items-center justify-center gap-2 border border-slate-700 bg-slate-950/70 px-3 text-sm font-medium text-slate-300 hover:bg-slate-900 hover:text-slate-50"
+      className={`app-button inline-flex items-center justify-center gap-2 border border-slate-700 bg-slate-950/70 px-3 text-sm font-medium text-slate-300 hover:bg-slate-900 hover:text-slate-50 ${className}`}
     >
       <Icon className="h-4 w-4" />
       {!compact && <span>{label}</span>}
