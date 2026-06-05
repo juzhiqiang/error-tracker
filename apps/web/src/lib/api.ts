@@ -118,10 +118,19 @@ export interface HealthReport {
   ingest?: Record<string, number>
 }
 
+export interface SourcemapUploadResponse {
+  uploaded: number
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers)
+  if (!(init?.body instanceof FormData) && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json')
+  }
+
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
+    headers,
     credentials: 'include',
   })
   if (!res.ok) throw new Error(`API ${res.status}: ${path}`)
@@ -147,6 +156,13 @@ export const api = {
       apiFetch<TrendPoint[]>(`/api/stats/issues?projectId=${projectId}&days=${days}`),
     performance: (projectId: string) =>
       apiFetch<PerformanceSummary[]>(`/api/stats/performance?projectId=${projectId}`),
+  },
+  sourcemaps: {
+    upload: (projectId: string, release: string, formData: FormData) =>
+      apiFetch<SourcemapUploadResponse>(
+        `/api/sourcemaps/${encodeURIComponent(projectId)}/${encodeURIComponent(release)}`,
+        { method: 'POST', body: formData },
+      ),
   },
   projects: {
     list: () => apiFetch<Project[]>('/api/projects'),

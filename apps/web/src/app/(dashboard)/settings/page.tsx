@@ -9,6 +9,7 @@ import {
   Clipboard,
   Clock3,
   Copy,
+  FileCode2,
   KeyRound,
   Link2,
   Plus,
@@ -16,6 +17,7 @@ import {
   Rocket,
   ShieldCheck,
   Trash2,
+  UploadCloud,
   UserPlus,
   Users,
   Webhook,
@@ -27,6 +29,7 @@ import { API_BASE, api, type Project, type ProjectInvitation, type ProjectMember
 import { formatFullDateTime } from '@/lib/format'
 import { useI18n } from '@/lib/i18n'
 import { sdkSetupGuide } from '@/lib/sdk-docs'
+import { buildSourcemapUploadFormData, validateSourcemapUpload } from '@/lib/sourcemap-upload'
 
 const roleOptions: ProjectRole[] = ['owner', 'admin', 'member', 'viewer']
 type SettingsTab = 'access' | 'members'
@@ -53,6 +56,10 @@ export default function SettingsPage() {
   const [inviting, setInviting] = useState(false)
   const [updatingMemberId, setUpdatingMemberId] = useState('')
   const [updatingInvitationId, setUpdatingInvitationId] = useState('')
+  const [sourcemapRelease, setSourcemapRelease] = useState('')
+  const [sourcemapFiles, setSourcemapFiles] = useState<File[]>([])
+  const [sourcemapUploading, setSourcemapUploading] = useState(false)
+  const [sourcemapInputKey, setSourcemapInputKey] = useState(0)
 
   useEffect(() => {
     refreshProjects()
@@ -73,6 +80,9 @@ export default function SettingsPage() {
   useEffect(() => {
     setLatestInviteUrl('')
     setLatestInviteDelivery(null)
+    setSourcemapRelease('')
+    setSourcemapFiles([])
+    setSourcemapInputKey((current) => current + 1)
   }, [selectedProject?.id])
 
   async function refreshProjects() {
@@ -233,6 +243,28 @@ export default function SettingsPage() {
       toast.error(t('settings.invitations.revokeFailed'))
     } finally {
       setUpdatingInvitationId('')
+    }
+  }
+
+  async function uploadSourcemaps() {
+    if (!selectedProject) return
+    const release = sourcemapRelease.trim()
+    const validation = validateSourcemapUpload(release, sourcemapFiles)
+    if (!validation.ok) {
+      toast.error(t(validation.messageKey))
+      return
+    }
+
+    setSourcemapUploading(true)
+    try {
+      const result = await api.sourcemaps.upload(selectedProject.id, release, buildSourcemapUploadFormData(sourcemapFiles))
+      toast.success(t('settings.toast.sourcemapUploaded', { count: result.uploaded }))
+      setSourcemapFiles([])
+      setSourcemapInputKey((current) => current + 1)
+    } catch {
+      toast.error(t('settings.toast.sourcemapUploadFailed'))
+    } finally {
+      setSourcemapUploading(false)
     }
   }
 
@@ -416,6 +448,16 @@ export default function SettingsPage() {
                 <pre className="app-code overflow-x-auto rounded-none border-0 p-5 text-xs text-slate-300">{sdkSnippet(dsn)}</pre>
               </Panel>
 
+              <SourcemapFallbackUploader
+                release={sourcemapRelease}
+                files={sourcemapFiles}
+                uploading={sourcemapUploading}
+                inputKey={sourcemapInputKey}
+                onReleaseChange={setSourcemapRelease}
+                onFilesChange={setSourcemapFiles}
+                onUpload={uploadSourcemaps}
+              />
+
               <section className="grid gap-3 md:grid-cols-2">
                 {sdkSetupGuide.map((item, index) => (
                   <Link key={item.href} href={item.href} className="app-panel flex min-h-[64px] items-center gap-3 p-4 no-underline hover:-translate-y-0.5">
@@ -459,6 +501,97 @@ export default function SettingsPage() {
         </main>
       </section>
     </div>
+  )
+}
+
+function SourcemapFallbackUploader({
+  release,
+  files,
+  uploading,
+  inputKey,
+  onReleaseChange,
+  onFilesChange,
+  onUpload,
+}: {
+  release: string
+  files: File[]
+  uploading: boolean
+  inputKey: number
+  onReleaseChange: (release: string) => void
+  onFilesChange: (files: File[]) => void
+  onUpload: () => void
+}) {
+  const { t } = useI18n()
+  const selectedFileNames = files.map((file) => file.name).join(', ')
+
+  return (
+    <Panel
+      title={t('settings.sourcemap.title')}
+      description={t('settings.sourcemap.description')}
+      action={
+        <Link
+          href="/docs#upload-sourcemap"
+          className="app-button inline-flex items-center justify-center gap-2 border border-primary/35 bg-primary/10 px-3 text-sm text-indigo-200 hover:bg-primary/15"
+        >
+          <FileCode2 className="h-4 w-4" />
+          {t('settings.sourcemap.docs')}
+        </Link>
+      }
+    >
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(260px,0.42fr)]">
+        <div className="grid gap-3 md:grid-cols-[minmax(180px,0.8fr)_minmax(220px,1fr)]">
+          <label className="block min-w-0">
+            <span className="mb-1.5 block text-sm text-slate-300">{t('settings.sourcemap.release')}</span>
+            <input
+              value={release}
+              onChange={(event) => onReleaseChange(event.target.value)}
+              placeholder="web@2.8.1"
+              className="app-control w-full px-3 font-mono text-sm"
+            />
+          </label>
+          <label className="block min-w-0">
+            <span className="mb-1.5 block text-sm text-slate-300">{t('settings.sourcemap.files')}</span>
+            <input
+              key={inputKey}
+              type="file"
+              multiple
+              accept=".map,.json,application/json"
+              onChange={(event) => onFilesChange(Array.from(event.target.files ?? []))}
+              className="app-control w-full cursor-pointer px-3 py-2 text-sm text-slate-300 file:mr-3 file:rounded-md file:border-0 file:bg-primary/20 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-indigo-100"
+            />
+          </label>
+        </div>
+
+        <div className="app-panel-muted flex min-h-[96px] items-center gap-3 p-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-info/30 bg-cyan-500/10 text-cyan-200">
+            <FileCode2 className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-sm font-medium text-slate-100">
+              {files.length > 0 ? t('settings.sourcemap.selectedFiles', { count: files.length }) : t('settings.sourcemap.noFiles')}
+            </div>
+            <div className="mt-1 truncate font-mono text-xs text-slate-500">
+              {selectedFileNames || t('settings.sourcemap.fileTypes')}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+        <div className="inline-flex min-h-8 items-center gap-2 rounded-md border border-warning/35 bg-warning/10 px-2.5 text-xs font-medium text-amber-200">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          {t('settings.sourcemap.ownerAdmin')}
+        </div>
+        <button
+          onClick={onUpload}
+          disabled={uploading}
+          className="app-button inline-flex items-center justify-center gap-2 bg-primary px-4 text-sm font-medium text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <UploadCloud className="h-4 w-4" />
+          {uploading ? t('settings.sourcemap.uploading') : t('settings.sourcemap.upload')}
+        </button>
+      </div>
+    </Panel>
   )
 }
 

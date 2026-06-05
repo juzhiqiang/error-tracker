@@ -115,6 +115,7 @@ ErrorTracker.addBreadcrumb({
         bullets: [
           'Use the same release value in SDK initialization and sourcemap upload.',
           'Upload after assets are built and before the deploy is marked complete.',
+          'If CI access is unavailable, open Settings and upload the matching sourcemap files from the selected project.',
           'Do not publish sourcemaps publicly unless your security policy allows it.',
         ],
         code: `bun error-tracker sourcemaps upload \\
@@ -239,6 +240,7 @@ ErrorTracker.addBreadcrumb({
         bullets: [
           'SDK 初始化和 sourcemap 上传必须使用同一个 release 值。',
           '建议在构建完成后、发布完成标记前上传。',
+          '如果暂时无法接入 CI 上传，可以在 Settings 选中项目后手动补传对应 sourcemap。',
           '除非安全策略允许，不要公开发布 sourcemap 文件。',
         ],
         code: `bun error-tracker sourcemaps upload \\
