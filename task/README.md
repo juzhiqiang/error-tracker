@@ -107,3 +107,16 @@ Plan 2: API + Dashboard + utils-plane 接入
 2. **每个任务完成后立即 commit** — 方便 review 和回滚
 3. **Plan 2 Task 2 必须在 Docker 启动后执行** — migration 需要真实数据库连接
 4. **Task 11（utils-plane 接入）在 utils-plane 仓库提交** — 注意切换工作目录
+
+## Plan 5 - 正式生产补齐
+
+| 文件 | 任务 | 目标 |
+|------|------|------|
+| [p5-task-01-e2e-regression.md](./p5-task-01-e2e-regression.md) | E2E 自动化回归 | 覆盖 migration、登录、项目、ingest、issue、sourcemap 的真实流程 |
+| [p5-task-02-restore-drill.md](./p5-task-02-restore-drill.md) | 备份恢复真实演练 | 记录 Postgres 和 MinIO 恢复证据、RTO/RPO |
+| [p5-task-03-production-security-config.md](./p5-task-03-production-security-config.md) | 生产部署安全配置 | 强化 HTTPS、CORS、cookie、secret 和反向代理要求 |
+| [p5-task-04-queue-operations.md](./p5-task-04-queue-operations.md) | 队列失败闭环 | 展示 failed jobs，并支持重试和清理 |
+| [p5-task-05-organization-tenancy.md](./p5-task-05-organization-tenancy.md) | 组织与团队多租户强化 | 组织、团队、项目权限边界严格隔离 |
+| [p5-task-06-audit-log-console.md](./p5-task-06-audit-log-console.md) | 审计日志控制台与导出 | 支持筛选、查询和 CSV 导出 |
+| [p5-task-07-sourcemap-ci-cli.md](./p5-task-07-sourcemap-ci-cli.md) | Sourcemap CI/CLI 上传完善 | 自动上传 artifact，记录 checksum |
+| [p5-task-08-capacity-baseline.md](./p5-task-08-capacity-baseline.md) | 容量与压测基线 | 建立 ingest、replay、sourcemap、查询延迟基线 |
