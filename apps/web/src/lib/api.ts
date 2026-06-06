@@ -122,6 +122,25 @@ export interface SourcemapUploadResponse {
   uploaded: number
 }
 
+export type OperationsQueueName = 'events' | 'cleanup'
+
+export interface QueueFailedJob {
+  id: string
+  name: string
+  failedReason?: string | null
+  timestamp: number
+}
+
+export interface QueueOperationsSnapshot {
+  counts: Record<string, number>
+  failedJobs: QueueFailedJob[]
+}
+
+export interface QueueOperationsReport {
+  events: QueueOperationsSnapshot
+  cleanup: QueueOperationsSnapshot
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers)
   if (!(init?.body instanceof FormData) && !headers.has('Content-Type')) {
@@ -162,6 +181,20 @@ export const api = {
       apiFetch<SourcemapUploadResponse>(
         `/api/sourcemaps/${encodeURIComponent(projectId)}/${encodeURIComponent(release)}`,
         { method: 'POST', body: formData },
+      ),
+  },
+  operations: {
+    queues: (projectId: string) =>
+      apiFetch<QueueOperationsReport>(`/api/operations/queues?${new URLSearchParams({ projectId })}`),
+    retryQueueJob: (projectId: string, queueName: OperationsQueueName, jobId: string) =>
+      apiFetch<{ ok: true }>(
+        `/api/operations/queues/${queueName}/jobs/${encodeURIComponent(jobId)}/retry?${new URLSearchParams({ projectId })}`,
+        { method: 'POST' },
+      ),
+    removeQueueJob: (projectId: string, queueName: OperationsQueueName, jobId: string) =>
+      apiFetch<{ ok: true }>(
+        `/api/operations/queues/${queueName}/jobs/${encodeURIComponent(jobId)}?${new URLSearchParams({ projectId })}`,
+        { method: 'DELETE' },
       ),
   },
   projects: {

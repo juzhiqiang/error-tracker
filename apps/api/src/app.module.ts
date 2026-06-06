@@ -14,6 +14,7 @@ import { AuthModule } from './modules/auth/auth.module'
 import { HealthModule } from './modules/health/health.module'
 import { ObservabilityModule } from './modules/observability/observability.module'
 import { AuditLogModule } from './modules/audit/audit-log.module'
+import { OperationsModule } from './modules/operations/operations.module'
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { AuditLogModule } from './modules/audit/audit-log.module'
     AuthModule,
     ObservabilityModule,
     AuditLogModule,
+    OperationsModule,
     HealthModule,
   ],
 })

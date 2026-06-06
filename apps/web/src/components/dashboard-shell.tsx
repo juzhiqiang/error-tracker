@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Activity, BookOpen, Bug, CircleDot, LayoutDashboard, LogOut, Settings, ShieldCheck } from 'lucide-react'
+import { Activity, BookOpen, Bug, CircleDot, LayoutDashboard, LogOut, Settings, ShieldCheck, Workflow } from 'lucide-react'
 import { LanguageToggle } from '@/components/language-toggle'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { authClient } from '@/lib/auth-client'
@@ -20,6 +20,7 @@ const navItems = [
   { href: '/', labelKey: 'nav.overview', icon: LayoutDashboard },
   { href: '/issues', labelKey: 'nav.issues', icon: Bug },
   { href: '/performance', labelKey: 'nav.performance', icon: Activity },
+  { href: '/operations', labelKey: 'nav.operations', icon: Workflow },
   { href: '/settings', labelKey: 'nav.settings', icon: Settings },
 ]
 
