@@ -13,7 +13,7 @@ export class ReplayPlugin implements Integration {
   name = 'Replay'
   private buffer: CircularBuffer
   private stopFn?: () => void
-  private dsnBase = ''
+  private replayDsn = ''
   private readonly sampleRate: number
 
   constructor(private readonly opts: ReplayPluginOptions = {}) {
@@ -25,8 +25,7 @@ export class ReplayPlugin implements Integration {
     if (Math.random() > this.sampleRate) return
 
     const dsn = (client as unknown as { options: { dsn: string } }).options?.dsn ?? ''
-    const parts = dsn.split('/')
-    this.dsnBase = parts.slice(0, -1).join('/')
+    this.replayDsn = dsn
 
     this.stopFn = record({
       emit: (event) => this.buffer.push(event as { timestamp: number; type: number; data: unknown }),
@@ -39,7 +38,7 @@ export class ReplayPlugin implements Integration {
       const eventId = origCapture(error, extra)
       const events = this.buffer.drain()
       if (eventId && events.length > 0) {
-        uploadReplay(this.dsnBase, eventId, events)
+        uploadReplay(this.replayDsn, eventId, events)
       }
       return eventId
     }

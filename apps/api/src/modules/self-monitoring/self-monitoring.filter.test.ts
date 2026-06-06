@@ -42,6 +42,30 @@ describe('SelfMonitoringExceptionFilter', () => {
       path: '/api/projects',
     })
   })
+
+  it('preserves body parser payload-too-large status codes', () => {
+    const captureException = mock(async () => undefined)
+    const filter = new SelfMonitoringExceptionFilter({
+      shouldCapture: () => false,
+      captureException,
+    } as never)
+    const response = mockResponse()
+    const error = Object.assign(new Error('request entity too large'), {
+      status: 413,
+      statusCode: 413,
+      type: 'entity.too.large',
+    })
+
+    filter.catch(error, mockHost({ response, request: { method: 'POST', url: '/ingest/project/token/replay' } }) as never)
+
+    expect(captureException).not.toHaveBeenCalled()
+    expect(response.status).toHaveBeenCalledWith(413)
+    expect(response.json).toHaveBeenCalledWith({
+      statusCode: 413,
+      message: 'request entity too large',
+      path: '/ingest/project/token/replay',
+    })
+  })
 })
 
 function mockResponse() {

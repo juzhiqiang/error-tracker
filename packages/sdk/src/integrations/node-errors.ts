@@ -7,12 +7,14 @@ export class NodeErrorsIntegration implements Integration {
   setup(client: ErrorTrackerClient): void {
     process.on('uncaughtException', (error: Error) => {
       client.captureException(error)
+      void client.flush().catch(() => undefined)
       setTimeout(() => process.exit(1), 100)
     })
 
     process.on('unhandledRejection', (reason: unknown) => {
       const error = reason instanceof Error ? reason : new Error(String(reason))
       client.captureException(error)
+      void client.flush().catch(() => undefined)
     })
   }
 }

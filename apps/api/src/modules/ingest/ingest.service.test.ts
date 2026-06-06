@@ -11,6 +11,9 @@ describe('IngestService', () => {
           insertedValues.push(value)
         }),
       }),
+      update: () => ({
+        set: mock(() => ({ where: mock(async () => undefined) })),
+      }),
     }
     const queue = { add: mock(async () => undefined) }
     const service = new IngestService(db as never, queue as never, {} as never)
@@ -40,6 +43,9 @@ describe('IngestService', () => {
           insertedValues.push(value)
         }),
       }),
+      update: () => ({
+        set: mock(() => ({ where: mock(async () => undefined) })),
+      }),
     }
     const queue = { add: mock(async () => undefined) }
     const service = new IngestService(db as never, queue as never, {} as never)
@@ -62,5 +68,33 @@ describe('IngestService', () => {
       breadcrumbs: [{ data: { token: '[Filtered]', label: 'submit' } }],
       tags: { feature: 'checkout', secret: '[Filtered]' },
     })
+  })
+
+  it('links an orphan replay row when the matching event is ingested later', async () => {
+    const updateValues: unknown[] = []
+    const db = {
+      execute: mock(async () => ({ rows: [{ id: 'issue-1' }] })),
+      insert: () => ({
+        values: mock(async () => undefined),
+      }),
+      update: () => ({
+        set: mock((value: unknown) => {
+          updateValues.push(value)
+          return { where: mock(async () => undefined) }
+        }),
+      }),
+    }
+    const queue = { add: mock(async () => undefined) }
+    const service = new IngestService(db as never, queue as never, {} as never)
+
+    await service.ingestEvent('project-1', {
+      eventId: 'event-1',
+      timestamp: Date.now(),
+      level: 'error',
+      message: 'boom',
+      fingerprint: 'client-fp',
+    })
+
+    expect(updateValues).toEqual([{ eventId: 'event-1' }])
   })
 })

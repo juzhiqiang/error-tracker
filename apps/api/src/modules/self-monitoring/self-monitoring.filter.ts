@@ -25,6 +25,8 @@ export class SelfMonitoringExceptionFilter implements ExceptionFilter {
 
 function statusFromException(exception: unknown): number {
   if (exception instanceof HttpException) return exception.getStatus()
+  const status = statusCodeFromPlainError(exception)
+  if (status) return status
   return HttpStatus.INTERNAL_SERVER_ERROR
 }
 
@@ -37,11 +39,26 @@ function responseBody(exception: unknown, statusCode: number, path: string): Rec
 
   return {
     statusCode,
-    message: 'Internal server error',
+    message: statusCode >= 500 ? 'Internal server error' : messageFromPlainError(exception),
     path,
   }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
+}
+
+function statusCodeFromPlainError(exception: unknown): number | undefined {
+  if (!isRecord(exception)) return undefined
+  const status = exception.status ?? exception.statusCode
+  if (typeof status !== 'number' || !Number.isInteger(status)) return undefined
+  if (status < 400 || status > 599) return undefined
+  return status
+}
+
+function messageFromPlainError(exception: unknown): string {
+  if (isRecord(exception) && typeof exception.message === 'string' && exception.message) {
+    return exception.message
+  }
+  return 'Request failed'
 }

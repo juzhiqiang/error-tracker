@@ -45,22 +45,28 @@ describe('ReplayPlugin', () => {
 
   it('uploads replay events with the captured exception event id', async () => {
     const fetchBodies: string[] = []
-    const fetchMock = mock(async (_url: string, init?: RequestInit) => {
+    const fetchInits: RequestInit[] = []
+    const fetchUrls: string[] = []
+    const fetchMock = mock(async (url: string, init?: RequestInit) => {
+      fetchUrls.push(url)
+      fetchInits.push(init ?? {})
       fetchBodies.push(init?.body as string)
       return new Response(null, { status: 202 })
     })
     globalThis.fetch = fetchMock as unknown as typeof fetch
     const client = {
       captureException: () => 'evt_123',
+      options: { dsn: 'http://localhost:3002/ingest/p1/t1' },
     } as unknown as ErrorTrackerClient
 
     const plugin = new ReplayPlugin({ sampleRate: 1 })
-    ;(plugin as unknown as { dsnBase: string }).dsnBase = 'http://localhost:3002/ingest/p1/t1'
     plugin.setup(client)
     client.captureException(new Error('boom'))
     await new Promise((r) => setTimeout(r, 10))
 
     const body = JSON.parse(fetchBodies[0])
+    expect(fetchUrls[0]).toBe('http://localhost:3002/ingest/p1/t1/replay')
+    expect(fetchInits[0].keepalive).toBeUndefined()
     expect(body.eventId).toBe('evt_123')
   })
 })

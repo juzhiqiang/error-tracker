@@ -10,7 +10,6 @@ export function uploadReplay(ingestBase: string, eventId: string, events: RrwebE
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body,
-    keepalive: true,
   }).catch(() => {
     // 静默失败
   })

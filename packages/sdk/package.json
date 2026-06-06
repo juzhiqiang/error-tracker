@@ -3,26 +3,35 @@
   "version": "0.1.0",
   "private": false,
   "type": "module",
+  "types": "./dist/types/index.d.ts",
+  "files": [
+    "dist",
+    "package.json"
+  ],
   "exports": {
     ".": {
+      "types": "./dist/types/index.d.ts",
       "browser": "./dist/browser/index.js",
       "import": "./dist/browser/index.js",
       "require": "./dist/node/node.js"
     },
     "./node": {
+      "types": "./dist/types/node.d.ts",
       "import": "./dist/node/node.js",
       "require": "./dist/node/node.js"
     },
     "./plugins/replay": {
+      "types": "./dist/types/plugins/replay/index.d.ts",
       "browser": "./dist/browser/plugins/replay/index.js",
       "import": "./dist/browser/plugins/replay/index.js"
     }
   },
   "scripts": {
-    "build": "bun run build:browser && bun run build:node && bun run build:replay",
+    "build": "bun run build:browser && bun run build:node && bun run build:replay && bun run build:types",
     "build:browser": "bun build src/index.ts --outdir dist/browser --target browser --format esm --sourcemap --external react",
     "build:node": "bun build src/node.ts --outdir dist/node --target node --format cjs --sourcemap --external react",
     "build:replay": "bun build src/plugins/replay/index.ts --outdir dist/browser/plugins/replay --target browser --format esm --sourcemap --external react",
+    "build:types": "tsc --emitDeclarationOnly --declaration --declarationMap false --outDir dist/types",
     "dev": "bun run build --watch",
     "test": "bun test",
     "lint": "tsc --noEmit"

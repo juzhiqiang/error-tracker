@@ -22,7 +22,7 @@ export function init(options: SdkOptions): ErrorTrackerClient {
   })
   _client.setupIntegrations()
 
-  window.addEventListener('visibilitychange', () => {
+  document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') {
       _client?.flush(true)
     }

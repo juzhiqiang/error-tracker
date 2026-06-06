@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common'
 import { InjectQueue } from '@nestjs/bullmq'
 import { Queue } from 'bullmq'
 import { createHash } from 'crypto'
-import { eq, sql } from 'drizzle-orm'
+import { and, eq, isNull, sql } from 'drizzle-orm'
 import { DB } from '../../db/db.module'
 import { events, performanceMetrics, replays } from '../../db/schema'
 import { MinioService } from '../sourcemaps/minio.service'
@@ -84,6 +84,7 @@ export class IngestService {
       release: payload.release,
     })
 
+    await this.linkReplayIfPresent(projectId, payload.eventId)
     await this.eventsQueue.add('check-alert', { projectId, issueId }, this.alertJobOptions())
   }
 
@@ -104,7 +105,7 @@ export class IngestService {
   async ingestReplay(projectId: string, eventId: string, rrwebEvents: unknown[]): Promise<void> {
     if (!rrwebEvents?.length) return
 
-    const key = `replays/${projectId}/${eventId}.json`
+    const key = this.replayStorageKey(projectId, eventId)
     await this.minio.upload(key, JSON.stringify(rrwebEvents), 'application/json')
 
     const timestamps = rrwebEvents as { timestamp?: number }[]
@@ -117,6 +118,17 @@ export class IngestService {
       .insert(replays)
       .values({ eventId: event ? eventId : null, storageUrl: key, duration })
       .onConflictDoNothing()
+  }
+
+  private async linkReplayIfPresent(projectId: string, eventId: string): Promise<void> {
+    await this.db
+      .update(replays)
+      .set({ eventId })
+      .where(and(isNull(replays.eventId), eq(replays.storageUrl, this.replayStorageKey(projectId, eventId))))
+  }
+
+  private replayStorageKey(projectId: string, eventId: string): string {
+    return `replays/${projectId}/${eventId}.json`
   }
 
   private computeServerFingerprint(event: IncomingEvent): string {
