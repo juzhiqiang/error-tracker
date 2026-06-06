@@ -20,7 +20,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 创建 minio.service.ts**
+- [x] **Step 1: 创建 minio.service.ts**
 
 ```typescript
 // apps/api/src/modules/sourcemaps/minio.service.ts
@@ -62,7 +62,7 @@ export class MinioService {
 }
 ```
 
-- [ ] **Step 2: 创建 sourcemaps.service.ts**
+- [x] **Step 2: 创建 sourcemaps.service.ts**
 
 ```typescript
 // apps/api/src/modules/sourcemaps/sourcemaps.service.ts
@@ -96,7 +96,7 @@ export class SourceMapsService {
 }
 ```
 
-- [ ] **Step 3: 创建 sourcemaps.controller.ts**
+- [x] **Step 3: 创建 sourcemaps.controller.ts**
 
 ```typescript
 // apps/api/src/modules/sourcemaps/sourcemaps.controller.ts
@@ -128,7 +128,7 @@ export class SourceMapsController {
 }
 ```
 
-- [ ] **Step 4: 创建 sourcemaps.module.ts**
+- [x] **Step 4: 创建 sourcemaps.module.ts**
 
 ```typescript
 // apps/api/src/modules/sourcemaps/sourcemaps.module.ts
@@ -145,7 +145,7 @@ import { MinioService } from './minio.service'
 export class SourceMapsModule {}
 ```
 
-- [ ] **Step 5: 更新 events.service.ts 集成 source-map 反解**
+- [x] **Step 5: 更新 events.service.ts 集成 source-map 反解**
 
 在 `apps/api/src/modules/events/events.service.ts` 中，将 `findById` 方法更新为：
 
@@ -233,7 +233,7 @@ import { SourceMapsModule } from '../sourcemaps/sourcemaps.module'
 export class EventsModule {}
 ```
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 cd D:/myProject/error-tracker

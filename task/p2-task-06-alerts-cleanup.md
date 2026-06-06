@@ -22,7 +22,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 创建 alerts.processor.ts**
+- [x] **Step 1: 创建 alerts.processor.ts**
 
 ```typescript
 // apps/api/src/modules/alerts/alerts.processor.ts
@@ -74,7 +74,7 @@ export class AlertsProcessor {
 }
 ```
 
-- [ ] **Step 2: 创建 alerts.module.ts**
+- [x] **Step 2: 创建 alerts.module.ts**
 
 ```typescript
 // apps/api/src/modules/alerts/alerts.module.ts
@@ -89,7 +89,7 @@ import { AlertsProcessor } from './alerts.processor'
 export class AlertsModule {}
 ```
 
-- [ ] **Step 3: 创建 cleanup.processor.ts**
+- [x] **Step 3: 创建 cleanup.processor.ts**
 
 ```typescript
 // apps/api/src/modules/cleanup/cleanup.processor.ts
@@ -144,7 +144,7 @@ export class CleanupProcessor {
 }
 ```
 
-- [ ] **Step 4: 创建 cleanup.module.ts**
+- [x] **Step 4: 创建 cleanup.module.ts**
 
 ```typescript
 // apps/api/src/modules/cleanup/cleanup.module.ts
@@ -164,7 +164,7 @@ import { SourceMapsModule } from '../sourcemaps/sourcemaps.module'
 export class CleanupModule {}
 ```
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 cd D:/myProject/error-tracker

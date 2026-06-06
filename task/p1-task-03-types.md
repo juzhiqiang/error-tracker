@@ -18,7 +18,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 写测试**
+- [x] **Step 1: 写测试**
 
 创建 `packages/sdk/src/__tests__/types.test.ts`：
 
@@ -46,7 +46,7 @@ describe('types', () => {
 })
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 cd D:/myProject/error-tracker
@@ -55,7 +55,7 @@ bun test packages/sdk/src/__tests__/types.test.ts
 
 Expected: FAIL - "Cannot find module '../types'"
 
-- [ ] **Step 3: 创建 packages/sdk/src/types.ts**
+- [x] **Step 3: 创建 packages/sdk/src/types.ts**
 
 ```typescript
 export type Level = 'fatal' | 'error' | 'warning' | 'info' | 'debug'
@@ -128,7 +128,7 @@ export interface SdkOptions {
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 bun test packages/sdk/src/__tests__/types.test.ts
@@ -136,7 +136,7 @@ bun test packages/sdk/src/__tests__/types.test.ts
 
 Expected: PASS
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add packages/sdk/src/types.ts packages/sdk/src/__tests__/types.test.ts

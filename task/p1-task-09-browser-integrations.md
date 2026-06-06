@@ -22,7 +22,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 创建 packages/sdk/src/integrations/browser-errors.ts**
+- [x] **Step 1: 创建 packages/sdk/src/integrations/browser-errors.ts**
 
 ```typescript
 import type { Integration } from '../types'
@@ -62,7 +62,7 @@ export class BrowserErrorsIntegration implements Integration {
 }
 ```
 
-- [ ] **Step 2: 创建 packages/sdk/src/integrations/browser-breadcrumbs.ts**
+- [x] **Step 2: 创建 packages/sdk/src/integrations/browser-breadcrumbs.ts**
 
 ```typescript
 import type { Integration } from '../types'
@@ -138,7 +138,7 @@ export class BrowserBreadcrumbsIntegration implements Integration {
 }
 ```
 
-- [ ] **Step 3: 创建 packages/sdk/src/integrations/browser-performance.ts**
+- [x] **Step 3: 创建 packages/sdk/src/integrations/browser-performance.ts**
 
 ```typescript
 import { onLCP, onFID, onCLS, onINP, onTTFB } from 'web-vitals'
@@ -172,7 +172,7 @@ export class BrowserPerformanceIntegration implements Integration {
 }
 ```
 
-- [ ] **Step 4: 提交**
+- [x] **Step 4: 提交**
 
 ```bash
 cd D:/myProject/error-tracker

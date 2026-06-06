@@ -17,7 +17,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 在设计文档"去重 & 限流"章节补充两层去重描述**
+- [x] **Step 1: 在设计文档"去重 & 限流"章节补充两层去重描述**
 
 在 `docs/superpowers/specs/2026-05-27-error-tracker-design.md` 的"去重 & 限流"章节，将原有内容替换为：
 
@@ -58,7 +58,7 @@ ON CONFLICT (project_id, fingerprint) DO UPDATE SET
 - `visibilitychange` 切后台时立即 flush 队列（比 beforeunload 更可靠）
 ```
 
-- [ ] **Step 2: 提交**
+- [x] **Step 2: 提交**
 
 ```bash
 cd D:/myProject/error-tracker

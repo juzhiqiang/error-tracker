@@ -17,7 +17,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 创建 apps/api/src/app.module.ts**
+- [x] **Step 1: 创建 apps/api/src/app.module.ts**
 
 ```typescript
 import { Module, OnModuleInit } from '@nestjs/common'
@@ -68,7 +68,7 @@ export class AppModule implements OnModuleInit {
 }
 ```
 
-- [ ] **Step 2: 在 .env.example 补充 Redis 配置**
+- [x] **Step 2: 在 .env.example 补充 Redis 配置**
 
 在 `error-tracker/.env.example` 末尾追加：
 
@@ -88,7 +88,7 @@ CORS_ORIGIN=http://localhost:3003
       - "6379:6379"
 ```
 
-- [ ] **Step 3: 尝试编译验证**
+- [x] **Step 3: 尝试编译验证**
 
 ```bash
 cd D:/myProject/error-tracker/apps/api
@@ -97,7 +97,7 @@ bun run lint
 
 Expected: 无 TypeScript 错误（或只有可接受的类型警告）
 
-- [ ] **Step 4: 提交**
+- [x] **Step 4: 提交**
 
 ```bash
 cd D:/myProject/error-tracker

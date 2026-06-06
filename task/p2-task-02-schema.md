@@ -21,7 +21,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 创建 apps/api/src/db/schema.ts**
+- [x] **Step 1: 创建 apps/api/src/db/schema.ts**
 
 ```typescript
 import { pgTable, text, integer, timestamp, jsonb, serial, uuid } from 'drizzle-orm/pg-core'
@@ -94,7 +94,7 @@ export const sourceMaps = pgTable('source_maps', {
 })
 ```
 
-- [ ] **Step 2: 创建 apps/api/src/db/db.module.ts**
+- [x] **Step 2: 创建 apps/api/src/db/db.module.ts**
 
 ```typescript
 import { Module, Global } from '@nestjs/common'
@@ -120,7 +120,7 @@ export const DB = Symbol('DB')
 export class DbModule {}
 ```
 
-- [ ] **Step 3: 创建 apps/api/drizzle.config.ts**
+- [x] **Step 3: 创建 apps/api/drizzle.config.ts**
 
 ```typescript
 import type { Config } from 'drizzle-kit'
@@ -133,7 +133,7 @@ export default {
 } satisfies Config
 ```
 
-- [ ] **Step 4: 启动 Docker 并执行 migration**
+- [x] **Step 4: 启动 Docker 并执行 migration**
 
 ```bash
 cd D:/myProject/error-tracker
@@ -150,7 +150,7 @@ bunx drizzle-kit migrate
 
 Expected: `drizzle/` 目录下出现 migration SQL 文件，migration 执行成功
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 cd D:/myProject/error-tracker

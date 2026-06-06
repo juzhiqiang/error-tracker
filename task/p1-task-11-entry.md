@@ -20,7 +20,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 创建 packages/sdk/src/index.ts（browser 入口）**
+- [x] **Step 1: 创建 packages/sdk/src/index.ts（browser 入口）**
 
 ```typescript
 import { ErrorTrackerClient } from './core/client'
@@ -71,7 +71,7 @@ export function getClient(): ErrorTrackerClient | null {
 }
 ```
 
-- [ ] **Step 2: 创建 packages/sdk/src/node.ts（Node.js 入口）**
+- [x] **Step 2: 创建 packages/sdk/src/node.ts（Node.js 入口）**
 
 ```typescript
 import { ErrorTrackerClient } from './core/client'
@@ -101,7 +101,7 @@ export function captureMessage(message: string): void {
 }
 ```
 
-- [ ] **Step 3: 运行完整测试套件**
+- [x] **Step 3: 运行完整测试套件**
 
 ```bash
 cd D:/myProject/error-tracker
@@ -110,7 +110,7 @@ bun test packages/sdk
 
 Expected: 所有测试通过
 
-- [ ] **Step 4: 构建 SDK**
+- [x] **Step 4: 构建 SDK**
 
 ```bash
 cd packages/sdk && bun run build
@@ -118,7 +118,7 @@ cd packages/sdk && bun run build
 
 Expected: `dist/browser/index.js` 和 `dist/node/index.cjs` 生成成功
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add packages/sdk/src/index.ts packages/sdk/src/node.ts

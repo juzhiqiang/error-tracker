@@ -18,7 +18,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 写测试**
+- [x] **Step 1: 写测试**
 
 ```typescript
 // packages/sdk/src/__tests__/breadcrumbs.test.ts
@@ -52,7 +52,7 @@ describe('BreadcrumbManager', () => {
 })
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 cd D:/myProject/error-tracker
@@ -61,7 +61,7 @@ bun test packages/sdk/src/__tests__/breadcrumbs.test.ts
 
 Expected: FAIL - "Cannot find module '../core/breadcrumbs'"
 
-- [ ] **Step 3: 创建 packages/sdk/src/core/breadcrumbs.ts**
+- [x] **Step 3: 创建 packages/sdk/src/core/breadcrumbs.ts**
 
 ```typescript
 import type { Breadcrumb } from '../types'
@@ -99,7 +99,7 @@ export class BreadcrumbManager {
 }
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 bun test packages/sdk/src/__tests__/breadcrumbs.test.ts
@@ -107,7 +107,7 @@ bun test packages/sdk/src/__tests__/breadcrumbs.test.ts
 
 Expected: PASS
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add packages/sdk/src/core/breadcrumbs.ts packages/sdk/src/__tests__/breadcrumbs.test.ts

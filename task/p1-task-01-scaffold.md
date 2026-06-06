@@ -22,7 +22,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 创建 root package.json**
+- [x] **Step 1: 创建 root package.json**
 
 ```json
 {
@@ -47,7 +47,7 @@
 }
 ```
 
-- [ ] **Step 2: 创建 turbo.json**
+- [x] **Step 2: 创建 turbo.json**
 
 ```json
 {
@@ -71,7 +71,7 @@
 }
 ```
 
-- [ ] **Step 3: 创建 tsconfig.base.json**
+- [x] **Step 3: 创建 tsconfig.base.json**
 
 ```json
 {
@@ -91,7 +91,7 @@
 }
 ```
 
-- [ ] **Step 4: 创建 .gitignore**
+- [x] **Step 4: 创建 .gitignore**
 
 ```
 node_modules/
@@ -101,7 +101,7 @@ dist/
 .turbo/
 ```
 
-- [ ] **Step 5: 创建 docker-compose.yml**
+- [x] **Step 5: 创建 docker-compose.yml**
 
 ```yaml
 services:
@@ -135,7 +135,7 @@ volumes:
   minio_data:
 ```
 
-- [ ] **Step 6: 创建 .env.example**
+- [x] **Step 6: 创建 .env.example**
 
 ```env
 DATABASE_URL=postgresql://tracker:tracker@localhost:5433/error_tracker
@@ -149,7 +149,7 @@ BETTER_AUTH_SECRET=change-me-use-openssl-rand-base64-32
 BETTER_AUTH_URL=http://localhost:3003
 ```
 
-- [ ] **Step 7: 初始化 git 并提交**
+- [x] **Step 7: 初始化 git 并提交**
 
 ```bash
 cd D:/myProject/error-tracker

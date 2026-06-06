@@ -29,7 +29,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 创建 packages/sdk/src/core/scope.ts**
+- [x] **Step 1: 创建 packages/sdk/src/core/scope.ts**
 
 ```typescript
 export class Scope {
@@ -44,7 +44,7 @@ export class Scope {
 }
 ```
 
-- [ ] **Step 2: 创建 packages/sdk/src/core/utils.ts**
+- [x] **Step 2: 创建 packages/sdk/src/core/utils.ts**
 
 ```typescript
 export function randomId(): string {
@@ -53,7 +53,7 @@ export function randomId(): string {
 }
 ```
 
-- [ ] **Step 3: 写 client 测试**
+- [x] **Step 3: 写 client 测试**
 
 ```typescript
 // packages/sdk/src/__tests__/client.test.ts
@@ -107,7 +107,7 @@ describe('ErrorTrackerClient', () => {
 })
 ```
 
-- [ ] **Step 4: 运行测试确认失败**
+- [x] **Step 4: 运行测试确认失败**
 
 ```bash
 cd D:/myProject/error-tracker
@@ -116,7 +116,7 @@ bun test packages/sdk/src/__tests__/client.test.ts
 
 Expected: FAIL - "Cannot find module '../core/client'"
 
-- [ ] **Step 5: 创建 packages/sdk/src/core/client.ts**
+- [x] **Step 5: 创建 packages/sdk/src/core/client.ts**
 
 ```typescript
 import type { SdkOptions, ErrorEvent, TrackerEvent, Integration } from '../types'
@@ -209,7 +209,7 @@ export class ErrorTrackerClient {
 }
 ```
 
-- [ ] **Step 6: 运行测试确认通过**
+- [x] **Step 6: 运行测试确认通过**
 
 ```bash
 bun test packages/sdk/src/__tests__/client.test.ts
@@ -217,7 +217,7 @@ bun test packages/sdk/src/__tests__/client.test.ts
 
 Expected: PASS
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**
 
 ```bash
 git add packages/sdk/src/core/scope.ts packages/sdk/src/core/client.ts \

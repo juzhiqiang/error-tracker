@@ -22,7 +22,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 写 DedupeFilter 测试**
+- [x] **Step 1: 写 DedupeFilter 测试**
 
 ```typescript
 // packages/sdk/src/__tests__/dedupe.test.ts
@@ -56,7 +56,7 @@ describe('DedupeFilter', () => {
 })
 ```
 
-- [ ] **Step 2: 写 EventQueue 测试**
+- [x] **Step 2: 写 EventQueue 测试**
 
 ```typescript
 // packages/sdk/src/__tests__/queue.test.ts
@@ -103,7 +103,7 @@ describe('EventQueue', () => {
 })
 ```
 
-- [ ] **Step 3: 运行测试确认失败**
+- [x] **Step 3: 运行测试确认失败**
 
 ```bash
 cd D:/myProject/error-tracker
@@ -112,7 +112,7 @@ bun test packages/sdk/src/__tests__/dedupe.test.ts packages/sdk/src/__tests__/qu
 
 Expected: FAIL
 
-- [ ] **Step 4: 创建 packages/sdk/src/core/dedupe.ts**
+- [x] **Step 4: 创建 packages/sdk/src/core/dedupe.ts**
 
 ```typescript
 export class DedupeFilter {
@@ -130,7 +130,7 @@ export class DedupeFilter {
 }
 ```
 
-- [ ] **Step 5: 创建 packages/sdk/src/core/queue.ts**
+- [x] **Step 5: 创建 packages/sdk/src/core/queue.ts**
 
 ```typescript
 import type { TrackerEvent } from '../types'
@@ -160,7 +160,7 @@ export class EventQueue {
 }
 ```
 
-- [ ] **Step 6: 运行测试确认通过**
+- [x] **Step 6: 运行测试确认通过**
 
 ```bash
 bun test packages/sdk/src/__tests__/dedupe.test.ts packages/sdk/src/__tests__/queue.test.ts
@@ -168,7 +168,7 @@ bun test packages/sdk/src/__tests__/dedupe.test.ts packages/sdk/src/__tests__/qu
 
 Expected: PASS
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**
 
 ```bash
 git add packages/sdk/src/core/dedupe.ts packages/sdk/src/core/queue.ts \

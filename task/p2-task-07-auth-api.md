@@ -28,7 +28,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 创建 apps/api/src/modules/auth/auth.ts**
+- [x] **Step 1: 创建 apps/api/src/modules/auth/auth.ts**
 
 ```typescript
 import { betterAuth } from 'better-auth'
@@ -49,7 +49,7 @@ export const auth = betterAuth({
 })
 ```
 
-- [ ] **Step 2: 创建 apps/api/src/modules/auth/auth.module.ts**
+- [x] **Step 2: 创建 apps/api/src/modules/auth/auth.module.ts**
 
 ```typescript
 import { Module } from '@nestjs/common'
@@ -58,7 +58,7 @@ import { Module } from '@nestjs/common'
 export class AuthModule {}
 ```
 
-- [ ] **Step 3: 创建 apps/api/src/common/guards/session.guard.ts**
+- [x] **Step 3: 创建 apps/api/src/common/guards/session.guard.ts**
 
 ```typescript
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common'
@@ -76,7 +76,7 @@ export class SessionGuard implements CanActivate {
 }
 ```
 
-- [ ] **Step 4: 修改 apps/api/src/main.ts，挂载 Better-Auth handler**
+- [x] **Step 4: 修改 apps/api/src/main.ts，挂载 Better-Auth handler**
 
 在 `bootstrap()` 函数里，`app.listen()` 之前加入：
 
@@ -109,7 +109,7 @@ async function bootstrap() {
 bootstrap()
 ```
 
-- [ ] **Step 5: 给所有 /api/* controller 加 SessionGuard**
+- [x] **Step 5: 给所有 /api/* controller 加 SessionGuard**
 
 在以下每个 controller 的 class 装饰器上加 `@UseGuards(SessionGuard)`：
 
@@ -125,7 +125,7 @@ export class IssuesController { ... }
 
 同样处理：`events.controller.ts`、`projects.controller.ts`、`stats.controller.ts`、`sourcemaps.controller.ts`
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 cd D:/myProject/error-tracker

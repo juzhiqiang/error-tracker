@@ -20,7 +20,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 创建 DSN Token 认证 guard**
+- [x] **Step 1: 创建 DSN Token 认证 guard**
 
 ```typescript
 // apps/api/src/common/guards/dsn-auth.guard.ts
@@ -56,7 +56,7 @@ export class DsnAuthGuard implements CanActivate {
 }
 ```
 
-- [ ] **Step 2: 创建 ingest.service.ts（服务端指纹 + UPSERT）**
+- [x] **Step 2: 创建 ingest.service.ts（服务端指纹 + UPSERT）**
 
 ```typescript
 // apps/api/src/modules/ingest/ingest.service.ts
@@ -166,7 +166,7 @@ export class IngestService {
 }
 ```
 
-- [ ] **Step 3: 创建 ingest.controller.ts**
+- [x] **Step 3: 创建 ingest.controller.ts**
 
 ```typescript
 // apps/api/src/modules/ingest/ingest.controller.ts
@@ -211,7 +211,7 @@ export class IngestController {
 }
 ```
 
-- [ ] **Step 4: 创建 ingest.module.ts**
+- [x] **Step 4: 创建 ingest.module.ts**
 
 ```typescript
 // apps/api/src/modules/ingest/ingest.module.ts
@@ -229,7 +229,7 @@ import { DsnAuthGuard } from '../../common/guards/dsn-auth.guard'
 export class IngestModule {}
 ```
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 cd D:/myProject/error-tracker

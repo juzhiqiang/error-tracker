@@ -19,7 +19,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 创建 apps/web/package.json**
+- [x] **Step 1: 创建 apps/web/package.json**
 
 ```json
 {
@@ -57,7 +57,7 @@
 }
 ```
 
-- [ ] **Step 2: 创建 apps/web/tsconfig.json**
+- [x] **Step 2: 创建 apps/web/tsconfig.json**
 
 ```json
 {
@@ -72,7 +72,7 @@
 }
 ```
 
-- [ ] **Step 3: 创建 apps/web/next.config.ts**
+- [x] **Step 3: 创建 apps/web/next.config.ts**
 
 ```typescript
 import type { NextConfig } from 'next'
@@ -83,7 +83,7 @@ const config: NextConfig = {
 export default config
 ```
 
-- [ ] **Step 4: 创建 tailwind.config.ts**
+- [x] **Step 4: 创建 tailwind.config.ts**
 
 ```typescript
 // apps/web/tailwind.config.ts
@@ -113,7 +113,7 @@ const config: Config = {
 export default config
 ```
 
-- [ ] **Step 5: 创建 src/app/globals.css**
+- [x] **Step 5: 创建 src/app/globals.css**
 
 ```css
 /* apps/web/src/app/globals.css */
@@ -135,7 +135,7 @@ body {
 }
 ```
 
-- [ ] **Step 6: 创建 src/lib/auth-client.ts**
+- [x] **Step 6: 创建 src/lib/auth-client.ts**
 
 ```typescript
 // apps/web/src/lib/auth-client.ts
@@ -146,13 +146,13 @@ export const authClient = createAuthClient({
 })
 ```
 
-- [ ] **Step 7: 安装依赖**
+- [x] **Step 7: 安装依赖**
 
 ```bash
 cd D:/myProject/error-tracker && bun install
 ```
 
-- [ ] **Step 8: 提交**
+- [x] **Step 8: 提交**
 
 ```bash
 git add apps/web/

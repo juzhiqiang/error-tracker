@@ -18,7 +18,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 创建 packages/sdk/src/integrations/node-errors.ts**
+- [x] **Step 1: 创建 packages/sdk/src/integrations/node-errors.ts**
 
 ```typescript
 import type { Integration } from '../types'
@@ -44,7 +44,7 @@ export class NodeErrorsIntegration implements Integration {
 }
 ```
 
-- [ ] **Step 2: 创建 packages/sdk/src/integrations/react-error-boundary.tsx**
+- [x] **Step 2: 创建 packages/sdk/src/integrations/react-error-boundary.tsx**
 
 ```typescript
 import React from 'react'
@@ -82,7 +82,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
 }
 ```
 
-- [ ] **Step 3: 提交**
+- [x] **Step 3: 提交**
 
 ```bash
 cd D:/myProject/error-tracker

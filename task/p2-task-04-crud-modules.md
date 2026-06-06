@@ -28,7 +28,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 创建 issues.service.ts**
+- [x] **Step 1: 创建 issues.service.ts**
 
 ```typescript
 // apps/api/src/modules/issues/issues.service.ts
@@ -87,7 +87,7 @@ export class IssuesService {
 }
 ```
 
-- [ ] **Step 2: 创建 issues.controller.ts**
+- [x] **Step 2: 创建 issues.controller.ts**
 
 ```typescript
 // apps/api/src/modules/issues/issues.controller.ts
@@ -122,7 +122,7 @@ export class IssuesController {
 }
 ```
 
-- [ ] **Step 3: 创建 issues.module.ts**
+- [x] **Step 3: 创建 issues.module.ts**
 
 ```typescript
 // apps/api/src/modules/issues/issues.module.ts
@@ -137,7 +137,7 @@ import { IssuesService } from './issues.service'
 export class IssuesModule {}
 ```
 
-- [ ] **Step 4: 创建 events.service.ts**
+- [x] **Step 4: 创建 events.service.ts**
 
 ```typescript
 // apps/api/src/modules/events/events.service.ts
@@ -167,7 +167,7 @@ export class EventsService {
 }
 ```
 
-- [ ] **Step 5: 创建 events.controller.ts + events.module.ts**
+- [x] **Step 5: 创建 events.controller.ts + events.module.ts**
 
 ```typescript
 // apps/api/src/modules/events/events.controller.ts
@@ -197,7 +197,7 @@ import { EventsService } from './events.service'
 export class EventsModule {}
 ```
 
-- [ ] **Step 6: 创建 projects.service.ts + controller + module**
+- [x] **Step 6: 创建 projects.service.ts + controller + module**
 
 ```typescript
 // apps/api/src/modules/projects/projects.service.ts
@@ -250,7 +250,7 @@ import { ProjectsService } from './projects.service'
 export class ProjectsModule {}
 ```
 
-- [ ] **Step 7: 创建 stats.service.ts + controller + module**
+- [x] **Step 7: 创建 stats.service.ts + controller + module**
 
 ```typescript
 // apps/api/src/modules/stats/stats.service.ts
@@ -317,7 +317,7 @@ import { StatsService } from './stats.service'
 export class StatsModule {}
 ```
 
-- [ ] **Step 8: 提交**
+- [x] **Step 8: 提交**
 
 ```bash
 cd D:/myProject/error-tracker

@@ -20,7 +20,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 写测试**
+- [x] **Step 1: 写测试**
 
 ```typescript
 // packages/sdk/src/__tests__/replay.test.ts
@@ -52,7 +52,7 @@ describe('CircularBuffer', () => {
 })
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 cd D:/myProject/error-tracker
@@ -61,7 +61,7 @@ bun test packages/sdk/src/__tests__/replay.test.ts
 
 Expected: FAIL - "Cannot find module '../plugins/replay/circular-buffer'"
 
-- [ ] **Step 3: 创建 packages/sdk/src/plugins/replay/circular-buffer.ts**
+- [x] **Step 3: 创建 packages/sdk/src/plugins/replay/circular-buffer.ts**
 
 ```typescript
 interface RrwebEvent {
@@ -93,7 +93,7 @@ export class CircularBuffer {
 }
 ```
 
-- [ ] **Step 4: 创建 packages/sdk/src/plugins/replay/upload.ts**
+- [x] **Step 4: 创建 packages/sdk/src/plugins/replay/upload.ts**
 
 ```typescript
 interface RrwebEvent {
@@ -117,7 +117,7 @@ export async function uploadReplay(
 }
 ```
 
-- [ ] **Step 5: 创建 packages/sdk/src/plugins/replay/index.ts**
+- [x] **Step 5: 创建 packages/sdk/src/plugins/replay/index.ts**
 
 ```typescript
 import { record } from 'rrweb'
@@ -175,7 +175,7 @@ export class ReplayPlugin implements Integration {
 }
 ```
 
-- [ ] **Step 6: 运行测试确认通过**
+- [x] **Step 6: 运行测试确认通过**
 
 ```bash
 bun test packages/sdk/src/__tests__/replay.test.ts
@@ -183,7 +183,7 @@ bun test packages/sdk/src/__tests__/replay.test.ts
 
 Expected: PASS
 
-- [ ] **Step 7: 完整测试套件**
+- [x] **Step 7: 完整测试套件**
 
 ```bash
 cd D:/myProject/error-tracker
@@ -192,7 +192,7 @@ bun test packages/sdk
 
 Expected: 全部通过
 
-- [ ] **Step 8: 重新构建（含 replay 插件）**
+- [x] **Step 8: 重新构建（含 replay 插件）**
 
 ```bash
 cd packages/sdk && bun run build
@@ -200,7 +200,7 @@ cd packages/sdk && bun run build
 
 Expected: `dist/browser/plugins/replay/index.js` 存在
 
-- [ ] **Step 9: 提交**
+- [x] **Step 9: 提交**
 
 ```bash
 git add packages/sdk/src/plugins/ packages/sdk/src/__tests__/replay.test.ts

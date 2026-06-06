@@ -35,7 +35,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 创建 src/lib/api.ts**
+- [x] **Step 1: 创建 src/lib/api.ts**
 
 ```typescript
 // apps/web/src/lib/api.ts
@@ -75,7 +75,7 @@ export const api = {
 }
 ```
 
-- [ ] **Step 2: 创建 app/layout.tsx**
+- [x] **Step 2: 创建 app/layout.tsx**
 
 ```typescript
 // apps/web/src/app/layout.tsx
@@ -93,7 +93,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 ```
 
-- [ ] **Step 3: 创建登录页**
+- [x] **Step 3: 创建登录页**
 
 ```typescript
 // apps/web/src/app/(auth)/login/page.tsx
@@ -156,7 +156,7 @@ export default function LoginPage() {
 }
 ```
 
-- [ ] **Step 4: 创建 (dashboard)/layout.tsx（侧边栏 + Session 检查）**
+- [x] **Step 4: 创建 (dashboard)/layout.tsx（侧边栏 + Session 检查）**
 
 ```typescript
 // apps/web/src/app/(dashboard)/layout.tsx
@@ -209,7 +209,7 @@ export const auth = betterAuth({
 })
 ```
 
-- [ ] **Step 5: 创建概览页**
+- [x] **Step 5: 创建概览页**
 
 ```typescript
 // apps/web/src/app/(dashboard)/page.tsx
@@ -260,7 +260,7 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
 }
 ```
 
-- [ ] **Step 6: 创建错误列表页**
+- [x] **Step 6: 创建错误列表页**
 
 ```typescript
 // apps/web/src/app/(dashboard)/issues/page.tsx
@@ -336,7 +336,7 @@ export default function IssuesPage() {
 }
 ```
 
-- [ ] **Step 7: 创建错误详情页**
+- [x] **Step 7: 创建错误详情页**
 
 ```typescript
 // apps/web/src/app/(dashboard)/issues/[id]/page.tsx
@@ -409,7 +409,7 @@ export default async function IssuePage({ params }: { params: { id: string } }) 
 }
 ```
 
-- [ ] **Step 8: 创建录屏页**
+- [x] **Step 8: 创建录屏页**
 
 ```typescript
 // apps/web/src/app/(dashboard)/issues/[id]/replay/page.tsx
@@ -437,7 +437,7 @@ export default function ReplayPage({ params }: { params: { id: string } }) {
 }
 ```
 
-- [ ] **Step 9: 创建性能页**
+- [x] **Step 9: 创建性能页**
 
 ```typescript
 // apps/web/src/app/(dashboard)/performance/page.tsx
@@ -487,7 +487,7 @@ export default function PerformancePage() {
 }
 ```
 
-- [ ] **Step 10: 创建设置页**
+- [x] **Step 10: 创建设置页**
 
 ```typescript
 // apps/web/src/app/(dashboard)/settings/page.tsx
@@ -555,7 +555,7 @@ export default function SettingsPage() {
 }
 ```
 
-- [ ] **Step 11: 启动验证**
+- [x] **Step 11: 启动验证**
 
 ```bash
 cd D:/myProject/error-tracker
@@ -565,7 +565,7 @@ bun run dev
 
 打开 http://localhost:3003，应能看到登录页（深色风格）。
 
-- [ ] **Step 12: 提交**
+- [x] **Step 12: 提交**
 
 ```bash
 git add apps/web/src/

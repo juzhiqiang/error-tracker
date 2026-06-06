@@ -18,7 +18,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 创建 packages/sdk/package.json**
+- [x] **Step 1: 创建 packages/sdk/package.json**
 
 ```json
 {
@@ -66,7 +66,7 @@
 }
 ```
 
-- [ ] **Step 2: 创建 packages/sdk/tsconfig.json**
+- [x] **Step 2: 创建 packages/sdk/tsconfig.json**
 
 ```json
 {
@@ -81,7 +81,7 @@
 }
 ```
 
-- [ ] **Step 3: 安装依赖**
+- [x] **Step 3: 安装依赖**
 
 ```bash
 cd D:/myProject/error-tracker
@@ -90,7 +90,7 @@ bun install
 
 Expected: `node_modules` 创建，`web-vitals` 和 `rrweb` 安装成功
 
-- [ ] **Step 4: 提交**
+- [x] **Step 4: 提交**
 
 ```bash
 git add packages/sdk/package.json packages/sdk/tsconfig.json bun.lockb

@@ -19,7 +19,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 创建 apps/api/package.json**
+- [x] **Step 1: 创建 apps/api/package.json**
 
 ```json
 {
@@ -62,7 +62,7 @@
 }
 ```
 
-- [ ] **Step 2: 创建 apps/api/tsconfig.json**
+- [x] **Step 2: 创建 apps/api/tsconfig.json**
 
 ```json
 {
@@ -80,7 +80,7 @@
 }
 ```
 
-- [ ] **Step 3: 创建 apps/api/src/main.ts**
+- [x] **Step 3: 创建 apps/api/src/main.ts**
 
 ```typescript
 import 'reflect-metadata'
@@ -98,7 +98,7 @@ async function bootstrap() {
 bootstrap()
 ```
 
-- [ ] **Step 4: 安装依赖**
+- [x] **Step 4: 安装依赖**
 
 ```bash
 cd D:/myProject/error-tracker && bun install
@@ -106,7 +106,7 @@ cd D:/myProject/error-tracker && bun install
 
 Expected: NestJS 相关包安装成功
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add apps/api/package.json apps/api/tsconfig.json apps/api/src/main.ts
