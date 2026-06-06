@@ -10,6 +10,10 @@
     "e2e": "powershell -ExecutionPolicy Bypass -File scripts/e2e/start-stack.ps1",
     "cli:build": "bun run --cwd packages/cli build",
     "cli:test": "bun test packages/cli",
+    "load:ingest": "bun scripts/load/ingest-load.ts",
+    "load:replay": "bun scripts/load/replay-load.ts",
+    "load:sourcemap": "bun scripts/load/sourcemap-load.ts",
+    "load:dashboard": "bun scripts/load/dashboard-query-load.ts",
     "services:up": "docker compose up -d",
     "services:down": "docker compose down",
     "services:reset": "docker compose down -v && docker compose up -d"
