@@ -1,15 +1,31 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common'
+import { Controller, Get, Header, Query, UseGuards } from '@nestjs/common'
 import { SessionGuard } from '../../common/guards/session.guard'
 import { ProjectAccessGuard } from '../access/project-access.guard'
-import { AuditLogService } from './audit-log.service'
+import { AuditLogListFilters, AuditLogService } from './audit-log.service'
 
 @Controller('api/audit-logs')
 @UseGuards(SessionGuard, ProjectAccessGuard)
 export class AuditLogController {
   constructor(private readonly auditLogService: AuditLogService) {}
 
+  @Get('export.csv')
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Content-Disposition', 'attachment; filename="audit-logs.csv"')
+  async exportCsv(@Query() query: AuditLogQuery) {
+    return AuditLogService.toCsv(await this.auditLogService.list(normalizeFilters(query)))
+  }
+
   @Get()
-  list(@Query('projectId') projectId: string, @Query('limit') limit?: string) {
-    return this.auditLogService.listByProject(projectId, limit ? Number(limit) : 100)
+  list(@Query() query: AuditLogQuery) {
+    return this.auditLogService.list(normalizeFilters(query))
+  }
+}
+
+type AuditLogQuery = Omit<AuditLogListFilters, 'limit'> & { limit?: string | number }
+
+function normalizeFilters(query: AuditLogQuery): AuditLogListFilters {
+  return {
+    ...query,
+    limit: query.limit ? Number(query.limit) : undefined,
   }
 }

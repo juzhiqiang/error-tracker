@@ -24,7 +24,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 写 audit 过滤和 CSV 测试**
+- [x] **Step 1: 写 audit 过滤和 CSV 测试**
 
 在 `audit-log.service.test.ts` 增加：
 
@@ -64,7 +64,7 @@ it('exports audit rows as csv', () => {
 })
 ```
 
-- [ ] **Step 2: 扩展 AuditLogService**
+- [x] **Step 2: 扩展 AuditLogService**
 
 增加 `AuditLogListFilters`：
 
@@ -88,12 +88,12 @@ private static csvCell(value: unknown): string {
 }
 ```
 
-- [ ] **Step 3: 扩展 controller**
+- [x] **Step 3: 扩展 controller**
 
 `GET /api/audit-logs?projectId=&actorUserId=&action=&targetType=&from=&to=` 返回 JSON。  
 `GET /api/audit-logs/export.csv?...` 返回 `text/csv`。
 
-- [ ] **Step 4: 前端 API 封装**
+- [x] **Step 4: 前端 API 封装**
 
 在 `apps/web/src/lib/api.ts` 增加：
 
@@ -111,7 +111,7 @@ export interface AuditLogRow {
 
 增加 `api.auditLogs.list(params)` 和 `api.auditLogs.exportUrl(params)`。
 
-- [ ] **Step 5: 增加 Audit 页面**
+- [x] **Step 5: 增加 Audit 页面**
 
 创建 `apps/web/src/app/(dashboard)/audit/page.tsx`：
 
@@ -123,11 +123,11 @@ export interface AuditLogRow {
 - table
 - export CSV button
 
-- [ ] **Step 6: 加导航和 i18n**
+- [x] **Step 6: 加导航和 i18n**
 
 Dashboard 侧边栏增加 Audit；中英文文案走 `i18n.tsx`。
 
-- [ ] **Step 7: 验证**
+- [x] **Step 7: 验证**
 
 ```bash
 bun run --cwd apps/api test src/modules/audit/audit-log.service.test.ts
@@ -137,7 +137,7 @@ bun run --cwd apps/web lint
 bun run --cwd apps/web build
 ```
 
-- [ ] **Step 8: 提交**
+- [x] **Step 8: 提交**
 
 ```bash
 git add apps/api/src/modules/audit apps/web/src/lib/api.ts apps/web/src/app/(dashboard)/audit apps/web/src/components/dashboard-shell.tsx apps/web/src/lib/i18n.tsx

@@ -141,6 +141,25 @@ export interface QueueOperationsReport {
   cleanup: QueueOperationsSnapshot
 }
 
+export interface AuditLogRow {
+  createdAt: string
+  actorUserId?: string | null
+  projectId?: string | null
+  action: string
+  targetType: string
+  targetId?: string | null
+  metadata?: Record<string, unknown> | null
+}
+
+export interface AuditLogFilters {
+  projectId: string
+  actorUserId?: string
+  action?: string
+  targetType?: string
+  from?: string
+  to?: string
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers)
   if (!(init?.body instanceof FormData) && !headers.has('Content-Type')) {
@@ -154,6 +173,14 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   })
   if (!res.ok) throw new Error(`API ${res.status}: ${path}`)
   return res.json()
+}
+
+function searchParams<T extends object>(params: T): string {
+  const search = new URLSearchParams()
+  Object.entries(params as Record<string, unknown>).forEach(([key, value]) => {
+    if (value !== undefined && String(value).trim() !== '') search.set(key, String(value))
+  })
+  return search.toString()
 }
 
 export const api = {
@@ -196,6 +223,10 @@ export const api = {
         `/api/operations/queues/${queueName}/jobs/${encodeURIComponent(jobId)}?${new URLSearchParams({ projectId })}`,
         { method: 'DELETE' },
       ),
+  },
+  auditLogs: {
+    list: (params: AuditLogFilters) => apiFetch<AuditLogRow[]>(`/api/audit-logs?${searchParams(params)}`),
+    exportUrl: (params: AuditLogFilters) => `${API_BASE}/api/audit-logs/export.csv?${searchParams(params)}`,
   },
   projects: {
     list: () => apiFetch<Project[]>('/api/projects'),
