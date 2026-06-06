@@ -16,11 +16,20 @@ const REQUIRED_API_ENV = [
 
 export type ApiEnv = Record<string, string | undefined>
 
+const DEFAULT_AUTH_SECRETS = new Set(['change-me', 'change-me-use-openssl-rand-base64-32'])
+
 export function resolveLocalEnvPath(cwd = process.cwd()): string {
   const normalized = normalize(cwd)
   return normalized.endsWith(normalize('apps/api')) || normalized.endsWith('api')
     ? join(normalized, '../../.env.local')
     : join(normalized, '.env.local')
+}
+
+export function parseCorsOrigins(origin: string | undefined): string[] {
+  return (origin ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean)
 }
 
 export function loadLocalEnv(cwd = process.cwd()): void {
@@ -42,6 +51,27 @@ export function validateApiEnv(env: ApiEnv = process.env): void {
     if (!Number.isInteger(value) || value <= 0) {
       throw new Error(`Invalid API environment variable: ${key} must be a positive integer`)
     }
+  }
+
+  if (env.NODE_ENV !== 'production') {
+    return
+  }
+
+  const corsOrigins = parseCorsOrigins(env.CORS_ORIGIN)
+  if (corsOrigins.includes('*')) {
+    throw new Error('CORS_ORIGIN cannot be wildcard in production')
+  }
+  if (corsOrigins.some((origin) => !origin.startsWith('https://'))) {
+    throw new Error('CORS_ORIGIN must use https in production')
+  }
+  if (!env.BETTER_AUTH_URL?.startsWith('https://')) {
+    throw new Error('BETTER_AUTH_URL must use https in production')
+  }
+  if ((env.BETTER_AUTH_SECRET ?? '').length < 32) {
+    throw new Error('BETTER_AUTH_SECRET must be at least 32 characters in production')
+  }
+  if (DEFAULT_AUTH_SECRETS.has(env.BETTER_AUTH_SECRET ?? '')) {
+    throw new Error('BETTER_AUTH_SECRET cannot use a default value in production')
   }
 }
 
