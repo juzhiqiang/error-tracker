@@ -23,7 +23,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 创建 Postgres 备份脚本**
+- [x] **Step 1: 创建 Postgres 备份脚本**
 
 创建 `scripts/ops/backup-postgres.ps1`：
 
@@ -50,7 +50,7 @@ if ($backup.Length -le 0) {
 Write-Output $backup.FullName
 ```
 
-- [ ] **Step 2: 创建 Postgres 恢复脚本**
+- [x] **Step 2: 创建 Postgres 恢复脚本**
 
 创建 `scripts/ops/restore-postgres.ps1`：
 
@@ -70,7 +70,7 @@ docker exec $Container pg_restore -U $User -d $RestoreDatabase --clean --if-exis
 docker exec $Container psql -U $User -d $RestoreDatabase -c "select count(*) as issues from issues;"
 ```
 
-- [ ] **Step 3: 创建 MinIO 备份与恢复脚本**
+- [x] **Step 3: 创建 MinIO 备份与恢复脚本**
 
 创建 `scripts/ops/backup-minio.ps1`：
 
@@ -103,7 +103,7 @@ mc mirror $resolved "$Alias/$RestoreBucket"
 mc ls "$Alias/$RestoreBucket"
 ```
 
-- [ ] **Step 4: 执行真实演练**
+- [x] **Step 4: 执行真实演练**
 
 ```bash
 bun run services:up
@@ -113,7 +113,7 @@ pwsh scripts/ops/backup-minio.ps1
 pwsh scripts/ops/restore-minio.ps1 -BackupDir backups/minio/error-tracker-YYYYMMDD-HHMMSS
 ```
 
-- [ ] **Step 5: 生成恢复演练报告**
+- [x] **Step 5: 生成恢复演练报告**
 
 创建 `docs/operations/restore-drill-report.md`：
 
@@ -160,7 +160,7 @@ Schedule the next drill within 30 days of this report.
 
 Fill every blank with actual values from the drill before committing.
 
-- [ ] **Step 6: 更新 runbook**
+- [x] **Step 6: 更新 runbook**
 
 在 `docs/operations/backup-restore-runbook.md` 增加脚本引用和报告路径：
 
@@ -168,7 +168,7 @@ Fill every blank with actual values from the drill before committing.
 Use `scripts/ops/backup-postgres.ps1`, `scripts/ops/restore-postgres.ps1`, `scripts/ops/backup-minio.ps1`, and `scripts/ops/restore-minio.ps1` for repeatable drills. Record each completed drill in `docs/operations/restore-drill-report.md`.
 ```
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**
 
 ```bash
 git add scripts/ops/ docs/operations/backup-restore-runbook.md docs/operations/restore-drill-report.md

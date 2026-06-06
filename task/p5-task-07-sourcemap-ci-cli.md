@@ -28,7 +28,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 创建 CLI package**
+- [x] **Step 1: 创建 CLI package**
 
 创建 `packages/cli/package.json`：
 
@@ -53,7 +53,7 @@
 }
 ```
 
-- [ ] **Step 2: 写 CLI sourcemap 测试**
+- [x] **Step 2: 写 CLI sourcemap 测试**
 
 创建 `packages/cli/src/sourcemaps.test.ts`：
 
@@ -93,7 +93,7 @@ describe('sourcemap cli', () => {
 })
 ```
 
-- [ ] **Step 3: 实现 CLI**
+- [x] **Step 3: 实现 CLI**
 
 创建 `packages/cli/src/sourcemaps.ts`，实现：
 
@@ -113,7 +113,7 @@ CLI 请求头使用：
 headers: { 'x-error-tracker-token': options.token }
 ```
 
-- [ ] **Step 4: API schema 增加 checksum**
+- [x] **Step 4: API schema 增加 checksum**
 
 `source_maps` 增加：
 
@@ -128,7 +128,7 @@ sizeBytes: integer('size_bytes'),
 bun run --cwd apps/api db:generate
 ```
 
-- [ ] **Step 5: API 保存 checksum**
+- [x] **Step 5: API 保存 checksum**
 
 `SourceMapsService.upload()` 参数扩展为：
 
@@ -138,11 +138,11 @@ async upload(projectId: string, release: string, filename: string, content: Buff
 
 DB insert 保存 checksum 和 sizeBytes。重复 `projectId + release + filename` 时更新 checksum 和 storageUrl。
 
-- [ ] **Step 6: Controller 支持 checksums**
+- [x] **Step 6: Controller 支持 checksums**
 
 `sourcemaps.controller.ts` 从 body 读取 `checksums`，按文件顺序传给 service。控制台上传没有 checksum 时由 service 计算。
 
-- [ ] **Step 7: 更新 Docs**
+- [x] **Step 7: 更新 Docs**
 
 `/docs#upload-sourcemap` 增加 CI 示例：
 
@@ -155,7 +155,7 @@ bunx error-tracker sourcemaps upload \
   --dist apps/web/.next/static
 ```
 
-- [ ] **Step 8: 验证**
+- [x] **Step 8: 验证**
 
 ```bash
 bun test packages/cli
@@ -165,7 +165,7 @@ bun run --cwd apps/api lint
 bun run --cwd apps/web build
 ```
 
-- [ ] **Step 9: 提交**
+- [x] **Step 9: 提交**
 
 ```bash
 git add packages/cli package.json apps/api/src/db/schema.ts apps/api/drizzle apps/api/src/modules/sourcemaps apps/web/src/app/(dashboard)/docs/page.tsx

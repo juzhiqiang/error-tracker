@@ -23,7 +23,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 增加 load scripts**
+- [x] **Step 1: 增加 load scripts**
 
 在 root `package.json` 增加：
 
@@ -38,7 +38,7 @@
 }
 ```
 
-- [ ] **Step 2: 创建 ingest 压测脚本**
+- [x] **Step 2: 创建 ingest 压测脚本**
 
 创建 `scripts/load/ingest-load.ts`：
 
@@ -95,7 +95,7 @@ const durationMs = Date.now() - started
 console.log(JSON.stringify({ requests, concurrency, accepted, rejected, durationMs, qps: requests / (durationMs / 1000) }, null, 2))
 ```
 
-- [ ] **Step 3: 创建 replay 和 sourcemap 大对象脚本**
+- [x] **Step 3: 创建 replay 和 sourcemap 大对象脚本**
 
 `replay-load.ts` 生成 1 MB、5 MB、10 MB rrweb payload 并 POST replay endpoint。  
 `sourcemap-load.ts` 生成 1 MB、5 MB、10 MB `.map` 文件并上传到 `/api/sourcemaps/:projectId/:release`。
@@ -110,7 +110,7 @@ console.log(JSON.stringify({ requests, concurrency, accepted, rejected, duration
 }
 ```
 
-- [ ] **Step 4: 创建 Dashboard 查询脚本**
+- [x] **Step 4: 创建 Dashboard 查询脚本**
 
 `dashboard-query-load.ts` 调用：
 
@@ -120,7 +120,7 @@ console.log(JSON.stringify({ requests, concurrency, accepted, rejected, duration
 
 记录 p50、p95、p99。
 
-- [ ] **Step 5: 执行基线测试**
+- [x] **Step 5: 执行基线测试**
 
 ```bash
 bun run services:up
@@ -130,7 +130,7 @@ bun run load:sourcemap
 bun run load:dashboard
 ```
 
-- [ ] **Step 6: 写容量报告**
+- [x] **Step 6: 写容量报告**
 
 创建 `docs/operations/capacity-baseline.md`：
 
@@ -167,7 +167,7 @@ bun run load:dashboard
 - Large replay payloads depend on MinIO and reverse proxy body-size settings.
 ```
 
-- [ ] **Step 7: 验证**
+- [x] **Step 7: 验证**
 
 ```bash
 bun scripts/load/ingest-load.ts
@@ -176,7 +176,7 @@ bun scripts/load/dashboard-query-load.ts
 
 Expected: scripts print JSON results and exit 0.
 
-- [ ] **Step 8: 提交**
+- [x] **Step 8: 提交**
 
 ```bash
 git add package.json scripts/load docs/operations/capacity-baseline.md

@@ -27,7 +27,7 @@
 
 ## Steps
 
-- [ ] **Step 1: Write the service tests**
+- [x] **Step 1: Write the service tests**
 
 Create `apps/api/src/modules/operations/queue-operations.service.test.ts`:
 
@@ -73,7 +73,7 @@ describe('QueueOperationsService', () => {
 })
 ```
 
-- [ ] **Step 2: Verify the service tests fail**
+- [x] **Step 2: Verify the service tests fail**
 
 Run:
 
@@ -83,7 +83,7 @@ bun run --cwd apps/api test src/modules/operations/queue-operations.service.test
 
 Expected: FAIL because `QueueOperationsService` does not exist.
 
-- [ ] **Step 3: Implement QueueOperationsService**
+- [x] **Step 3: Implement QueueOperationsService**
 
 Create `apps/api/src/modules/operations/queue-operations.service.ts`:
 
@@ -143,7 +143,7 @@ export class QueueOperationsService {
 }
 ```
 
-- [ ] **Step 4: Write controller guard tests**
+- [x] **Step 4: Write controller guard tests**
 
 Create `apps/api/src/modules/operations/queue-operations.controller.test.ts`:
 
@@ -189,7 +189,7 @@ describe('QueueOperationsController', () => {
 })
 ```
 
-- [ ] **Step 5: Implement controller and module**
+- [x] **Step 5: Implement controller and module**
 
 Create `apps/api/src/modules/operations/queue-operations.controller.ts`:
 
@@ -250,7 +250,7 @@ export class OperationsModule {}
 
 Add `OperationsModule` to `apps/api/src/app.module.ts`.
 
-- [ ] **Step 6: Add Web API client methods**
+- [x] **Step 6: Add Web API client methods**
 
 In `apps/web/src/lib/api.ts`, add:
 
@@ -280,7 +280,7 @@ operations: {
 }
 ```
 
-- [ ] **Step 7: Add the Operations page**
+- [x] **Step 7: Add the Operations page**
 
 Create `apps/web/src/app/(dashboard)/operations/page.tsx`. It must use the existing project list to choose a project, then call `api.operations.queues(selectedProject.id)`. Show:
 
@@ -291,11 +291,11 @@ Create `apps/web/src/app/(dashboard)/operations/page.tsx`. It must use the exist
 - retry button
 - remove button
 
-- [ ] **Step 8: Add navigation and i18n**
+- [x] **Step 8: Add navigation and i18n**
 
 Add an Operations nav item to `DashboardShell`, and add `nav.operations` plus Operations page copy to `apps/web/src/lib/i18n.tsx`.
 
-- [ ] **Step 9: Verify**
+- [x] **Step 9: Verify**
 
 Run:
 
@@ -309,7 +309,7 @@ bun run --cwd apps/web build
 
 Expected: all commands pass.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add apps/api/src/modules/operations apps/api/src/app.module.ts apps/web/src/lib/api.ts "apps/web/src/app/(dashboard)/operations" apps/web/src/components/dashboard-shell.tsx apps/web/src/lib/i18n.tsx

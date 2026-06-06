@@ -23,7 +23,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 安装 Playwright 依赖**
+- [x] **Step 1: 安装 Playwright 依赖**
 
 ```bash
 cd D:/myProject/error-tracker
@@ -31,7 +31,7 @@ bun add -d -F @error-tracker/web @playwright/test
 bunx playwright install chromium
 ```
 
-- [ ] **Step 2: 增加 e2e 脚本**
+- [x] **Step 2: 增加 e2e 脚本**
 
 在 root `package.json` 增加：
 
@@ -53,7 +53,7 @@ bunx playwright install chromium
 }
 ```
 
-- [ ] **Step 3: 写 Playwright 配置**
+- [x] **Step 3: 写 Playwright 配置**
 
 创建 `apps/web/playwright.config.ts`：
 
@@ -81,7 +81,7 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Step 4: 写 seed 用户脚本**
+- [x] **Step 4: 写 seed 用户脚本**
 
 创建 `scripts/e2e/seed-user.ts`，用 Better Auth 或现有 auth schema 创建固定测试用户。若 Better Auth CLI 不提供直接 seed，则写入 user/account 表并用登录 API 验证。
 
@@ -93,7 +93,7 @@ password: e2e-password-123
 name: E2E Owner
 ```
 
-- [ ] **Step 5: 写 E2E 测试**
+- [x] **Step 5: 写 E2E 测试**
 
 创建 `apps/web/e2e/error-tracker.spec.ts`：
 
@@ -146,7 +146,7 @@ test('production smoke path creates project, ingests event, and shows issue deta
 })
 ```
 
-- [ ] **Step 6: 验证失败和通过**
+- [x] **Step 6: 验证失败和通过**
 
 先在未启动服务时运行：
 
@@ -167,7 +167,7 @@ bun run e2e
 
 Expected: PASS。
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**
 
 ```bash
 git add package.json apps/web/package.json apps/web/playwright.config.ts apps/web/e2e/ scripts/e2e/

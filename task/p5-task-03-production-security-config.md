@@ -23,7 +23,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 写生产配置失败测试**
+- [x] **Step 1: 写生产配置失败测试**
 
 在 `apps/api/src/config/env.test.ts` 增加：
 
@@ -58,7 +58,7 @@ describe('production env security', () => {
 })
 ```
 
-- [ ] **Step 2: 实现生产配置校验**
+- [x] **Step 2: 实现生产配置校验**
 
 在 `apps/api/src/config/env.ts` 中确保 `validateApiEnv()` 接收可注入 env，并增加生产分支：
 
@@ -86,7 +86,7 @@ export function validateApiEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.Pro
 }
 ```
 
-- [ ] **Step 3: 确认 CORS 使用白名单和 credentials**
+- [x] **Step 3: 确认 CORS 使用白名单和 credentials**
 
 `apps/api/src/main.ts` 应保持：
 
@@ -96,7 +96,7 @@ app.enableCors({ origin: process.env.CORS_ORIGIN, credentials: true })
 
 若需要支持多个 origin，使用逗号分隔白名单并精确匹配，不允许生产环境 `*`。
 
-- [ ] **Step 4: 强化 auth cookie 配置**
+- [x] **Step 4: 强化 auth cookie 配置**
 
 在 `apps/api/src/modules/auth/auth.ts` 中为 production 配置 secure cookie。实际字段按 Better Auth 当前 API 调整，目标语义必须是：
 
@@ -111,7 +111,7 @@ export const auth = betterAuth({
 })
 ```
 
-- [ ] **Step 5: 写生产部署文档**
+- [x] **Step 5: 写生产部署文档**
 
 创建 `docs/operations/production-deployment.md`，包含：
 
@@ -146,7 +146,7 @@ Production cookies must be secure and scoped to the HTTPS application origin.
 Do not use wildcard CORS in production. Only the deployed Web origin may call the API with credentials.
 ```
 
-- [ ] **Step 6: 验证**
+- [x] **Step 6: 验证**
 
 ```bash
 bun run --cwd apps/api test src/config/env.test.ts
@@ -154,7 +154,7 @@ bun run --cwd apps/api lint
 bun run --cwd apps/api build
 ```
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**
 
 ```bash
 git add apps/api/src/config/env.ts apps/api/src/config/env.test.ts apps/api/src/main.ts apps/api/src/modules/auth/auth.ts docs/operations/production-deployment.md .env.example
