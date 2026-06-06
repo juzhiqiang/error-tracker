@@ -2,13 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Activity, Gauge, MonitorDot, SignalHigh, TimerReset, Zap } from 'lucide-react'
+import { toast } from 'sonner'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { AiAnalysisPanel } from '@/components/ai-analysis-panel'
 import { EmptyState } from '@/components/empty-state'
 import { MetricCard } from '@/components/metric-card'
 import { PageHeader, Panel } from '@/components/panel'
 import { ProjectSelect } from '@/components/project-select'
 import { RatingBadge } from '@/components/status-badge'
-import { api, type PerformanceSummary, type Project } from '@/lib/api'
+import { api, type AiAnalysis, type PerformanceSummary, type Project } from '@/lib/api'
 import { compactNumber, formatMetricValue, toNumber } from '@/lib/format'
 import { useI18n } from '@/lib/i18n'
 
@@ -26,6 +28,9 @@ export default function PerformancePage() {
   const [data, setData] = useState<PerformanceSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [aiAnalysis, setAiAnalysis] = useState<AiAnalysis | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState('')
 
   useEffect(() => {
     api.projects
@@ -44,6 +49,8 @@ export default function PerformancePage() {
   useEffect(() => {
     if (!projectId) return
     setLoading(true)
+    setAiAnalysis(null)
+    setAiError('')
     api.stats
       .performance(projectId)
       .then((result) => {
@@ -81,6 +88,22 @@ export default function PerformancePage() {
   const poorSamples = data.filter((item) => item.rating === 'poor').reduce((sum, item) => sum + toNumber(item.count), 0)
   const coveredMetrics = metricCards.filter((metric) => metric.count > 0).length
 
+  async function generateAiAnalysis() {
+    if (!projectId) return
+    setAiLoading(true)
+    setAiError('')
+    try {
+      const analysis = await api.stats.aiPerformance(projectId)
+      setAiAnalysis(analysis)
+      toast.success(t('performance.ai.toast.generated'))
+    } catch {
+      setAiError(t('performance.ai.error'))
+      toast.error(t('performance.ai.error'))
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-5">
       <PageHeader
@@ -101,6 +124,19 @@ export default function PerformancePage() {
         <MetricCard icon={<SignalHigh className="h-5 w-5 text-red-300" />} label={t('performance.metric.poor')} value={loading ? '...' : compactNumber(poorSamples)} tone="danger" />
         <MetricCard icon={<MonitorDot className="h-5 w-5 text-emerald-300" />} label={t('performance.metric.covered')} value={`${coveredMetrics} / ${metricNames.length}`} tone="success" />
       </section>
+
+      <AiAnalysisPanel
+        title={t('performance.ai.title')}
+        description={t('performance.ai.description')}
+        analyzeLabel={t('performance.ai.action')}
+        emptyTitle={t('performance.ai.emptyTitle')}
+        emptyDescription={t('performance.ai.emptyDescription')}
+        analysis={aiAnalysis}
+        loading={aiLoading}
+        error={aiError}
+        disabled={!projectId}
+        onAnalyze={generateAiAnalysis}
+      />
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
         <Panel title={t('performance.distribution.title')} description={t('performance.distribution.description')}>

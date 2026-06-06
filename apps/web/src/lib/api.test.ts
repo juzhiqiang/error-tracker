@@ -34,3 +34,25 @@ describe('api sourcemap upload', () => {
     expect(new Headers(capturedInit?.headers).has('Content-Type')).toBe(false)
   })
 })
+
+describe('api AI advisor', () => {
+  it('requests issue and performance AI analysis with POST', async () => {
+    const calls: Array<{ url: string; init?: RequestInit }> = []
+    global.fetch = mock(async (input, init) => {
+      calls.push({ url: String(input), init })
+      return new Response(JSON.stringify({ summary: 'analysis', recommendations: [] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }) as typeof fetch
+
+    await api.issues.aiAnalysis('issue-1')
+    await api.stats.aiPerformance('project-1')
+
+    expect(calls.map((call) => call.url)).toEqual([
+      'http://localhost:3002/api/issues/issue-1/ai-analysis',
+      'http://localhost:3002/api/stats/performance/ai-analysis?projectId=project-1',
+    ])
+    expect(calls.every((call) => call.init?.method === 'POST')).toBe(true)
+  })
+})

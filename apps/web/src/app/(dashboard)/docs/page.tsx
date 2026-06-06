@@ -4,6 +4,7 @@ import Link from 'next/link'
 import {
   Activity,
   BellRing,
+  BrainCircuit,
   CheckCircle2,
   Code2,
   FileCode2,
@@ -26,6 +27,7 @@ const sectionIcons = {
   'alert-webhook': BellRing,
   'verify-ingestion': CheckCircle2,
   'self-monitoring': Activity,
+  'ai-advisor': BrainCircuit,
   troubleshooting: LifeBuoy,
 } as const
 
@@ -174,6 +176,21 @@ NEXT_PUBLIC_ERROR_TRACKER_RELEASE=web@2.8.1
 ERROR_TRACKER_RELEASE=api@2.8.1`,
         note: 'Self-monitoring data appears in the same Issues and Performance pages under the dedicated project.',
       },
+      'ai-advisor': {
+        title: 'AI Advisor',
+        description: 'Use AI guidance to turn captured errors and Web Vitals samples into repair and optimization plans.',
+        bullets: [
+          'Open an issue detail page and run AI repair guidance after stack trace, breadcrumbs, and runtime context are captured.',
+          'Open Performance and run AI optimization guidance for the selected project after Web Vitals samples arrive.',
+          'Leave OPENAI_API_KEY empty to use deterministic local rules for demos and restricted environments.',
+          'Set OPENAI_API_KEY, OPENAI_MODEL, and optionally OPENAI_BASE_URL on the API service to enable OpenAI Responses API generation.',
+          'Error, request, user, and breadcrumb context is scrubbed before the provider call, and each generation is recorded in audit logs.',
+        ],
+        code: `OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4.1-mini
+OPENAI_BASE_URL=https://api.openai.com/v1`,
+        note: 'AI Advisor does not read your source repository or create pull requests. It only analyzes telemetry already stored in Error Tracker.',
+      },
       troubleshooting: {
         title: 'Troubleshooting',
         description: 'Use these checks when events do not appear or stack traces are hard to read.',
@@ -318,6 +335,21 @@ ERROR_TRACKER_ENVIRONMENT=production
 NEXT_PUBLIC_ERROR_TRACKER_RELEASE=web@2.8.1
 ERROR_TRACKER_RELEASE=api@2.8.1`,
         note: '自监控数据会进入这个独立项目的 Issues 和 Performance 页面。',
+      },
+      'ai-advisor': {
+        title: 'AI Advisor',
+        description: '使用 AI 建议把已采集的错误和 Web Vitals 样本转成修复与优化计划。',
+        bullets: [
+          '进入问题详情页，在调用栈、路径轨迹和运行上下文齐全后生成 AI 修复建议。',
+          '进入 Performance 页面，在所选项目有 Web Vitals 样本后生成 AI 优化建议。',
+          'OPENAI_API_KEY 留空时使用确定性的本地规则，适合演示和受限环境。',
+          '在 API 服务配置 OPENAI_API_KEY、OPENAI_MODEL，也可以配置 OPENAI_BASE_URL，以启用 OpenAI Responses API。',
+          '错误、请求、用户和路径轨迹上下文会在调用 provider 前脱敏，每次生成都会记录审计日志。',
+        ],
+        code: `OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4.1-mini
+OPENAI_BASE_URL=https://api.openai.com/v1`,
+        note: 'AI Advisor 不读取你的源码仓库，也不会自动创建 PR。它只分析 Error Tracker 已存储的遥测数据。',
       },
       troubleshooting: {
         title: '常见问题',

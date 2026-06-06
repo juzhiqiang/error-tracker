@@ -111,6 +111,27 @@ export interface PerformanceSummary {
   avg_value: number | string
 }
 
+export type AiPriority = 'low' | 'medium' | 'high'
+export type AiConfidence = 'low' | 'medium' | 'high'
+
+export interface AiRecommendation {
+  title: string
+  reason: string
+  steps: string[]
+}
+
+export interface AiAnalysis {
+  summary: string
+  probableCause: string
+  priority: AiPriority
+  confidence: AiConfidence
+  evidence: string[]
+  recommendations: AiRecommendation[]
+  testsToAdd: string[]
+  provider?: 'local' | 'openai'
+  model?: string
+}
+
 export interface HealthReport {
   ok: boolean
   checks?: Record<string, { ok?: boolean; latencyMs?: number; error?: string }>
@@ -192,6 +213,8 @@ export const api = {
     events: (id: string) => apiFetch<EventRow[]>(`/api/issues/${id}/events`),
     update: (id: string, body: { status: IssueStatus }) =>
       apiFetch<Issue>(`/api/issues/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+    aiAnalysis: (id: string) =>
+      apiFetch<AiAnalysis>(`/api/issues/${encodeURIComponent(id)}/ai-analysis`, { method: 'POST' }),
   },
   events: {
     get: (id: string) => apiFetch<EventRow>(`/api/events/${id}`),
@@ -202,6 +225,8 @@ export const api = {
       apiFetch<TrendPoint[]>(`/api/stats/issues?projectId=${projectId}&days=${days}`),
     performance: (projectId: string) =>
       apiFetch<PerformanceSummary[]>(`/api/stats/performance?projectId=${projectId}`),
+    aiPerformance: (projectId: string) =>
+      apiFetch<AiAnalysis>(`/api/stats/performance/ai-analysis?${new URLSearchParams({ projectId })}`, { method: 'POST' }),
   },
   sourcemaps: {
     upload: (projectId: string, release: string, formData: FormData) =>

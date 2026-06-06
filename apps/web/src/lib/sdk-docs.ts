@@ -27,5 +27,6 @@ export const sdkDocsSections: SdkDocsSection[] = [
   { id: 'alert-webhook', titleKey: 'docs.section.webhook.title', descriptionKey: 'docs.section.webhook.description' },
   { id: 'verify-ingestion', titleKey: 'docs.section.verify.title', descriptionKey: 'docs.section.verify.description' },
   { id: 'self-monitoring', titleKey: 'docs.section.selfMonitoring.title', descriptionKey: 'docs.section.selfMonitoring.description' },
+  { id: 'ai-advisor', titleKey: 'docs.section.aiAdvisor.title', descriptionKey: 'docs.section.aiAdvisor.description' },
   { id: 'troubleshooting', titleKey: 'docs.section.troubleshooting.title', descriptionKey: 'docs.section.troubleshooting.description' },
 ]

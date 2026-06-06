@@ -17,6 +17,7 @@ import { AuditLogModule } from './modules/audit/audit-log.module'
 import { OperationsModule } from './modules/operations/operations.module'
 import { OrganizationsModule } from './modules/organizations/organizations.module'
 import { SelfMonitoringModule } from './modules/self-monitoring/self-monitoring.module'
+import { AiAdvisorModule } from './modules/ai/ai-advisor.module'
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { SelfMonitoringModule } from './modules/self-monitoring/self-monitoring.
     OperationsModule,
     OrganizationsModule,
     SelfMonitoringModule,
+    AiAdvisorModule,
     HealthModule,
   ],
 })

@@ -19,10 +19,11 @@ import {
   Tags,
   User,
 } from 'lucide-react'
+import { AiAnalysisPanel } from '@/components/ai-analysis-panel'
 import { EmptyState } from '@/components/empty-state'
 import { Panel } from '@/components/panel'
 import { LevelBadge, StatusBadge } from '@/components/status-badge'
-import { api, type Breadcrumb, type EventRow, type Issue, type IssueLevel, type IssueStatus, type StackFrame } from '@/lib/api'
+import { api, type AiAnalysis, type Breadcrumb, type EventRow, type Issue, type IssueLevel, type IssueStatus, type StackFrame } from '@/lib/api'
 import { compactNumber, formatFullDateTime, formatTime, stringifyRecord } from '@/lib/format'
 import { useI18n } from '@/lib/i18n'
 
@@ -42,6 +43,9 @@ export default function IssueDetailPage() {
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState<IssueStatus | null>(null)
   const [error, setError] = useState('')
+  const [aiAnalysis, setAiAnalysis] = useState<AiAnalysis | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState('')
 
   useEffect(() => {
     if (!issueId) return
@@ -52,6 +56,8 @@ export default function IssueDetailPage() {
         setIssue(issueResult)
         setEvents(ordered)
         setSelectedEventId((current) => current || ordered[0]?.id || '')
+        setAiAnalysis(null)
+        setAiError('')
         setError('')
       })
       .catch(() => setError(t('detail.loadError')))
@@ -74,6 +80,22 @@ export default function IssueDetailPage() {
       toast.error(t('detail.toast.updateFailed'))
     } finally {
       setUpdating(null)
+    }
+  }
+
+  async function generateAiAnalysis() {
+    if (!issue) return
+    setAiLoading(true)
+    setAiError('')
+    try {
+      const analysis = await api.issues.aiAnalysis(issue.id)
+      setAiAnalysis(analysis)
+      toast.success(t('detail.ai.toast.generated'))
+    } catch {
+      setAiError(t('detail.ai.error'))
+      toast.error(t('detail.ai.error'))
+    } finally {
+      setAiLoading(false)
     }
   }
 
@@ -162,6 +184,18 @@ export default function IssueDetailPage() {
           </div>
         </div>
       </section>
+
+      <AiAnalysisPanel
+        title={t('detail.ai.title')}
+        description={t('detail.ai.description')}
+        analyzeLabel={t('detail.ai.action')}
+        emptyTitle={t('detail.ai.emptyTitle')}
+        emptyDescription={t('detail.ai.emptyDescription')}
+        analysis={aiAnalysis}
+        loading={aiLoading}
+        error={aiError}
+        onAnalyze={generateAiAnalysis}
+      />
 
       <section className="grid gap-4 xl:grid-cols-[380px_minmax(0,1fr)]">
         <Panel title={t('detail.timeline.title')} description={t('detail.timeline.description', { count: events.length })}>
