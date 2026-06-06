@@ -55,6 +55,22 @@ function Wait-HttpReady {
   throw "Timed out waiting for $Url"
 }
 
+function Stop-ListeningProcess {
+  param([int[]] $Ports)
+
+  foreach ($port in $Ports) {
+    $connections = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
+    $processIds = $connections | Select-Object -ExpandProperty OwningProcess -Unique
+    foreach ($processId in $processIds) {
+      if (-not $processId -or $processId -eq $PID) {
+        continue
+      }
+      Write-Host "Stopping existing process on port $port (PID $processId)..."
+      Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
+    }
+  }
+}
+
 function Start-BackgroundProcess {
   param(
     [string] $Name,
@@ -83,28 +99,26 @@ Invoke-Native "bun" @("run", "services:up")
 Write-Host "Running database migrations..."
 Invoke-Native "bun" @("run", "--cwd", "apps/api", "db:migrate")
 
+Stop-ListeningProcess @(3002, 3003)
+
 $started = @()
-if (-not (Test-HttpReady "http://localhost:3002/health")) {
-  $started += Start-BackgroundProcess `
-    -Name "API" `
-    -FilePath "bun" `
-    -Arguments @("run", "--cwd", "apps/api", "dev") `
-    -Stdout (Join-Path $root "apps/api/e2e.out.log") `
-    -Stderr (Join-Path $root "apps/api/e2e.err.log")
-}
+$started += Start-BackgroundProcess `
+  -Name "API" `
+  -FilePath "bun" `
+  -Arguments @("run", "--cwd", "apps/api", "dev") `
+  -Stdout (Join-Path $root "apps/api/e2e.out.log") `
+  -Stderr (Join-Path $root "apps/api/e2e.err.log")
 Wait-HttpReady "http://localhost:3002/health" 120
 
 Write-Host "Seeding E2E user..."
 Invoke-Native "bun" @("scripts/e2e/seed-user.ts")
 
-if (-not (Test-HttpReady "http://localhost:3003/login")) {
-  $started += Start-BackgroundProcess `
-    -Name "Web" `
-    -FilePath "bun" `
-    -Arguments @("run", "--cwd", "apps/web", "dev") `
-    -Stdout (Join-Path $root "apps/web/e2e.out.log") `
-    -Stderr (Join-Path $root "apps/web/e2e.err.log")
-}
+$started += Start-BackgroundProcess `
+  -Name "Web" `
+  -FilePath "bun" `
+  -Arguments @("run", "--cwd", "apps/web", "dev") `
+  -Stdout (Join-Path $root "apps/web/e2e.out.log") `
+  -Stderr (Join-Path $root "apps/web/e2e.err.log")
 Wait-HttpReady "http://localhost:3003/login" 120
 
 try {
