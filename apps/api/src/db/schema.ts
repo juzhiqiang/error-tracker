@@ -26,9 +26,44 @@ export const organizationMembers = pgTable(
   }),
 )
 
+export const teams = pgTable(
+  'teams',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id),
+    name: text('name').notNull(),
+    slug: text('slug').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    teamOrgSlugUnique: unique('teams_org_slug_unique').on(table.organizationId, table.slug),
+  }),
+)
+
+export const teamMembers = pgTable(
+  'team_members',
+  {
+    id: serial('id').primaryKey(),
+    teamId: uuid('team_id')
+      .notNull()
+      .references(() => teams.id),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    teamUserUnique: unique('team_members_team_user_unique').on(table.teamId, table.userId),
+  }),
+)
+
 export const projects = pgTable('projects', {
   id: uuid('id').primaryKey().defaultRandom(),
-  organizationId: uuid('organization_id').references(() => organizations.id),
+  organizationId: uuid('organization_id')
+    .notNull()
+    .references(() => organizations.id),
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
   dsnToken: text('dsn_token').notNull().unique(),
@@ -64,6 +99,24 @@ export const projectMembers = pgTable(
   },
   (table) => ({
     projectUserUnique: unique('project_members_project_user_unique').on(table.projectId, table.userId),
+  }),
+)
+
+export const teamProjects = pgTable(
+  'team_projects',
+  {
+    id: serial('id').primaryKey(),
+    teamId: uuid('team_id')
+      .notNull()
+      .references(() => teams.id),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id),
+    role: text('role', { enum: ['admin', 'member', 'viewer'] }).notNull().default('viewer'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    teamProjectUnique: unique('team_projects_team_project_unique').on(table.teamId, table.projectId),
   }),
 )
 

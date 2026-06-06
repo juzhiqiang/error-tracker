@@ -15,6 +15,7 @@ import { HealthModule } from './modules/health/health.module'
 import { ObservabilityModule } from './modules/observability/observability.module'
 import { AuditLogModule } from './modules/audit/audit-log.module'
 import { OperationsModule } from './modules/operations/operations.module'
+import { OrganizationsModule } from './modules/organizations/organizations.module'
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { OperationsModule } from './modules/operations/operations.module'
     ObservabilityModule,
     AuditLogModule,
     OperationsModule,
+    OrganizationsModule,
     HealthModule,
   ],
 })

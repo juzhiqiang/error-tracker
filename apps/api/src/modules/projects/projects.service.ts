@@ -1,10 +1,16 @@
-import { Injectable, Inject } from '@nestjs/common'
+import { ForbiddenException, Injectable, Inject, UnauthorizedException } from '@nestjs/common'
 import { randomBytes } from 'crypto'
 import { eq, sql } from 'drizzle-orm'
 import { DB } from '../../db/db.module'
-import { projectMembers, projects } from '../../db/schema'
+import { projects } from '../../db/schema'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../db/schema'
+
+interface ProjectCreateBody {
+  name: string
+  slug: string
+  organizationId?: string
+}
 
 @Injectable()
 export class ProjectsService {
@@ -24,23 +30,46 @@ export class ProjectsService {
         p.retention_days as "retentionDays",
         p.created_at as "createdAt"
       FROM projects p
-      LEFT JOIN project_members pm ON pm.project_id = p.id
-      LEFT JOIN organization_members om ON om.organization_id = p.organization_id
-      WHERE pm.user_id = ${userId}
-        OR om.user_id = ${userId}
+      LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = ${userId}
+      LEFT JOIN organization_members om ON om.organization_id = p.organization_id AND om.user_id = ${userId}
+      LEFT JOIN team_projects tp ON tp.project_id = p.id
+      LEFT JOIN teams t ON t.id = tp.team_id AND t.organization_id = p.organization_id
+      LEFT JOIN team_members tm ON tm.team_id = t.id AND tm.user_id = ${userId}
+      WHERE pm.user_id IS NOT NULL
+        OR om.user_id IS NOT NULL
+        OR tm.user_id IS NOT NULL
       ORDER BY p.created_at
     `)
     return rowsFrom<typeof projects.$inferSelect>(result)
   }
 
-  async create(body: { name: string; slug: string }, ownerUserId?: string) {
+  async create(body: ProjectCreateBody, ownerUserId?: string) {
+    if (!ownerUserId) throw new UnauthorizedException('User required')
+
+    const organizationId = await this.resolveOrganizationIdForCreate(body.organizationId, ownerUserId)
     const dsnToken = randomBytes(20).toString('hex')
-    const created = await this.db.insert(projects).values({ name: body.name, slug: body.slug, dsnToken }).returning()
-    if (ownerUserId && created[0]?.id) {
-      await this.db
-        .insert(projectMembers)
-        .values({ projectId: created[0].id, userId: ownerUserId, role: 'owner' })
-        .onConflictDoNothing()
+    const created = rowsFrom<typeof projects.$inferSelect>(
+      await this.db.execute(sql`
+        INSERT INTO projects (organization_id, name, slug, dsn_token)
+        VALUES (${organizationId}, ${body.name}, ${body.slug}, ${dsnToken})
+        RETURNING
+          id,
+          organization_id as "organizationId",
+          name,
+          slug,
+          dsn_token as "dsnToken",
+          webhook_url as "webhookUrl",
+          alert_threshold as "alertThreshold",
+          retention_days as "retentionDays",
+          created_at as "createdAt"
+      `),
+    )
+    if (created[0]?.id) {
+      await this.db.execute(sql`
+        INSERT INTO project_members (project_id, user_id, role)
+        VALUES (${created[0].id}, ${ownerUserId}, 'owner')
+        ON CONFLICT (project_id, user_id) DO NOTHING
+      `)
     }
     return created
   }
@@ -48,6 +77,55 @@ export class ProjectsService {
   rotateToken(projectId: string) {
     const dsnToken = randomBytes(20).toString('hex')
     return this.db.update(projects).set({ dsnToken }).where(eq(projects.id, projectId)).returning()
+  }
+
+  private async resolveOrganizationIdForCreate(organizationId: string | undefined, userId: string): Promise<string> {
+    if (organizationId) {
+      const membership = rowsFrom<{ id: string }>(
+        await this.db.execute(sql`
+          SELECT organization_id as id
+          FROM organization_members
+          WHERE organization_id = ${organizationId}
+            AND user_id = ${userId}
+            AND role IN ('owner', 'admin', 'member')
+          LIMIT 1
+        `),
+      )
+      if (!membership[0]) throw new ForbiddenException('Organization access denied')
+      return organizationId
+    }
+
+    const existing = rowsFrom<{ id: string }>(
+      await this.db.execute(sql`
+        SELECT organization_id as id
+        FROM organization_members
+        WHERE user_id = ${userId}
+          AND role IN ('owner', 'admin', 'member')
+        ORDER BY created_at
+        LIMIT 1
+      `),
+    )
+    if (existing[0]?.id) return existing[0].id
+
+    const created = rowsFrom<{ id: string }>(
+      await this.db.execute(sql`
+        WITH created_organization AS (
+          INSERT INTO organizations (name, slug)
+          VALUES (${`Personal ${userId.slice(0, 8)}`}, ${`personal-${userId.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}-${randomBytes(4).toString('hex')}`})
+          RETURNING id
+        ),
+        created_member AS (
+          INSERT INTO organization_members (organization_id, user_id, role)
+          SELECT id, ${userId}, 'owner' FROM created_organization
+          ON CONFLICT (organization_id, user_id) DO NOTHING
+          RETURNING organization_id
+        )
+        SELECT id FROM created_organization
+      `),
+    )
+
+    if (!created[0]?.id) throw new Error('Failed to create default organization')
+    return created[0].id
   }
 }
 

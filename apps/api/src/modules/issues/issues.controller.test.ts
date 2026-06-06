@@ -12,9 +12,10 @@ describe('IssuesController audit logging', () => {
       updateStatus: mock(async () => issue),
     }
     const eventsService = {}
+    const access = { canAccessIssue: mock(async () => true) }
     const audit = { record: mock(async () => undefined) }
     const { IssuesController } = await import('./issues.controller')
-    const controller = new IssuesController(issuesService as never, eventsService as never, audit as never)
+    const controller = new IssuesController(issuesService as never, eventsService as never, access as never, audit as never)
     const req = { session: { user: { id: 'user-1' } } }
 
     await controller.update('issue-1', { status: 'resolved' }, req)
@@ -29,6 +30,36 @@ describe('IssuesController audit logging', () => {
         metadata: { status: 'resolved' },
       },
     ])
+    expect(access.canAccessIssue.mock.calls[0]).toEqual(['user-1', 'issue-1', ['owner', 'admin', 'member']])
+  })
+
+  it('checks issue access before returning a detail row', async () => {
+    const issue = { id: 'issue-1', projectId: 'project-1' }
+    const issuesService = { findById: mock(async () => issue) }
+    const eventsService = {}
+    const access = { canAccessIssue: mock(async () => true) }
+    const audit = { record: mock(async () => undefined) }
+    const { IssuesController } = await import('./issues.controller')
+    const controller = new IssuesController(issuesService as never, eventsService as never, access as never, audit as never)
+    const req = { session: { user: { id: 'user-1' } } }
+
+    await expect(controller.findOne('issue-1', req)).resolves.toEqual(issue)
+
+    expect(access.canAccessIssue.mock.calls[0]).toEqual(['user-1', 'issue-1', ['viewer']])
+    expect(issuesService.findById).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not read issue events when issue access is denied', async () => {
+    const issuesService = {}
+    const eventsService = { listByIssue: mock(async () => []) }
+    const access = { canAccessIssue: mock(async () => false) }
+    const audit = { record: mock(async () => undefined) }
+    const { IssuesController } = await import('./issues.controller')
+    const controller = new IssuesController(issuesService as never, eventsService as never, access as never, audit as never)
+    const req = { session: { user: { id: 'user-1' } } }
+
+    await expect(controller.events('issue-1', req)).rejects.toThrow('Issue access denied')
+    expect(eventsService.listByIssue).not.toHaveBeenCalled()
   })
 
   it('runs the session guard before project access on project-scoped list', async () => {

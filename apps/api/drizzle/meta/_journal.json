@@ -43,6 +43,13 @@
       "when": 1780709117187,
       "tag": "0005_minor_sway",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1780710722911,
+      "tag": "0006_secret_albert_cleary",
+      "breakpoints": true
     }
   ]
 }

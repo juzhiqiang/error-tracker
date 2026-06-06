@@ -27,7 +27,7 @@
 
 ## 步骤
 
-- [ ] **Step 1: 写访问控制测试**
+- [x] **Step 1: 写访问控制测试**
 
 在 `access-control.service.test.ts` 增加：
 
@@ -47,7 +47,7 @@ it('rejects project access across organizations without membership', async () =>
 })
 ```
 
-- [ ] **Step 2: 扩展 schema**
+- [x] **Step 2: 扩展 schema**
 
 在 `apps/api/src/db/schema.ts` 增加：
 
@@ -96,7 +96,7 @@ export const teamProjects = pgTable(
 
 并将 `projects.organizationId` 改为 `.notNull()`。迁移要为已有项目创建 default organization。
 
-- [ ] **Step 3: 更新 AccessControlService 查询**
+- [x] **Step 3: 更新 AccessControlService 查询**
 
 `canAccessProject()` 需要合并三种来源：
 
@@ -112,7 +112,7 @@ const roleRank = { viewer: 1, member: 2, admin: 3, owner: 4 }
 
 满足任一来源角色等级即可访问。
 
-- [ ] **Step 4: 增加 organizations 模块**
+- [x] **Step 4: 增加 organizations 模块**
 
 实现：
 
@@ -123,11 +123,11 @@ const roleRank = { viewer: 1, member: 2, admin: 3, owner: 4 }
 - `POST /api/organizations/:organizationId/teams/:teamId/members`
 - `POST /api/organizations/:organizationId/teams/:teamId/projects`
 
-- [ ] **Step 5: 更新 ProjectsService**
+- [x] **Step 5: 更新 ProjectsService**
 
 创建项目时必须有 organizationId。若没有传入，则使用当前用户第一个 organization，若用户没有 organization，则创建个人默认 organization。
 
-- [ ] **Step 6: 验证迁移**
+- [x] **Step 6: 验证迁移**
 
 ```bash
 bun run --cwd apps/api db:generate
@@ -135,7 +135,7 @@ bun run services:up
 bun run --cwd apps/api db:migrate
 ```
 
-- [ ] **Step 7: 验证测试和构建**
+- [x] **Step 7: 验证测试和构建**
 
 ```bash
 bun run --cwd apps/api test src/modules/access/access-control.service.test.ts src/modules/projects/projects.service.test.ts src/modules/organizations/organizations.service.test.ts
@@ -143,7 +143,7 @@ bun run --cwd apps/api lint
 bun run --cwd apps/api build
 ```
 
-- [ ] **Step 8: 提交**
+- [x] **Step 8: 提交**
 
 ```bash
 git add apps/api/src/db/schema.ts apps/api/drizzle apps/api/src/modules/access apps/api/src/modules/projects apps/api/src/modules/organizations

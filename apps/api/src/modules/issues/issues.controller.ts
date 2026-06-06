@@ -1,9 +1,11 @@
-import { Controller, Get, Patch, Param, Query, Body, UseGuards, Req } from '@nestjs/common'
+import { Body, Controller, ForbiddenException, Get, Param, Patch, Query, Req, UseGuards } from '@nestjs/common'
 import { IssuesService } from './issues.service'
 import { EventsService } from '../events/events.service'
 import { SessionGuard } from '../../common/guards/session.guard'
 import { ProjectAccessGuard } from '../access/project-access.guard'
 import { AuditLogService } from '../audit/audit-log.service'
+import { AccessControlService } from '../access/access-control.service'
+import type { ProjectRole } from '../access/project-roles.decorator'
 
 type SessionRequest = { session?: { user?: { id?: string } } }
 
@@ -13,6 +15,7 @@ export class IssuesController {
   constructor(
     private readonly issuesService: IssuesService,
     private readonly eventsService: EventsService,
+    private readonly accessControlService: AccessControlService,
     private readonly auditLogService: AuditLogService,
   ) {}
 
@@ -30,12 +33,14 @@ export class IssuesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string, @Req() req: SessionRequest) {
+    await this.assertIssueAccess(req, id, ['viewer'])
     return this.issuesService.findById(id)
   }
 
   @Get(':id/events')
-  events(@Param('id') id: string) {
+  async events(@Param('id') id: string, @Req() req: SessionRequest) {
+    await this.assertIssueAccess(req, id, ['viewer'])
     return this.eventsService.listByIssue(id)
   }
 
@@ -45,6 +50,7 @@ export class IssuesController {
     @Body() body: { status: 'resolved' | 'ignored' | 'unresolved' },
     @Req() req: SessionRequest,
   ) {
+    await this.assertIssueAccess(req, id, ['owner', 'admin', 'member'])
     const issue = await this.issuesService.updateStatus(id, body.status)
     if (issue?.id && issue.projectId) {
       await this.auditLogService.record({
@@ -57,5 +63,12 @@ export class IssuesController {
       })
     }
     return issue
+  }
+
+  private async assertIssueAccess(req: SessionRequest, issueId: string, roles: ProjectRole[]): Promise<void> {
+    const userId = req.session?.user?.id
+    if (!userId || !(await this.accessControlService.canAccessIssue(userId, issueId, roles))) {
+      throw new ForbiddenException('Issue access denied')
+    }
   }
 }
