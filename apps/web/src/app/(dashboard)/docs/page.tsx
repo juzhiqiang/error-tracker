@@ -118,9 +118,11 @@ ErrorTracker.addBreadcrumb({
           'If CI access is unavailable, open Settings and upload the matching sourcemap files from the selected project.',
           'Do not publish sourcemaps publicly unless your security policy allows it.',
         ],
-        code: `bun error-tracker sourcemaps upload \\
-  --project checkout-web \\
-  --release web@2.8.1 \\
+        code: `bunx error-tracker sourcemaps upload \\
+  --api-url https://tracker.example.com \\
+  --project-id $ERROR_TRACKER_PROJECT_ID \\
+  --token $ERROR_TRACKER_TOKEN \\
+  --release $APP_RELEASE \\
   --dist apps/web/.next/static`,
       },
       'alert-webhook': {
@@ -243,9 +245,11 @@ ErrorTracker.addBreadcrumb({
           '如果暂时无法接入 CI 上传，可以在 Settings 选中项目后手动补传对应 sourcemap。',
           '除非安全策略允许，不要公开发布 sourcemap 文件。',
         ],
-        code: `bun error-tracker sourcemaps upload \\
-  --project checkout-web \\
-  --release web@2.8.1 \\
+        code: `bunx error-tracker sourcemaps upload \\
+  --api-url https://tracker.example.com \\
+  --project-id $ERROR_TRACKER_PROJECT_ID \\
+  --token $ERROR_TRACKER_TOKEN \\
+  --release $APP_RELEASE \\
   --dist apps/web/.next/static`,
       },
       'alert-webhook': {

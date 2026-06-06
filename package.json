@@ -8,6 +8,8 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "e2e": "powershell -ExecutionPolicy Bypass -File scripts/e2e/start-stack.ps1",
+    "cli:build": "bun run --cwd packages/cli build",
+    "cli:test": "bun test packages/cli",
     "services:up": "docker compose up -d",
     "services:down": "docker compose down",
     "services:reset": "docker compose down -v && docker compose up -d"

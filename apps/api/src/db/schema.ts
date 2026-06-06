@@ -156,16 +156,28 @@ export const performanceMetrics = pgTable('performance_metrics', {
   timestamp: timestamp('timestamp').defaultNow().notNull(),
 })
 
-export const sourceMaps = pgTable('source_maps', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  projectId: uuid('project_id')
-    .notNull()
-    .references(() => projects.id),
-  release: text('release').notNull(),
-  filename: text('filename').notNull(),
-  storageUrl: text('storage_url').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-})
+export const sourceMaps = pgTable(
+  'source_maps',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id),
+    release: text('release').notNull(),
+    filename: text('filename').notNull(),
+    storageUrl: text('storage_url').notNull(),
+    checksum: text('checksum'),
+    sizeBytes: integer('size_bytes'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    projectReleaseFilenameUnique: unique('source_maps_project_release_filename_unique').on(
+      table.projectId,
+      table.release,
+      table.filename,
+    ),
+  }),
+)
 
 // Better-Auth 表（user/session/account/verification）由 @better-auth/cli 生成
 export * from './auth-schema'
