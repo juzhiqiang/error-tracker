@@ -19,6 +19,7 @@ describe('SDK docs navigation', () => {
     }
 
     expect(sectionIds.has('verify-ingestion')).toBe(true)
+    expect(sectionIds.has('self-monitoring')).toBe(true)
     expect(sectionIds.has('troubleshooting')).toBe(true)
   })
 })

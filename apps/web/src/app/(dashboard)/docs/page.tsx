@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import {
+  Activity,
   BellRing,
   CheckCircle2,
   Code2,
@@ -24,6 +25,7 @@ const sectionIcons = {
   'upload-sourcemap': FileCode2,
   'alert-webhook': BellRing,
   'verify-ingestion': CheckCircle2,
+  'self-monitoring': Activity,
   troubleshooting: LifeBuoy,
 } as const
 
@@ -154,6 +156,24 @@ Content-Type: application/json
   throw new Error('error-tracker verification event')
 }, 1000)`,
       },
+      'self-monitoring': {
+        title: 'Monitor this platform',
+        description: 'Use a dedicated project when Error Tracker should report its own console errors, API failures, and Web Vitals.',
+        bullets: [
+          'Create a project such as error-tracker-self and copy its DSN from Settings.',
+          'Set NEXT_PUBLIC_ERROR_TRACKER_DSN on the Web console and ERROR_TRACKER_DSN on the API service.',
+          'Set environment and release labels on both services so self-monitoring events match each deployment.',
+          'Disable either side with NEXT_PUBLIC_ERROR_TRACKER_SELF_MONITORING_ENABLED=false or ERROR_TRACKER_SELF_MONITORING_ENABLED=false.',
+          'API self-monitoring reports 5xx and unhandled process errors, skips /ingest/* to avoid recursion, and does not include backend APM tracing.',
+        ],
+        code: `NEXT_PUBLIC_ERROR_TRACKER_DSN=https://tracker.example.com/ingest/self-project/web-token
+ERROR_TRACKER_DSN=https://tracker.example.com/ingest/self-project/api-token
+NEXT_PUBLIC_ERROR_TRACKER_ENVIRONMENT=production
+ERROR_TRACKER_ENVIRONMENT=production
+NEXT_PUBLIC_ERROR_TRACKER_RELEASE=web@2.8.1
+ERROR_TRACKER_RELEASE=api@2.8.1`,
+        note: 'Self-monitoring data appears in the same Issues and Performance pages under the dedicated project.',
+      },
       troubleshooting: {
         title: 'Troubleshooting',
         description: 'Use these checks when events do not appear or stack traces are hard to read.',
@@ -280,6 +300,24 @@ Content-Type: application/json
         code: `setTimeout(() => {
   throw new Error('error-tracker verification event')
 }, 1000)`,
+      },
+      'self-monitoring': {
+        title: '监控平台自身',
+        description: '当 Error Tracker 需要观察自己的控制台错误、API 故障和 Web Vitals 时，使用一个独立项目承接自监控数据。',
+        bullets: [
+          '创建一个类似 error-tracker-self 的项目，并在 Settings 中复制该项目的 DSN。',
+          '给 Web 控制台设置 NEXT_PUBLIC_ERROR_TRACKER_DSN，给 API 服务设置 ERROR_TRACKER_DSN。',
+          '两个服务都建议设置 environment 和 release，方便按部署批次过滤自监控事件。',
+          '如需关闭某一侧，设置 NEXT_PUBLIC_ERROR_TRACKER_SELF_MONITORING_ENABLED=false 或 ERROR_TRACKER_SELF_MONITORING_ENABLED=false。',
+          'API 自监控会上报 5xx 和未处理进程异常，并跳过 /ingest/* 避免递归；当前不包含后端 APM 链路追踪。',
+        ],
+        code: `NEXT_PUBLIC_ERROR_TRACKER_DSN=https://tracker.example.com/ingest/self-project/web-token
+ERROR_TRACKER_DSN=https://tracker.example.com/ingest/self-project/api-token
+NEXT_PUBLIC_ERROR_TRACKER_ENVIRONMENT=production
+ERROR_TRACKER_ENVIRONMENT=production
+NEXT_PUBLIC_ERROR_TRACKER_RELEASE=web@2.8.1
+ERROR_TRACKER_RELEASE=api@2.8.1`,
+        note: '自监控数据会进入这个独立项目的 Issues 和 Performance 页面。',
       },
       troubleshooting: {
         title: '常见问题',

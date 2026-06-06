@@ -26,5 +26,6 @@ export const sdkDocsSections: SdkDocsSection[] = [
   { id: 'upload-sourcemap', titleKey: 'docs.section.sourcemap.title', descriptionKey: 'docs.section.sourcemap.description' },
   { id: 'alert-webhook', titleKey: 'docs.section.webhook.title', descriptionKey: 'docs.section.webhook.description' },
   { id: 'verify-ingestion', titleKey: 'docs.section.verify.title', descriptionKey: 'docs.section.verify.description' },
+  { id: 'self-monitoring', titleKey: 'docs.section.selfMonitoring.title', descriptionKey: 'docs.section.selfMonitoring.description' },
   { id: 'troubleshooting', titleKey: 'docs.section.troubleshooting.title', descriptionKey: 'docs.section.troubleshooting.description' },
 ]
