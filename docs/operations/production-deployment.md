@@ -15,6 +15,17 @@
 - `MINIO_SECRET_KEY`
 - `MINIO_BUCKET`
 
+## Platform Self-Monitoring
+
+Self-monitoring is optional and uses the same DSN ingest path as customer projects. In the production console, create a dedicated project such as `error-tracker-self`, copy its DSN, then configure both services:
+
+- Web: `NEXT_PUBLIC_ERROR_TRACKER_DSN`
+- API: `ERROR_TRACKER_DSN`
+- Optional toggles: `NEXT_PUBLIC_ERROR_TRACKER_SELF_MONITORING_ENABLED=false` or `ERROR_TRACKER_SELF_MONITORING_ENABLED=false`
+- Optional labels: `NEXT_PUBLIC_ERROR_TRACKER_ENVIRONMENT`, `ERROR_TRACKER_ENVIRONMENT`, `NEXT_PUBLIC_ERROR_TRACKER_RELEASE`, `ERROR_TRACKER_RELEASE`
+
+The Web console reports browser errors, breadcrumbs, and Web Vitals. The API reports unhandled process errors and HTTP 5xx exceptions. API self-monitoring skips `/ingest/*` so a failing ingest path does not recursively report itself.
+
 ## Reverse Proxy
 
 Terminate TLS before API and Web through Nginx, Caddy, Ingress, or a managed load balancer. Forward these headers to the API:

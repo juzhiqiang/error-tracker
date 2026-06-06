@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 import { Toaster } from 'sonner'
+import { SelfMonitoringProvider } from '@/components/self-monitoring-provider'
 import { I18nProvider } from '@/lib/i18n'
 import './globals.css'
 
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" data-theme="dark" suppressHydrationWarning>
       <body className="bg-background text-slate-200 antialiased">
         <I18nProvider>
+          <SelfMonitoringProvider />
           {children}
           <Toaster theme="dark" richColors position="top-right" closeButton />
         </I18nProvider>

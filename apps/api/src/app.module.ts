@@ -16,6 +16,7 @@ import { ObservabilityModule } from './modules/observability/observability.modul
 import { AuditLogModule } from './modules/audit/audit-log.module'
 import { OperationsModule } from './modules/operations/operations.module'
 import { OrganizationsModule } from './modules/organizations/organizations.module'
+import { SelfMonitoringModule } from './modules/self-monitoring/self-monitoring.module'
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { OrganizationsModule } from './modules/organizations/organizations.modul
     AuditLogModule,
     OperationsModule,
     OrganizationsModule,
+    SelfMonitoringModule,
     HealthModule,
   ],
 })
