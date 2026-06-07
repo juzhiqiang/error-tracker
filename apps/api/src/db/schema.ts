@@ -164,10 +164,26 @@ export const issues = pgTable(
     firstSeen: timestamp('first_seen').defaultNow().notNull(),
     lastSeen: timestamp('last_seen').defaultNow().notNull(),
     count: integer('count').default(1).notNull(),
-    userCount: integer('user_count').default(1).notNull(),
+    userCount: integer('user_count').default(0).notNull(),
   },
   (table) => ({
     projectFingerprintUnique: unique('issues_project_fingerprint_unique').on(table.projectId, table.fingerprint),
+  }),
+)
+
+export const issueUsers = pgTable(
+  'issue_users',
+  {
+    id: serial('id').primaryKey(),
+    issueId: uuid('issue_id')
+      .notNull()
+      .references(() => issues.id, { onDelete: 'cascade' }),
+    userHash: text('user_hash').notNull(),
+    firstSeen: timestamp('first_seen').defaultNow().notNull(),
+  },
+  (table) => ({
+    issueUserUnique: unique('issue_users_issue_user_unique').on(table.issueId, table.userHash),
+    issueIdIdx: index('issue_users_issue_id_idx').on(table.issueId),
   }),
 )
 

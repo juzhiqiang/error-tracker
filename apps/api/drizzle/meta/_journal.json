@@ -57,6 +57,13 @@
       "when": 1780817686292,
       "tag": "0007_public_dorian_gray",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1780840813260,
+      "tag": "0008_fuzzy_triathlon",
+      "breakpoints": true
     }
   ]
 }

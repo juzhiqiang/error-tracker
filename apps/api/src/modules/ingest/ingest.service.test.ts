@@ -1,4 +1,5 @@
 import { describe, expect, it, mock } from 'bun:test'
+import { createHash } from 'crypto'
 import { IngestService } from './ingest.service'
 
 function sqlText(query: unknown): string {
@@ -15,13 +16,20 @@ function sqlText(query: unknown): string {
     .join('')
 }
 
-function makeIngestDb(options: { existingEventId?: string; issueId?: string } = {}) {
+function makeIngestDb(options: { existingEventId?: string; issueId?: string; issueUserInserted?: boolean } = {}) {
   const insertedValues: unknown[] = []
+  const issueUserValues: unknown[] = []
   const updateValues: unknown[] = []
   const issueUpserts: unknown[] = []
-  const onConflictDoNothing = mock(async () => undefined)
+  const userCountUpdates: unknown[] = []
+  const issueUserReturning = mock(async () => (options.issueUserInserted === false ? [] : [{ id: 1 }]))
+  const onConflictDoNothing = mock(() => ({ returning: issueUserReturning }))
   const values = mock((value: unknown) => {
-    insertedValues.push(value)
+    if (isIssueUserValue(value)) {
+      issueUserValues.push(value)
+    } else {
+      insertedValues.push(value)
+    }
     return { onConflictDoNothing }
   })
   const execute = mock(async (query?: unknown) => {
@@ -40,7 +48,11 @@ function makeIngestDb(options: { existingEventId?: string; issueId?: string } = 
     insert: mock(() => ({ values })),
     update: mock(() => ({
       set: mock((value: unknown) => {
-        updateValues.push(value)
+        if (isUserCountUpdate(value)) {
+          userCountUpdates.push(value)
+        } else {
+          updateValues.push(value)
+        }
         return { where: mock(async () => undefined) }
       }),
     })),
@@ -51,11 +63,26 @@ function makeIngestDb(options: { existingEventId?: string; issueId?: string } = 
     db: { transaction, ...tx },
     insertedValues,
     issueUpserts,
+    issueUserReturning,
+    issueUserValues,
     onConflictDoNothing,
     transaction,
     updateValues,
+    userCountUpdates,
     values,
   }
+}
+
+function isIssueUserValue(value: unknown): value is { issueId: string; userHash: string } {
+  return Boolean(value && typeof value === 'object' && 'issueId' in value && 'userHash' in value)
+}
+
+function isUserCountUpdate(value: unknown): boolean {
+  return Boolean(value && typeof value === 'object' && 'userCount' in value)
+}
+
+function hashIssueUserKey(issueId: string, userKey: string): string {
+  return createHash('md5').update(`${issueId}:${userKey}`).digest('hex')
 }
 
 describe('IngestService', () => {
@@ -169,5 +196,60 @@ describe('IngestService', () => {
     expect(db.values).not.toHaveBeenCalled()
     expect(db.updateValues).toEqual([])
     expect(queue.add).not.toHaveBeenCalled()
+  })
+
+  it('does not increment userCount in the event count upsert', async () => {
+    const db = makeIngestDb()
+    const queue = { add: mock(async () => undefined) }
+    const service = new IngestService(db.db as never, queue as never, {} as never)
+
+    await service.ingestEvent('project-1', {
+      eventId: 'event-1',
+      timestamp: Date.now(),
+      level: 'error',
+      message: 'boom',
+      fingerprint: 'client-fp',
+      user: { id: 'user-1' },
+    })
+
+    expect(sqlText(db.issueUpserts[0])).not.toContain('user_count = issues.user_count + 1')
+  })
+
+  it('tracks first seen users per issue with a hashed identity', async () => {
+    const db = makeIngestDb()
+    const queue = { add: mock(async () => undefined) }
+    const service = new IngestService(db.db as never, queue as never, {} as never)
+
+    await service.ingestEvent('project-1', {
+      eventId: 'event-1',
+      timestamp: Date.now(),
+      level: 'error',
+      message: 'boom',
+      fingerprint: 'client-fp',
+      user: { id: 'user-1', email: 'ada@example.com' },
+    })
+
+    expect(db.issueUserValues[0]).toEqual({ issueId: 'issue-1', userHash: hashIssueUserKey('issue-1', 'id:user-1') })
+    expect(db.issueUserReturning).toHaveBeenCalledTimes(1)
+    expect(db.userCountUpdates).toHaveLength(1)
+  })
+
+  it('does not increment userCount when the issue user already exists', async () => {
+    const db = makeIngestDb({ issueUserInserted: false })
+    const queue = { add: mock(async () => undefined) }
+    const service = new IngestService(db.db as never, queue as never, {} as never)
+
+    await service.ingestEvent('project-1', {
+      eventId: 'event-1',
+      timestamp: Date.now(),
+      level: 'error',
+      message: 'boom',
+      fingerprint: 'client-fp',
+      user: { id: 'user-1' },
+    })
+
+    expect(db.issueUserValues[0]).toEqual({ issueId: 'issue-1', userHash: hashIssueUserKey('issue-1', 'id:user-1') })
+    expect(db.issueUserReturning).toHaveBeenCalledTimes(1)
+    expect(db.userCountUpdates).toHaveLength(0)
   })
 })

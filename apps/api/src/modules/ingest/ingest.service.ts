@@ -4,7 +4,7 @@ import { Queue } from 'bullmq'
 import { createHash } from 'crypto'
 import { and, eq, isNull, sql } from 'drizzle-orm'
 import { DB } from '../../db/db.module'
-import { events, performanceMetrics, replays } from '../../db/schema'
+import { events, issues, issueUsers, performanceMetrics, replays } from '../../db/schema'
 import { MinioService } from '../sourcemaps/minio.service'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../db/schema'
@@ -62,11 +62,10 @@ export class IngestService {
 
       const result = await tx.execute(sql`
         INSERT INTO issues (project_id, fingerprint, title, level, first_seen, last_seen, count, user_count)
-        VALUES (${projectId}, ${serverFingerprint}, ${payload.message.slice(0, 255)}, ${payload.level}, now(), now(), 1, 1)
+        VALUES (${projectId}, ${serverFingerprint}, ${payload.message.slice(0, 255)}, ${payload.level}, now(), now(), 1, 0)
         ON CONFLICT (project_id, fingerprint) DO UPDATE SET
           last_seen = now(),
           count = issues.count + 1,
-          user_count = issues.user_count + 1,
           status = CASE WHEN issues.status = 'resolved' THEN 'unresolved' ELSE issues.status END
         RETURNING id
       `)
@@ -74,6 +73,22 @@ export class IngestService {
       const issueId =
         (result as unknown as { rows?: { id: string }[] }).rows?.[0]?.id ??
         (result as unknown as { id: string }[])[0]?.id
+
+      const userHash = issueId ? this.computeUserHash(issueId, payload.user) : null
+      if (issueId && userHash) {
+        const insertedUsers = await tx
+          .insert(issueUsers)
+          .values({ issueId, userHash })
+          .onConflictDoNothing()
+          .returning({ id: issueUsers.id })
+
+        if (insertedUsers.length > 0) {
+          await tx
+            .update(issues)
+            .set({ userCount: sql`${issues.userCount} + 1` })
+            .where(eq(issues.id, issueId))
+        }
+      }
 
       await tx
         .insert(events)
@@ -151,6 +166,33 @@ export class IngestService {
       .update(`${event.level}:${event.message}:${frameKey}`)
       .digest('hex')
       .slice(0, 16)
+  }
+
+  private computeUserHash(issueId: string, user?: Record<string, unknown>): string | null {
+    const userKey = this.userKey(user)
+    return userKey ? createHash('md5').update(`${issueId}:${userKey}`).digest('hex') : null
+  }
+
+  private userKey(user?: Record<string, unknown>): string | null {
+    if (!user) return null
+
+    const id = this.stringUserValue(user.id) ?? this.stringUserValue(user.userId)
+    if (id) return `id:${id}`
+
+    const email = this.stringUserValue(user.email)?.toLowerCase()
+    if (email) return `email:${email}`
+
+    const username = this.stringUserValue(user.username)?.toLowerCase()
+    if (username) return `username:${username}`
+
+    const anonymousId = this.stringUserValue(user.anonymousId)
+    return anonymousId ? `anonymousId:${anonymousId}` : null
+  }
+
+  private stringUserValue(value: unknown): string | null {
+    if (typeof value !== 'string' && typeof value !== 'number') return null
+    const normalized = String(value).trim()
+    return normalized.length > 0 ? normalized : null
   }
 
   private alertJobOptions() {
