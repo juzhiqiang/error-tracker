@@ -33,6 +33,9 @@ export function init(options: SdkOptions): ErrorTrackerClient {
       _client?.flush(true)
     }
   })
+  const flushOnPageEnd = () => _client?.flush(true)
+  window.addEventListener('beforeunload', flushOnPageEnd)
+  window.addEventListener('pagehide', flushOnPageEnd)
 
   return _client
 }
