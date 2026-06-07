@@ -7,6 +7,7 @@ const QUEUE_COUNT_TYPES: JobType[] = ['waiting', 'active', 'failed', 'delayed']
 export type QueueCounts = Record<string, number>
 
 export interface QueueCountsReport {
+  ingest: QueueCounts
   events: QueueCounts
   cleanup: QueueCounts
 }
@@ -32,17 +33,19 @@ export class MetricsService {
   }
 
   constructor(
+    @InjectQueue('ingest') private readonly ingestQueue: Queue,
     @InjectQueue('events') private readonly eventsQueue: Queue,
     @InjectQueue('cleanup') private readonly cleanupQueue: Queue,
   ) {}
 
   async queueCounts(): Promise<QueueCountsReport> {
-    const [events, cleanup] = await Promise.all([
+    const [ingest, events, cleanup] = await Promise.all([
+      this.ingestQueue.getJobCounts(...QUEUE_COUNT_TYPES),
       this.eventsQueue.getJobCounts(...QUEUE_COUNT_TYPES),
       this.cleanupQueue.getJobCounts(...QUEUE_COUNT_TYPES),
     ])
 
-    return { events, cleanup }
+    return { ingest, events, cleanup }
   }
 
   recordIngestAccepted(): void {

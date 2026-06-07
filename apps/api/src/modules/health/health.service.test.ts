@@ -7,7 +7,7 @@ describe('HealthService', () => {
     const queue = { waitUntilReady: mock(async () => ({})) }
     const minio = { headBucket: mock(async () => {}) }
     const metrics = {
-      queueCounts: mock(async () => ({ events: { failed: 0 }, cleanup: { failed: 0 } })),
+      queueCounts: mock(async () => ({ ingest: { failed: 0 }, events: { failed: 0 }, cleanup: { failed: 0 } })),
       ingestMetrics: mock(() => ({
         accepted: 1,
         rejected: 0,
@@ -25,7 +25,7 @@ describe('HealthService', () => {
     expect(report.checks.db.status).toBe('ok')
     expect(report.checks.redis.status).toBe('ok')
     expect(report.checks.minio.status).toBe('ok')
-    expect(report.queues).toEqual({ events: { failed: 0 }, cleanup: { failed: 0 } })
+    expect(report.queues).toEqual({ ingest: { failed: 0 }, events: { failed: 0 }, cleanup: { failed: 0 } })
     expect(report.ingest).toEqual({
       accepted: 1,
       rejected: 0,
@@ -43,7 +43,7 @@ describe('HealthService', () => {
     const queue = { waitUntilReady: mock(async () => ({})) }
     const minio = { headBucket: mock(async () => {}) }
     const metrics = {
-      queueCounts: mock(async () => ({ events: { failed: 0 }, cleanup: { failed: 0 } })),
+      queueCounts: mock(async () => ({ ingest: { failed: 0 }, events: { failed: 0 }, cleanup: { failed: 0 } })),
       ingestMetrics: mock(() => ({ accepted: 0, rejected: 1 })),
     }
     const service = new HealthService(db as never, queue as never, minio as never, metrics as never)

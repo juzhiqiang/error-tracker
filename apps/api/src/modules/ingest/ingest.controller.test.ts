@@ -7,15 +7,13 @@ import type { MetricsService } from '../observability/metrics.service'
 
 describe('IngestController', () => {
   it('rejects invalid ingest bodies before calling the service', async () => {
-    const ingestEvent = mock(async () => undefined)
-    const ingestPerformance = mock(async () => undefined)
+    const enqueueBatch = mock(async () => undefined)
     const limits = createLimits()
     const metrics = createMetrics()
-    const controller = new IngestController({ ingestEvent, ingestPerformance } as unknown as IngestService, limits, metrics)
+    const controller = new IngestController({ enqueueBatch } as unknown as IngestService, limits, metrics)
 
     await expect(controller.ingest('project-1', { events: 'not-array' } as never)).rejects.toThrow(BadRequestException)
-    expect(ingestEvent.mock.calls).toHaveLength(0)
-    expect(ingestPerformance.mock.calls).toHaveLength(0)
+    expect(enqueueBatch.mock.calls).toHaveLength(0)
     expect(metrics.calls).toEqual([['rejected', 'validation_failed']])
   })
 
@@ -32,10 +30,10 @@ describe('IngestController', () => {
   })
 
   it('checks body size, rate limit, and daily quota before ingesting events', async () => {
-    const ingestEvent = mock(async () => undefined)
+    const enqueueBatch = mock(async () => undefined)
     const limits = createLimits()
     const metrics = createMetrics()
-    const controller = new IngestController({ ingestEvent } as unknown as IngestService, limits, metrics)
+    const controller = new IngestController({ enqueueBatch } as unknown as IngestService, limits, metrics)
     const body = {
       events: [
         {
@@ -55,6 +53,7 @@ describe('IngestController', () => {
       ['rate', 'project-1'],
       ['quota', 'project-1', 1],
     ])
+    expect(enqueueBatch.mock.calls).toEqual([['project-1', body.events]])
     expect(metrics.calls).toEqual([['accepted']])
   })
 })

@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common'
+import { Injectable, Inject, Optional } from '@nestjs/common'
 import { InjectQueue } from '@nestjs/bullmq'
 import { Queue } from 'bullmq'
 import { createHash } from 'crypto'
@@ -49,7 +49,14 @@ export class IngestService {
     @Inject(DB) private db: PostgresJsDatabase<typeof schema>,
     @InjectQueue('events') private eventsQueue: Queue,
     private readonly minio: MinioService,
+    @Optional() @InjectQueue('ingest') private readonly ingestQueue?: Queue,
   ) {}
+
+  async enqueueBatch(projectId: string, queuedEvents: unknown[]): Promise<void> {
+    if (!queuedEvents.length) return
+    if (!this.ingestQueue) throw new Error('ingest queue is not configured')
+    await this.ingestQueue.add('ingest-batch', { projectId, events: queuedEvents }, this.ingestJobOptions())
+  }
 
   async ingestEvent(projectId: string, payload: IncomingEvent): Promise<void> {
     const issueId = await this.db.transaction(async (tx) => {
@@ -162,10 +169,22 @@ export class IngestService {
   private computeServerFingerprint(event: IncomingEvent): string {
     const frames = (event.stacktrace ?? []).slice(0, 3)
     const frameKey = frames.map((f) => `${f.function}@${f.filename.split('/').pop()}`).join('|')
+    const messageKey = this.normalizeFingerprintMessage(event.message)
     return createHash('sha1')
-      .update(`${event.level}:${event.message}:${frameKey}`)
+      .update(frameKey ? `${event.level}:${frameKey}:${messageKey}` : `${event.level}:${messageKey}`)
       .digest('hex')
       .slice(0, 16)
+  }
+
+  private normalizeFingerprintMessage(message: string): string {
+    return message
+      .toLowerCase()
+      .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/gi, '<uuid>')
+      .replace(/\b[0-9a-f]{16,}\b/gi, '<hex>')
+      .replace(/\b\d+\b/g, '<num>')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 255)
   }
 
   private computeUserHash(issueId: string, user?: Record<string, unknown>): string | null {
@@ -199,6 +218,15 @@ export class IngestService {
     return {
       attempts: 3,
       backoff: { type: 'exponential' as const, delay: 5000 },
+      removeOnComplete: true,
+      removeOnFail: false,
+    }
+  }
+
+  private ingestJobOptions() {
+    return {
+      attempts: 5,
+      backoff: { type: 'exponential' as const, delay: 2000 },
       removeOnComplete: true,
       removeOnFail: false,
     }

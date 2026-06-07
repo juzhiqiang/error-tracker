@@ -19,16 +19,10 @@ export class IngestController {
   async ingest(@Param('projectId') projectId: string, @Body() body: { events: unknown[]; sentAt: string }) {
     try {
       this.ingestLimits.assertBodySize('ingest', body)
-      this.ingestLimits.assertRequestAllowed(projectId)
+      await this.ingestLimits.assertRequestAllowed(projectId)
       const validated = validateIngestBody(body)
-      this.ingestLimits.assertDailyQuota(projectId, validated.events.length)
-      const errorEvents = validated.events.filter((e: unknown) => (e as { type?: string }).type !== 'performance')
-      const perfEvents = validated.events.filter((e: unknown) => (e as { type?: string }).type === 'performance')
-
-      await Promise.all([
-        ...errorEvents.map((e) => this.ingestService.ingestEvent(projectId, e as never)),
-        perfEvents.length > 0 ? this.ingestService.ingestPerformance(projectId, perfEvents as never) : Promise.resolve(),
-      ])
+      await this.ingestLimits.assertDailyQuota(projectId, validated.events.length)
+      await this.ingestService.enqueueBatch(projectId, validated.events)
 
       this.metrics.recordIngestAccepted()
       return { ok: true }
@@ -44,7 +38,7 @@ export class IngestController {
   async ingestReplay(@Param('projectId') projectId: string, @Body() body: { eventId: string; events: unknown[] }) {
     try {
       this.ingestLimits.assertBodySize('replay', body)
-      this.ingestLimits.assertRequestAllowed(projectId)
+      await this.ingestLimits.assertRequestAllowed(projectId)
       const validated = validateReplayBody(body)
       await this.ingestService.ingestReplay(projectId, validated.eventId, validated.events)
       this.metrics.recordIngestAccepted()

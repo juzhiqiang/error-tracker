@@ -8,14 +8,19 @@ describe('QueueOperationsService', () => {
       getJobCounts: mock(async () => ({ waiting: 0, active: 0, failed: 1, delayed: 0 })),
       getJobs: mock(async () => [failedJob]),
     }
+    const ingestQueue = {
+      getJobCounts: mock(async () => ({ waiting: 3, active: 1, failed: 0, delayed: 0 })),
+      getJobs: mock(async () => []),
+    }
     const cleanupQueue = {
       getJobCounts: mock(async () => ({ waiting: 0, active: 0, failed: 0, delayed: 0 })),
       getJobs: mock(async () => []),
     }
 
-    const service = new QueueOperationsService(eventsQueue as never, cleanupQueue as never)
+    const service = new QueueOperationsService(ingestQueue as never, eventsQueue as never, cleanupQueue as never)
     const report = await service.list()
 
+    expect(report.ingest.counts.waiting).toBe(3)
     expect(report.events.counts.failed).toBe(1)
     expect(report.events.failedJobs[0]).toEqual({
       id: 'job-1',
@@ -30,9 +35,9 @@ describe('QueueOperationsService', () => {
   it('retries and removes jobs by queue name', async () => {
     const job = { retry: mock(async () => undefined), remove: mock(async () => undefined) }
     const queue = { getJob: mock(async () => job) }
-    const service = new QueueOperationsService(queue as never, queue as never)
+    const service = new QueueOperationsService(queue as never, queue as never, queue as never)
 
-    await service.retry('events', 'job-1')
+    await service.retry('ingest', 'job-1')
     await service.remove('cleanup', 'job-1')
 
     expect(job.retry).toHaveBeenCalled()

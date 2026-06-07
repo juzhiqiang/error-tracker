@@ -1,4 +1,6 @@
 import { HttpException, HttpStatus, Inject, Injectable, Optional, PayloadTooLargeException } from '@nestjs/common'
+import { InjectQueue } from '@nestjs/bullmq'
+import type { Queue } from 'bullmq'
 
 export type IngestBodyKind = 'ingest' | 'replay'
 
@@ -17,6 +19,12 @@ interface WindowCounter {
   count: number
 }
 
+interface RedisCounterClient {
+  incrby(key: string, amount: number): Promise<number>
+  decrby(key: string, amount: number): Promise<number>
+  pexpire(key: string, milliseconds: number): Promise<unknown>
+}
+
 @Injectable()
 export class IngestLimitsService {
   private readonly maxIngestBytes: number
@@ -27,7 +35,10 @@ export class IngestLimitsService {
   private readonly requestWindows = new Map<string, WindowCounter>()
   private readonly dailyUsage = new Map<string, WindowCounter>()
 
-  constructor(@Optional() @Inject(INGEST_LIMITS_OPTIONS) options: IngestLimitsOptions = {}) {
+  constructor(
+    @Optional() @Inject(INGEST_LIMITS_OPTIONS) options: IngestLimitsOptions = {},
+    @Optional() @InjectQueue('ingest') private readonly ingestQueue?: Queue,
+  ) {
     this.maxIngestBytes = options.maxIngestBytes ?? Number(process.env.INGEST_MAX_BODY_BYTES ?? 512 * 1024)
     this.maxReplayBytes = options.maxReplayBytes ?? Number(process.env.REPLAY_MAX_BODY_BYTES ?? 5 * 1024 * 1024)
     this.rateLimitWindowMs = options.rateLimitWindowMs ?? Number(process.env.INGEST_RATE_WINDOW_MS ?? 60_000)
@@ -43,35 +54,86 @@ export class IngestLimitsService {
     }
   }
 
-  assertRequestAllowed(projectId: string, now = Date.now()): void {
-    const window = this.currentCounter(this.requestWindows, projectId, now, this.rateLimitWindowMs)
-    if (window.count >= this.maxRequestsPerWindow) {
+  async assertRequestAllowed(projectId: string, now = Date.now()): Promise<void> {
+    const count = await this.incrementCounter(
+      `ingest:rate:${projectId}`,
+      1,
+      this.maxRequestsPerWindow,
+      this.rateLimitWindowMs,
+      now,
+      this.requestWindows,
+    )
+    if (count > this.maxRequestsPerWindow) {
       throw new HttpException('ingest rate limit exceeded', HttpStatus.TOO_MANY_REQUESTS)
     }
-    window.count += 1
   }
 
-  assertDailyQuota(projectId: string, eventCount: number, now = Date.now()): void {
-    const window = this.currentCounter(this.dailyUsage, projectId, now, this.msUntilNextUtcDay(now))
-    if (window.count + eventCount > this.dailyEventQuota) {
+  async assertDailyQuota(projectId: string, eventCount: number, now = Date.now()): Promise<void> {
+    const count = await this.incrementCounter(
+      `ingest:quota:${projectId}:${this.utcDayKey(now)}`,
+      eventCount,
+      this.dailyEventQuota,
+      this.msUntilNextUtcDay(now),
+      now,
+      this.dailyUsage,
+    )
+    if (count > this.dailyEventQuota) {
       throw new HttpException('daily ingest quota exceeded', HttpStatus.TOO_MANY_REQUESTS)
     }
-    window.count += eventCount
   }
 
-  private currentCounter(counters: Map<string, WindowCounter>, key: string, now: number, ttlMs: number): WindowCounter {
+  private async incrementCounter(
+    key: string,
+    amount: number,
+    limit: number,
+    ttlMs: number,
+    now: number,
+    fallbackCounters: Map<string, WindowCounter>,
+  ): Promise<number> {
+    const redis = await this.redisClient()
+    if (!redis) {
+      const count = this.incrementMemoryCounter(fallbackCounters, key, amount, now, ttlMs)
+      if (count > limit) this.incrementMemoryCounter(fallbackCounters, key, -amount, now, ttlMs)
+      return count
+    }
+
+    const count = await redis.incrby(key, amount)
+    if (count === amount) await redis.pexpire(key, ttlMs)
+    if (count > limit) {
+      await redis.decrby(key, amount)
+    }
+    return count
+  }
+
+  private incrementMemoryCounter(
+    counters: Map<string, WindowCounter>,
+    key: string,
+    amount: number,
+    now: number,
+    ttlMs: number,
+  ): number {
     const current = counters.get(key)
     if (!current || current.resetAt <= now) {
-      const next = { resetAt: now + ttlMs, count: 0 }
+      const next = { resetAt: now + ttlMs, count: amount }
       counters.set(key, next)
-      return next
+      return next.count
     }
-    return current
+    current.count += amount
+    return current.count
+  }
+
+  private async redisClient(): Promise<RedisCounterClient | null> {
+    const client = (this.ingestQueue as (Queue & { client?: Promise<RedisCounterClient> }) | undefined)?.client
+    return client ? await client : null
   }
 
   private msUntilNextUtcDay(now: number): number {
     const date = new Date(now)
     const nextDay = Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1)
     return nextDay - now
+  }
+
+  private utcDayKey(now: number): string {
+    return new Date(now).toISOString().slice(0, 10)
   }
 }

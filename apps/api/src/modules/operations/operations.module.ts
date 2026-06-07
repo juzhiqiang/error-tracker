@@ -5,7 +5,12 @@ import { QueueOperationsController } from './queue-operations.controller'
 import { QueueOperationsService } from './queue-operations.service'
 
 @Module({
-  imports: [BullModule.registerQueue({ name: 'events' }), BullModule.registerQueue({ name: 'cleanup' }), AccessModule],
+  imports: [
+    BullModule.registerQueue({ name: 'ingest' }),
+    BullModule.registerQueue({ name: 'events' }),
+    BullModule.registerQueue({ name: 'cleanup' }),
+    AccessModule,
+  ],
   controllers: [QueueOperationsController],
   providers: [QueueOperationsService],
 })

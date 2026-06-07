@@ -3,7 +3,7 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import type { JobType, Queue } from 'bullmq'
 
 const QUEUE_COUNT_TYPES: JobType[] = ['waiting', 'active', 'failed', 'delayed']
-export type OperationsQueueName = 'events' | 'cleanup'
+export type OperationsQueueName = 'ingest' | 'events' | 'cleanup'
 
 export interface QueueFailedJobSummary {
   id: string
@@ -20,13 +20,18 @@ export interface QueueOperationsSnapshot {
 @Injectable()
 export class QueueOperationsService {
   constructor(
+    @InjectQueue('ingest') private readonly ingestQueue: Queue,
     @InjectQueue('events') private readonly eventsQueue: Queue,
     @InjectQueue('cleanup') private readonly cleanupQueue: Queue,
   ) {}
 
   async list(): Promise<Record<OperationsQueueName, QueueOperationsSnapshot>> {
-    const [events, cleanup] = await Promise.all([this.describe(this.eventsQueue), this.describe(this.cleanupQueue)])
-    return { events, cleanup }
+    const [ingest, events, cleanup] = await Promise.all([
+      this.describe(this.ingestQueue),
+      this.describe(this.eventsQueue),
+      this.describe(this.cleanupQueue),
+    ])
+    return { ingest, events, cleanup }
   }
 
   async retry(queueName: OperationsQueueName, jobId: string): Promise<{ ok: true }> {
@@ -68,6 +73,7 @@ export class QueueOperationsService {
   }
 
   private queueFor(queueName: OperationsQueueName): Queue {
+    if (queueName === 'ingest') return this.ingestQueue
     if (queueName === 'events') return this.eventsQueue
     if (queueName === 'cleanup') return this.cleanupQueue
     throw new NotFoundException('Queue not found')

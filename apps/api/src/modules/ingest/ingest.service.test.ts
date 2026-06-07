@@ -85,7 +85,28 @@ function hashIssueUserKey(issueId: string, userKey: string): string {
   return createHash('md5').update(`${issueId}:${userKey}`).digest('hex')
 }
 
+function issueFingerprint(query: unknown): string | undefined {
+  return sqlText(query).match(/VALUES \(project-1, ([a-f0-9]+)/)?.[1]
+}
+
 describe('IngestService', () => {
+  it('enqueues validated ingest batches for async processing', async () => {
+    const ingestQueue = { add: mock(async () => undefined) }
+    const service = new IngestService({} as never, { add: mock(async () => undefined) } as never, {} as never, ingestQueue as never)
+    const event = {
+      eventId: 'event-1',
+      timestamp: Date.now(),
+      level: 'error',
+      message: 'boom',
+      fingerprint: 'client-fp',
+    }
+
+    await service.enqueueBatch('project-1', [event])
+
+    expect(ingestQueue.add.mock.calls[0][0]).toBe('ingest-batch')
+    expect(ingestQueue.add.mock.calls[0][1]).toEqual({ projectId: 'project-1', events: [event] })
+  })
+
   it('links inserted events to the issue id returned by raw SQL execute', async () => {
     const db = makeIngestDb()
     const queue = { add: mock(async () => undefined) }
@@ -251,5 +272,33 @@ describe('IngestService', () => {
     expect(db.issueUserValues[0]).toEqual({ issueId: 'issue-1', userHash: hashIssueUserKey('issue-1', 'id:user-1') })
     expect(db.issueUserReturning).toHaveBeenCalledTimes(1)
     expect(db.userCountUpdates).toHaveLength(0)
+  })
+
+  it('normalizes dynamic message values in stack-based server fingerprints', async () => {
+    const firstDb = makeIngestDb({ issueId: 'issue-1' })
+    const secondDb = makeIngestDb({ issueId: 'issue-2' })
+    const queue = { add: mock(async () => undefined) }
+    const firstService = new IngestService(firstDb.db as never, queue as never, {} as never)
+    const secondService = new IngestService(secondDb.db as never, queue as never, {} as never)
+    const stacktrace = [{ function: 'submitOrder', filename: '/app/src/checkout.ts', lineno: 42, colno: 7 }]
+
+    await firstService.ingestEvent('project-1', {
+      eventId: 'event-1',
+      timestamp: Date.now(),
+      level: 'error',
+      message: 'Checkout failed for order 123 user 550e8400-e29b-41d4-a716-446655440000',
+      fingerprint: 'client-fp',
+      stacktrace,
+    })
+    await secondService.ingestEvent('project-1', {
+      eventId: 'event-2',
+      timestamp: Date.now(),
+      level: 'error',
+      message: 'Checkout failed for order 456 user 550e8400-e29b-41d4-a716-446655440999',
+      fingerprint: 'client-fp',
+      stacktrace,
+    })
+
+    expect(issueFingerprint(firstDb.issueUpserts[0])).toBe(issueFingerprint(secondDb.issueUpserts[0]))
   })
 })
