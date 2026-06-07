@@ -8,6 +8,7 @@ describe('SDK docs navigation', () => {
       { labelKey: 'settings.step.init', href: '/docs#init-dsn', stepKey: 'settings.step', anchor: 'init-dsn' },
       { labelKey: 'settings.step.sourcemap', href: '/docs#upload-sourcemap', stepKey: 'settings.step', anchor: 'upload-sourcemap' },
       { labelKey: 'settings.step.webhook', href: '/docs#alert-webhook', stepKey: 'settings.step', anchor: 'alert-webhook' },
+      { labelKey: 'settings.step.verify', href: '/docs#verify-ingestion', stepKey: 'settings.step', anchor: 'verify-ingestion' },
     ])
   })
 
@@ -19,6 +20,9 @@ describe('SDK docs navigation', () => {
     }
 
     expect(sectionIds.has('verify-ingestion')).toBe(true)
+    expect(sectionIds.has('issue-workflow')).toBe(true)
+    expect(sectionIds.has('privacy-controls')).toBe(true)
+    expect(sectionIds.has('release-regressions')).toBe(true)
     expect(sectionIds.has('self-monitoring')).toBe(true)
     expect(sectionIds.has('ai-advisor')).toBe(true)
     expect(sectionIds.has('troubleshooting')).toBe(true)

@@ -8,11 +8,13 @@ import {
   CheckCircle2,
   Code2,
   FileCode2,
+  GitBranch,
   KeyRound,
   LifeBuoy,
   PackageCheck,
   RadioTower,
   ShieldCheck,
+  Users,
 } from 'lucide-react'
 import { PageHeader, Panel } from '@/components/panel'
 import { useI18n, type Locale } from '@/lib/i18n'
@@ -26,6 +28,9 @@ const sectionIcons = {
   'upload-sourcemap': FileCode2,
   'alert-webhook': BellRing,
   'verify-ingestion': CheckCircle2,
+  'issue-workflow': Users,
+  'privacy-controls': ShieldCheck,
+  'release-regressions': GitBranch,
   'self-monitoring': Activity,
   'ai-advisor': BrainCircuit,
   troubleshooting: LifeBuoy,
@@ -40,6 +45,7 @@ const docsCopy: Record<
     backToSettings: string
     checklistTitle: string
     checklistDescription: string
+    introCards: Array<{ title: string; description: string }>
     sections: Record<string, { title: string; description: string; bullets: string[]; code?: string; note?: string }>
   }
 > = {
@@ -51,14 +57,29 @@ const docsCopy: Record<
     backToSettings: 'Back to settings',
     checklistTitle: 'Setup path',
     checklistDescription: 'These steps match the project setup checklist in Settings.',
+    introCards: [
+      {
+        title: 'Instrument once',
+        description: 'Capture errors, resource failures, blank screens, Web Vitals, breadcrumbs, replay, release, and runtime environment from the SDK.',
+      },
+      {
+        title: 'Triage as a team',
+        description: 'Group events into issues, assign owners, comment on findings, merge or split noisy groups, and mark the release that fixed the problem.',
+      },
+      {
+        title: 'Close the loop',
+        description: 'Route alerts to chat, detect regressions after resolved issues reappear, and keep PII controls visible before data leaves the app.',
+      },
+    ],
     sections: {
       'quick-start': {
         title: 'Quick start',
-        description: 'Create a project, copy the DSN, install the SDK, and send one test event before adding release automation.',
+        description: 'Create a project, copy the DSN, install the SDK, and send one test event before adding alerts and release automation.',
         bullets: [
           'Use one project per frontend app or service boundary.',
           'Keep DSN tokens in environment variables for CI and deployed environments.',
           'Set environment and release on every deploy so issues can be filtered by rollout.',
+          'After the first event appears, configure chat alerts and invite the teammates who will triage production issues.',
         ],
         code: `bun add @error-tracker/sdk
 
@@ -145,20 +166,18 @@ ErrorTracker.addBreadcrumb({
       },
       'alert-webhook': {
         title: 'Configure alert webhook',
-        description: 'Connect alert delivery after the SDK sends events and issue grouping is verified.',
+        description: 'Connect alert delivery after SDK ingestion and issue grouping are verified.',
         bullets: [
-          'Start with fatal and error thresholds before routing noisy warning-level issues.',
-          'Use separate projects or webhook rules for production and staging.',
+          'Settings accepts Slack, Feishu/Lark, DingTalk, and WeCom webhook URLs and formats payloads automatically.',
+          'Alerts fire for new issues, resolved issue regressions, 10 minute event spikes, and affected-user thresholds.',
+          'Use separate projects or webhook routes for production and staging.',
           'Test the webhook with a controlled exception before relying on it for incidents.',
         ],
-        code: `POST https://chat.example.com/error-tracker
-Content-Type: application/json
+        code: `Settings -> Access -> IM alert delivery
 
-{
-  "issue": "{{issue.title}}",
-  "level": "{{issue.level}}",
-  "url": "{{issue.url}}"
-}`,
+Webhook URL: https://hooks.slack.com/services/...
+10 min events: 20
+Users affected: 5`,
       },
       'verify-ingestion': {
         title: 'Verify ingestion',
@@ -171,6 +190,58 @@ Content-Type: application/json
         code: `setTimeout(() => {
   throw new Error('error-tracker verification event')
 }, 1000)`,
+      },
+      'issue-workflow': {
+        title: 'Issue workflow',
+        description: 'Use the issue detail page as the shared incident workspace after grouping is stable.',
+        bullets: [
+          'Assign an owner from project members so every unresolved issue has a responsible person.',
+          'Use comments to keep hypotheses, investigation notes, and release decisions attached to the issue.',
+          'Mark fixed in a specific release when the patch ships; future matching events reopen the issue as a regression.',
+          'Merge duplicate issues when fingerprints split, or split selected event samples when unrelated errors were grouped together.',
+          'Use release, environment, and tag facets to see whether the issue is concentrated in one rollout, browser, tenant, or feature flag.',
+        ],
+        code: `Issue detail -> Workflow status
+
+Assignee: on-call-web
+Fixed in release: web@2.9.3
+Facets: release / environment / tags
+Manual grouping: merge target id or split selected events`,
+      },
+      'privacy-controls': {
+        title: 'Privacy controls',
+        description: 'Keep telemetry useful while limiting sensitive data exposure.',
+        bullets: [
+          'Ingest scrubs common PII values from messages, stack traces, breadcrumbs, request, user, tags, and context before storage.',
+          'Send project tokens with the x-error-tracker-token header; avoid putting ingest tokens in URLs.',
+          'Replay masks inputs and text by default, and supports block selectors for sensitive regions.',
+          'External AI analysis is per-project opt-in and only receives scrubbed context.',
+          'Use beforeSend to drop or coarsen fields that your policy does not allow collecting.',
+        ],
+        code: `init({
+  dsn,
+  token,
+  beforeSend(event) {
+    delete event.request?.headers
+    delete event.context?.environment?.userAgent?.raw
+    return event
+  },
+})`,
+        note: 'Prefer stable identifiers and coarse tags over raw customer data. The dashboard is more useful when context is consistent and less sensitive.',
+      },
+      'release-regressions': {
+        title: 'Release and regression loop',
+        description: 'Connect releases, sourcemaps, fixed status, and regression alerts into one verification path.',
+        bullets: [
+          'Use the same release string in SDK initialization, sourcemap upload, and fixed-in-release workflow actions.',
+          'When a resolved issue receives another matching event, ingest reopens it and records the regressed release.',
+          'Regression alerts include the release when available, so responders can compare the fixed and regressed versions.',
+          'Facets show whether a regression is isolated to one release or environment before you roll back broadly.',
+        ],
+        code: `release: 'web@2.9.3'
+
+Fix issue -> Fixed in release web@2.9.3
+Next matching event -> status unresolved, regressed in web@2.9.4`,
       },
       'self-monitoring': {
         title: 'Monitor this platform',
@@ -221,6 +292,20 @@ OPENAI_BASE_URL=https://api.openai.com/v1`,
     },
   },
   zh: {
+    introCards: [
+      {
+        title: '一次接入',
+        description: 'SDK 统一采集错误、资源加载失败、白屏检测、Web Vitals、路径轨迹、回放、版本和运行环境。',
+      },
+      {
+        title: '团队排障',
+        description: '事件会聚合成问题，团队可以指派负责人、评论结论、合并拆分分组，并标记修复版本。',
+      },
+      {
+        title: '形成闭环',
+        description: '告警进入 IM，resolved 问题复发会被标记为回归，隐私控制在数据离开应用前生效。',
+      },
+    ],
     eyebrow: 'SDK 文档',
     title: '在生产应用中接入 Error Tracker',
     description: '用这份文档完成 DSN、版本、sourcemap、告警、路径轨迹、回放和验证事件的接入。',
@@ -338,6 +423,58 @@ Content-Type: application/json
   throw new Error('error-tracker verification event')
 }, 1000)`,
       },
+      'issue-workflow': {
+        title: 'Issue 工作流',
+        description: '问题详情页是团队排障的共享工作台，而不只是事件列表。',
+        bullets: [
+          '从项目成员中指派负责人，让每个 unresolved 问题都有明确归属。',
+          '用评论沉淀假设、排查结论和修复决策。',
+          '补丁发布后标记 fixed in release；之后同一问题复发会自动重新打开并标记回归。',
+          '指纹拆裂时可以手动合并，误聚合时可以选择事件样本拆分成新 issue。',
+          '通过 release、environment、tags facets 判断问题是否集中在某个版本、环境、租户或功能开关。',
+        ],
+        code: `问题详情 -> Workflow status
+
+Assignee: on-call-web
+Fixed in release: web@2.9.3
+Facets: release / environment / tags
+Manual grouping: merge target id or split selected events`,
+      },
+      'privacy-controls': {
+        title: '隐私控制',
+        description: '让遥测数据保留排障价值，同时减少敏感信息暴露。',
+        bullets: [
+          'ingest 会在入库前对 message、stacktrace、breadcrumbs、request、user、tags、context 做常见 PII 脱敏。',
+          '项目 token 通过 x-error-tracker-token header 发送，避免把 token 放在 URL 中。',
+          '回放默认 mask 输入和文本，也支持用 block selector 排除敏感区域。',
+          '外部 AI 分析按项目 opt-in，只发送脱敏后的上下文。',
+          '可用 beforeSend 删除或粗化策略不允许采集的字段。',
+        ],
+        code: `init({
+  dsn,
+  token,
+  beforeSend(event) {
+    delete event.request?.headers
+    delete event.context?.environment?.userAgent?.raw
+    return event
+  },
+})`,
+        note: '优先上报稳定标识和粗粒度标签，不要上传原始客户资料。上下文越稳定、越少敏感信息，控制台越好用。',
+      },
+      'release-regressions': {
+        title: '版本与回归闭环',
+        description: '把 release、sourcemap、修复状态和回归告警连成一条验证路径。',
+        bullets: [
+          'SDK 初始化、sourcemap 上传、fixed-in-release 操作使用同一个 release 字符串。',
+          'resolved 问题再次收到匹配事件时，ingest 会重新打开并记录 regressed release。',
+          '回归告警会尽量带上 release，方便响应人比较修复版本和复发版本。',
+          'facets 能先判断回归是否只影响某个 release 或 environment，再决定是否扩大回滚范围。',
+        ],
+        code: `release: 'web@2.9.3'
+
+Fix issue -> Fixed in release web@2.9.3
+Next matching event -> status unresolved, regressed in web@2.9.4`,
+      },
       'self-monitoring': {
         title: '监控平台自身',
         description: '当 Error Tracker 需要观察自己的控制台错误、API 故障和 Web Vitals 时，使用一个独立项目承接自监控数据。',
@@ -407,6 +544,21 @@ export default function DocsPage() {
           </Link>
         }
       />
+
+      <section className="grid gap-3 md:grid-cols-3">
+        {copy.introCards.map((card, index) => {
+          const Icon = [RadioTower, Users, ShieldCheck][index] ?? RadioTower
+          return (
+            <article key={card.title} className="app-panel p-4">
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-md border border-primary/30 bg-primary/10 text-indigo-300">
+                <Icon className="h-4 w-4" />
+              </div>
+              <h2 className="text-sm font-semibold text-slate-100">{card.title}</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-400">{card.description}</p>
+            </article>
+          )
+        })}
+      </section>
 
       <div className="grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
         <aside className="lg:sticky lg:top-24 lg:self-start">

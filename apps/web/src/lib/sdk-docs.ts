@@ -16,6 +16,7 @@ export const sdkSetupGuide: SdkSetupStep[] = [
   { labelKey: 'settings.step.init', href: '/docs#init-dsn', stepKey: 'settings.step', anchor: 'init-dsn' },
   { labelKey: 'settings.step.sourcemap', href: '/docs#upload-sourcemap', stepKey: 'settings.step', anchor: 'upload-sourcemap' },
   { labelKey: 'settings.step.webhook', href: '/docs#alert-webhook', stepKey: 'settings.step', anchor: 'alert-webhook' },
+  { labelKey: 'settings.step.verify', href: '/docs#verify-ingestion', stepKey: 'settings.step', anchor: 'verify-ingestion' },
 ]
 
 export const sdkDocsSections: SdkDocsSection[] = [
@@ -26,6 +27,9 @@ export const sdkDocsSections: SdkDocsSection[] = [
   { id: 'upload-sourcemap', titleKey: 'docs.section.sourcemap.title', descriptionKey: 'docs.section.sourcemap.description' },
   { id: 'alert-webhook', titleKey: 'docs.section.webhook.title', descriptionKey: 'docs.section.webhook.description' },
   { id: 'verify-ingestion', titleKey: 'docs.section.verify.title', descriptionKey: 'docs.section.verify.description' },
+  { id: 'issue-workflow', titleKey: 'docs.section.workflow.title', descriptionKey: 'docs.section.workflow.description' },
+  { id: 'privacy-controls', titleKey: 'docs.section.privacy.title', descriptionKey: 'docs.section.privacy.description' },
+  { id: 'release-regressions', titleKey: 'docs.section.regression.title', descriptionKey: 'docs.section.regression.description' },
   { id: 'self-monitoring', titleKey: 'docs.section.selfMonitoring.title', descriptionKey: 'docs.section.selfMonitoring.description' },
   { id: 'ai-advisor', titleKey: 'docs.section.aiAdvisor.title', descriptionKey: 'docs.section.aiAdvisor.description' },
   { id: 'troubleshooting', titleKey: 'docs.section.troubleshooting.title', descriptionKey: 'docs.section.troubleshooting.description' },

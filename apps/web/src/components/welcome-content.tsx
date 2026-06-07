@@ -44,6 +44,8 @@ const runtimeCards = [
   { icon: Fingerprint, titleKey: 'welcome.runtime.queue.title', bodyKey: 'welcome.runtime.queue.body' },
   { icon: MousePointerClick, titleKey: 'welcome.runtime.replay.title', bodyKey: 'welcome.runtime.replay.body' },
   { icon: Activity, titleKey: 'welcome.runtime.vitals.title', bodyKey: 'welcome.runtime.vitals.body' },
+  { icon: RadioTower, titleKey: 'welcome.runtime.alerts.title', bodyKey: 'welcome.runtime.alerts.body' },
+  { icon: ShieldCheck, titleKey: 'welcome.runtime.privacy.title', bodyKey: 'welcome.runtime.privacy.body' },
 ] as const
 
 const contextCards = [
@@ -67,6 +69,8 @@ const stackKeys = [
   'welcome.stack.replay',
   'welcome.stack.vitals',
   'welcome.stack.release',
+  'welcome.stack.workflow',
+  'welcome.stack.privacy',
 ]
 
 const consoleKeys = [
