@@ -52,41 +52,59 @@ export class IngestService {
   ) {}
 
   async ingestEvent(projectId: string, payload: IncomingEvent): Promise<void> {
-    const serverFingerprint = this.computeServerFingerprint(payload)
+    const issueId = await this.db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${payload.eventId}), 0)`)
 
-    const result = await this.db.execute(sql`
-      INSERT INTO issues (project_id, fingerprint, title, level, first_seen, last_seen, count, user_count)
-      VALUES (${projectId}, ${serverFingerprint}, ${payload.message.slice(0, 255)}, ${payload.level}, now(), now(), 1, 1)
-      ON CONFLICT (project_id, fingerprint) DO UPDATE SET
-        last_seen = now(),
-        count = issues.count + 1,
-        user_count = issues.user_count + 1,
-        status = CASE WHEN issues.status = 'resolved' THEN 'unresolved' ELSE issues.status END
-      RETURNING id
-    `)
+      const [existingEvent] = await tx.select({ id: events.id }).from(events).where(eq(events.id, payload.eventId)).limit(1)
+      if (existingEvent) return null
 
-    const issueId =
-      (result as unknown as { rows?: { id: string }[] }).rows?.[0]?.id ??
-      (result as unknown as { id: string }[])[0]?.id
+      const serverFingerprint = this.computeServerFingerprint(payload)
 
-    await this.db.insert(events).values({
-      id: payload.eventId,
-      issueId,
-      projectId,
-      timestamp: new Date(payload.timestamp),
-      level: payload.level,
-      message: payload.message,
-      stacktrace: payload.stacktrace ?? null,
-      breadcrumbs: payload.breadcrumbs ? scrubPii(payload.breadcrumbs) : null,
-      request: payload.request ? scrubPii(payload.request) : null,
-      user: payload.user ? scrubPii(payload.user) : null,
-      tags: payload.tags ? scrubPii(payload.tags) : null,
-      context: payload.context ? scrubPii(payload.context) : null,
-      environment: payload.environment,
-      release: payload.release,
+      const result = await tx.execute(sql`
+        INSERT INTO issues (project_id, fingerprint, title, level, first_seen, last_seen, count, user_count)
+        VALUES (${projectId}, ${serverFingerprint}, ${payload.message.slice(0, 255)}, ${payload.level}, now(), now(), 1, 1)
+        ON CONFLICT (project_id, fingerprint) DO UPDATE SET
+          last_seen = now(),
+          count = issues.count + 1,
+          user_count = issues.user_count + 1,
+          status = CASE WHEN issues.status = 'resolved' THEN 'unresolved' ELSE issues.status END
+        RETURNING id
+      `)
+
+      const issueId =
+        (result as unknown as { rows?: { id: string }[] }).rows?.[0]?.id ??
+        (result as unknown as { id: string }[])[0]?.id
+
+      await tx
+        .insert(events)
+        .values({
+          id: payload.eventId,
+          issueId,
+          projectId,
+          timestamp: new Date(payload.timestamp),
+          level: payload.level,
+          message: payload.message,
+          stacktrace: payload.stacktrace ?? null,
+          breadcrumbs: payload.breadcrumbs ? scrubPii(payload.breadcrumbs) : null,
+          request: payload.request ? scrubPii(payload.request) : null,
+          user: payload.user ? scrubPii(payload.user) : null,
+          tags: payload.tags ? scrubPii(payload.tags) : null,
+          context: payload.context ? scrubPii(payload.context) : null,
+          environment: payload.environment,
+          release: payload.release,
+        })
+        .onConflictDoNothing()
+
+      await tx
+        .update(replays)
+        .set({ eventId: payload.eventId })
+        .where(and(isNull(replays.eventId), eq(replays.storageUrl, this.replayStorageKey(projectId, payload.eventId))))
+
+      return issueId
     })
 
-    await this.linkReplayIfPresent(projectId, payload.eventId)
+    if (!issueId) return
+
     await this.eventsQueue.add('check-alert', { projectId, issueId }, this.alertJobOptions())
   }
 
@@ -120,13 +138,6 @@ export class IngestService {
       .insert(replays)
       .values({ eventId: event ? eventId : null, storageUrl: key, duration })
       .onConflictDoNothing()
-  }
-
-  private async linkReplayIfPresent(projectId: string, eventId: string): Promise<void> {
-    await this.db
-      .update(replays)
-      .set({ eventId })
-      .where(and(isNull(replays.eventId), eq(replays.storageUrl, this.replayStorageKey(projectId, eventId))))
   }
 
   private replayStorageKey(projectId: string, eventId: string): string {
