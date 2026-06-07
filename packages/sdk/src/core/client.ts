@@ -20,7 +20,7 @@ export class ErrorTrackerClient {
     this.options = { sampleRate: 1.0, ...options }
     this.breadcrumbs = new BreadcrumbManager(100)
     this.dedupe = new DedupeFilter(5000)
-    this.transport = new HttpTransport(options.dsn)
+    this.transport = new HttpTransport(options.dsn, options.token)
     this.scope = new Scope()
     this.queue = new EventQueue(
       options.queue?.maxSize ?? 50,

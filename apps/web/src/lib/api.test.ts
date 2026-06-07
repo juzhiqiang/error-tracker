@@ -56,3 +56,24 @@ describe('api AI advisor', () => {
     expect(calls.every((call) => call.init?.method === 'POST')).toBe(true)
   })
 })
+
+describe('api project privacy settings', () => {
+  it('updates the project AI analysis opt-in with PATCH', async () => {
+    let capturedUrl = ''
+    let capturedInit: RequestInit | undefined
+    global.fetch = mock(async (input, init) => {
+      capturedUrl = String(input)
+      capturedInit = init
+      return new Response(JSON.stringify([{ id: 'project-1', aiAnalysisEnabled: true }]), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }) as typeof fetch
+
+    await api.projects.updateAiAnalysis('project-1', true)
+
+    expect(capturedUrl).toBe('http://localhost:3002/api/projects/project-1/ai-analysis')
+    expect(capturedInit?.method).toBe('PATCH')
+    expect(capturedInit?.body).toBe(JSON.stringify({ enabled: true }))
+  })
+})

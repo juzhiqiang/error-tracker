@@ -256,7 +256,8 @@ export function WelcomeContent({ user }: { user?: SessionUserSummary | null }) {
           <pre>{`import { init } from '@error-tracker/sdk'
 
 init({
-  dsn: 'https://api.example.com/ingest/project/token',
+  dsn: 'https://api.example.com/ingest/project',
+  token: 'project-token',
   environment: 'production',
   release: 'web@2.8.1',
   integrations: {

@@ -13,6 +13,7 @@ export function SelfMonitoringProvider() {
 
     const options = getWebSelfMonitoringOptions({
       NEXT_PUBLIC_ERROR_TRACKER_DSN: process.env.NEXT_PUBLIC_ERROR_TRACKER_DSN,
+      NEXT_PUBLIC_ERROR_TRACKER_TOKEN: process.env.NEXT_PUBLIC_ERROR_TRACKER_TOKEN,
       NEXT_PUBLIC_ERROR_TRACKER_SELF_MONITORING_ENABLED:
         process.env.NEXT_PUBLIC_ERROR_TRACKER_SELF_MONITORING_ENABLED,
       NEXT_PUBLIC_ERROR_TRACKER_ENVIRONMENT: process.env.NEXT_PUBLIC_ERROR_TRACKER_ENVIRONMENT,
@@ -24,6 +25,7 @@ export function SelfMonitoringProvider() {
       initialized = true
       const client = init({
         dsn: options.dsn,
+        token: options.token,
         environment: options.environment,
         release: options.release,
         beforeSend(event: ErrorEvent) {

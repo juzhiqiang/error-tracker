@@ -6,6 +6,7 @@ export const SELF_MONITORING_RUNTIME = Symbol('SELF_MONITORING_RUNTIME')
 
 export interface SelfMonitoringEnv {
   ERROR_TRACKER_DSN?: string
+  ERROR_TRACKER_TOKEN?: string
   ERROR_TRACKER_SELF_MONITORING_ENABLED?: string
   ERROR_TRACKER_ENVIRONMENT?: string
   ERROR_TRACKER_RELEASE?: string
@@ -80,6 +81,7 @@ export class SelfMonitoringService implements OnModuleInit, OnModuleDestroy {
     if (!this.isEnabled()) return
     const dsn = this.dsn()
     if (!dsn || !this.sender) return
+    const destination = ingestDestination(dsn, this.env.ERROR_TRACKER_TOKEN)
 
     const error = normalizeError(exception)
     const statusCode = context.statusCode ?? (exception instanceof HttpException ? exception.getStatus() : 500)
@@ -106,9 +108,12 @@ export class SelfMonitoringService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      await this.sender(dsn, {
+      await this.sender(destination.url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(destination.token ? { 'x-error-tracker-token': destination.token } : {}),
+        },
         body: JSON.stringify({
           events: [event],
           sentAt: new Date(timestamp).toISOString(),
@@ -180,6 +185,23 @@ function redactText(value: string): string {
 function optionalTrim(value: string | undefined): string | undefined {
   const trimmed = value?.trim()
   return trimmed || undefined
+}
+
+function ingestDestination(dsn: string, explicitToken?: string): { url: string; token?: string } {
+  const configuredToken = optionalTrim(explicitToken)
+  try {
+    const url = new URL(dsn)
+    const parts = url.pathname.split('/').filter(Boolean)
+    const ingestIndex = parts.lastIndexOf('ingest')
+    const token = ingestIndex >= 0 ? parts[ingestIndex + 2] : undefined
+    if (token) {
+      url.pathname = `/${parts.slice(0, ingestIndex + 2).join('/')}`
+      return { url: url.toString(), token: configuredToken ?? token }
+    }
+  } catch {
+    return { url: dsn, token: configuredToken }
+  }
+  return { url: dsn, token: configuredToken }
 }
 
 function isExplicitlyDisabled(value: string | undefined): boolean {

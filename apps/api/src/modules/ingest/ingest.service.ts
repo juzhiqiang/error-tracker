@@ -66,10 +66,12 @@ export class IngestService {
       if (existingEvent) return null
 
       const serverFingerprint = this.computeServerFingerprint(payload)
+      const scrubbedMessage = scrubPii(payload.message)
+      const scrubbedStacktrace = payload.stacktrace ? scrubPii(payload.stacktrace) : null
 
       const result = await tx.execute(sql`
         INSERT INTO issues (project_id, fingerprint, title, level, first_seen, last_seen, count, user_count)
-        VALUES (${projectId}, ${serverFingerprint}, ${payload.message.slice(0, 255)}, ${payload.level}, now(), now(), 1, 0)
+        VALUES (${projectId}, ${serverFingerprint}, ${scrubbedMessage.slice(0, 255)}, ${payload.level}, now(), now(), 1, 0)
         ON CONFLICT (project_id, fingerprint) DO UPDATE SET
           last_seen = now(),
           count = issues.count + 1,
@@ -105,8 +107,8 @@ export class IngestService {
           projectId,
           timestamp: new Date(payload.timestamp),
           level: payload.level,
-          message: payload.message,
-          stacktrace: payload.stacktrace ?? null,
+          message: scrubbedMessage,
+          stacktrace: scrubbedStacktrace,
           breadcrumbs: payload.breadcrumbs ? scrubPii(payload.breadcrumbs) : null,
           request: payload.request ? scrubPii(payload.request) : null,
           user: payload.user ? scrubPii(payload.user) : null,

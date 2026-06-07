@@ -19,7 +19,8 @@ describe('SelfMonitoringService', () => {
     const sender = mock(async () => new Response('{}', { status: 202 }))
     const service = new SelfMonitoringService(
       {
-        ERROR_TRACKER_DSN: 'http://localhost:3002/ingest/self-project/self-token',
+        ERROR_TRACKER_DSN: 'http://localhost:3002/ingest/self-project',
+        ERROR_TRACKER_TOKEN: 'self-token',
         ERROR_TRACKER_ENVIRONMENT: 'production',
         ERROR_TRACKER_RELEASE: 'api@1.2.3',
       },
@@ -34,8 +35,9 @@ describe('SelfMonitoringService', () => {
 
     expect(sender).toHaveBeenCalledTimes(1)
     const [url, init] = sender.mock.calls[0]
-    expect(url).toBe('http://localhost:3002/ingest/self-project/self-token')
+    expect(url).toBe('http://localhost:3002/ingest/self-project')
     expect(init?.method).toBe('POST')
+    expect(new Headers(init?.headers).get('x-error-tracker-token')).toBe('self-token')
     const body = JSON.parse(String(init?.body))
     expect(body.sentAt).toBe('2024-05-31T16:08:37.000Z')
     expect(body.events).toHaveLength(1)

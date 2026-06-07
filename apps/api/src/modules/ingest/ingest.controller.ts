@@ -13,10 +13,38 @@ export class IngestController {
     private readonly metrics: MetricsService,
   ) {}
 
-  @Post(':projectId/:token')
+  @Post(':projectId')
   @UseGuards(DsnAuthGuard)
   @HttpCode(202)
   async ingest(@Param('projectId') projectId: string, @Body() body: { events: unknown[]; sentAt: string }) {
+    return this.handleIngest(projectId, body)
+  }
+
+  @Post(':projectId/replay')
+  @UseGuards(DsnAuthGuard)
+  @HttpCode(202)
+  async ingestReplay(@Param('projectId') projectId: string, @Body() body: { eventId: string; events: unknown[] }) {
+    return this.handleReplay(projectId, body)
+  }
+
+  @Post(':projectId/:token')
+  @UseGuards(DsnAuthGuard)
+  @HttpCode(202)
+  async ingestWithPathToken(@Param('projectId') projectId: string, @Body() body: { events: unknown[]; sentAt: string }) {
+    return this.handleIngest(projectId, body)
+  }
+
+  @Post(':projectId/:token/replay')
+  @UseGuards(DsnAuthGuard)
+  @HttpCode(202)
+  async ingestReplayWithPathToken(
+    @Param('projectId') projectId: string,
+    @Body() body: { eventId: string; events: unknown[] },
+  ) {
+    return this.handleReplay(projectId, body)
+  }
+
+  private async handleIngest(projectId: string, body: { events: unknown[]; sentAt: string }) {
     try {
       this.ingestLimits.assertBodySize('ingest', body)
       await this.ingestLimits.assertRequestAllowed(projectId)
@@ -32,10 +60,7 @@ export class IngestController {
     }
   }
 
-  @Post(':projectId/:token/replay')
-  @UseGuards(DsnAuthGuard)
-  @HttpCode(202)
-  async ingestReplay(@Param('projectId') projectId: string, @Body() body: { eventId: string; events: unknown[] }) {
+  private async handleReplay(projectId: string, body: { eventId: string; events: unknown[] }) {
     try {
       this.ingestLimits.assertBodySize('replay', body)
       await this.ingestLimits.assertRequestAllowed(projectId)

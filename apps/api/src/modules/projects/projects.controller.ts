@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Param, Req } from '@nestjs/common'
+import { Controller, Get, Post, Patch, Body, UseGuards, Param, Req } from '@nestjs/common'
 import { ProjectsService } from './projects.service'
 import { SessionGuard } from '../../common/guards/session.guard'
 import { ProjectAccessGuard } from '../access/project-access.guard'
@@ -51,6 +51,30 @@ export class ProjectsController {
         targetType: 'project',
         targetId: project.id,
         metadata: null,
+      })
+    }
+    return updated
+  }
+
+  @Patch(':id/ai-analysis')
+  @ProjectRoles('owner', 'admin')
+  @UseGuards(SessionGuard, ProjectAccessGuard)
+  async updateAiAnalysis(
+    @Param('id') id: string,
+    @Body() body: { enabled?: boolean },
+    @Req() req: SessionRequest,
+  ) {
+    const enabled = body.enabled === true
+    const updated = await this.projectsService.updateAiAnalysisEnabled(id, enabled)
+    const project = updated[0]
+    if (project?.id) {
+      await this.auditLogService.record({
+        actorUserId: req.session?.user?.id ?? null,
+        projectId: project.id,
+        action: 'project.ai_analysis_updated',
+        targetType: 'project',
+        targetId: project.id,
+        metadata: { enabled },
       })
     }
     return updated

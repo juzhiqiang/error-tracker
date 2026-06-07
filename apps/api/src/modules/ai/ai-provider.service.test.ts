@@ -35,7 +35,12 @@ describe('AiProviderService', () => {
       { sender },
     )
 
-    const result = await service.generate('issue', '{"title":"boom"}', { summary: 'fallback', recommendations: [] } as never)
+    const result = await service.generate(
+      'issue',
+      '{"title":"boom"}',
+      { summary: 'fallback', recommendations: [] } as never,
+      { allowExternal: true },
+    )
 
     expect(result.summary).toBe('model summary')
     expect(result.provider).toBe('openai')
@@ -44,5 +49,22 @@ describe('AiProviderService', () => {
     expect(url).toBe('https://api.openai.com/v1/responses')
     expect(new Headers(init?.headers).get('Authorization')).toBe('Bearer sk-test')
     expect(String(init?.body)).toContain('"json_schema"')
+  })
+
+  it('does not call OpenAI unless external analysis is explicitly allowed', async () => {
+    const sender = mock(async () => new Response('{}', { status: 200 }))
+    const service = new AiProviderService(
+      { OPENAI_API_KEY: 'sk-test', OPENAI_MODEL: 'gpt-test' },
+      { sender },
+    )
+    const fallback = { summary: 'local', recommendations: [] }
+
+    await expect(service.generate('issue', '{}', fallback as never)).resolves.toEqual({
+      ...fallback,
+      provider: 'local',
+      model: 'local-rules',
+    })
+
+    expect(sender).not.toHaveBeenCalled()
   })
 })

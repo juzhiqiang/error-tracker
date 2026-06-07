@@ -62,7 +62,8 @@ const docsCopy: Record<
         ],
         code: `bun add @error-tracker/sdk
 
-ERROR_TRACKER_DSN=https://api.example.com/ingest/project/token
+ERROR_TRACKER_DSN=https://api.example.com/ingest/project
+ERROR_TRACKER_TOKEN=project-token
 APP_RELEASE=web@2.8.1`,
       },
       'install-sdk': {
@@ -82,6 +83,7 @@ npm install @error-tracker/sdk`,
         description: 'The DSN identifies the project and token that should receive events.',
         bullets: [
           'Read DSN, release, and environment from runtime configuration.',
+          'Pass the project token separately so ingest requests authenticate with the x-error-tracker-token header.',
           'Enable replay and performance only where user consent and policy allow it.',
           'Rotate the token from Settings if a DSN is exposed.',
         ],
@@ -89,6 +91,7 @@ npm install @error-tracker/sdk`,
 
 init({
   dsn: process.env.NEXT_PUBLIC_ERROR_TRACKER_DSN,
+  token: process.env.NEXT_PUBLIC_ERROR_TRACKER_TOKEN,
   environment: process.env.NODE_ENV,
   release: process.env.NEXT_PUBLIC_APP_RELEASE,
   integrations: {
@@ -107,6 +110,7 @@ init({
           'Use breadcrumbs for navigation, important UI actions, and failed requests.',
           'The browser SDK automatically captures parsed UA, browser, OS, device class, CPU, memory, screen, viewport, network, storage quota and usage ratio, persistent storage status, locale, timezone, and page visibility.',
           'Use beforeSend to remove or coarsen environment fields when policy requires stricter collection.',
+          'Replay masks inputs and visible text by default; use data-sensitive-block, data-private, or data-privacy="block" for regions that should not be recorded.',
         ],
         code: `init({
   dsn,
@@ -173,13 +177,15 @@ Content-Type: application/json
         description: 'Use a dedicated project when Error Tracker should report its own console errors, API failures, and Web Vitals.',
         bullets: [
           'Create a project such as error-tracker-self and copy its DSN from Settings.',
-          'Set NEXT_PUBLIC_ERROR_TRACKER_DSN on the Web console and ERROR_TRACKER_DSN on the API service.',
+          'Set NEXT_PUBLIC_ERROR_TRACKER_DSN and NEXT_PUBLIC_ERROR_TRACKER_TOKEN on the Web console; set ERROR_TRACKER_DSN and ERROR_TRACKER_TOKEN on the API service.',
           'Set environment and release labels on both services so self-monitoring events match each deployment.',
           'Disable either side with NEXT_PUBLIC_ERROR_TRACKER_SELF_MONITORING_ENABLED=false or ERROR_TRACKER_SELF_MONITORING_ENABLED=false.',
           'API self-monitoring reports 5xx and unhandled process errors, skips /ingest/* to avoid recursion, and does not include backend APM tracing.',
         ],
-        code: `NEXT_PUBLIC_ERROR_TRACKER_DSN=https://tracker.example.com/ingest/self-project/web-token
-ERROR_TRACKER_DSN=https://tracker.example.com/ingest/self-project/api-token
+        code: `NEXT_PUBLIC_ERROR_TRACKER_DSN=https://tracker.example.com/ingest/self-project
+NEXT_PUBLIC_ERROR_TRACKER_TOKEN=web-token
+ERROR_TRACKER_DSN=https://tracker.example.com/ingest/self-project
+ERROR_TRACKER_TOKEN=api-token
 NEXT_PUBLIC_ERROR_TRACKER_ENVIRONMENT=production
 ERROR_TRACKER_ENVIRONMENT=production
 NEXT_PUBLIC_ERROR_TRACKER_RELEASE=web@2.8.1
@@ -193,7 +199,7 @@ ERROR_TRACKER_RELEASE=api@2.8.1`,
           'Open an issue detail page and run AI repair guidance after stack trace, breadcrumbs, and runtime context are captured.',
           'Open Performance and run AI optimization guidance for the selected project after Web Vitals samples arrive.',
           'Leave OPENAI_API_KEY empty to use deterministic local rules for demos and restricted environments.',
-          'Set OPENAI_API_KEY, OPENAI_MODEL, and optionally OPENAI_BASE_URL on the API service to enable OpenAI Responses API generation.',
+          'Set OPENAI_API_KEY, OPENAI_MODEL, and optionally OPENAI_BASE_URL on the API service, then enable External AI analysis per project in Settings.',
           'Error, request, user, and breadcrumb context is scrubbed before the provider call, and each generation is recorded in audit logs.',
         ],
         code: `OPENAI_API_KEY=sk-...
@@ -232,7 +238,8 @@ OPENAI_BASE_URL=https://api.openai.com/v1`,
         ],
         code: `bun add @error-tracker/sdk
 
-ERROR_TRACKER_DSN=https://api.example.com/ingest/project/token
+ERROR_TRACKER_DSN=https://api.example.com/ingest/project
+ERROR_TRACKER_TOKEN=project-token
 APP_RELEASE=web@2.8.1`,
       },
       'install-sdk': {
@@ -259,6 +266,7 @@ npm install @error-tracker/sdk`,
 
 init({
   dsn: process.env.NEXT_PUBLIC_ERROR_TRACKER_DSN,
+  token: process.env.NEXT_PUBLIC_ERROR_TRACKER_TOKEN,
   environment: process.env.NODE_ENV,
   release: process.env.NEXT_PUBLIC_APP_RELEASE,
   integrations: {
@@ -335,13 +343,15 @@ Content-Type: application/json
         description: '当 Error Tracker 需要观察自己的控制台错误、API 故障和 Web Vitals 时，使用一个独立项目承接自监控数据。',
         bullets: [
           '创建一个类似 error-tracker-self 的项目，并在 Settings 中复制该项目的 DSN。',
-          '给 Web 控制台设置 NEXT_PUBLIC_ERROR_TRACKER_DSN，给 API 服务设置 ERROR_TRACKER_DSN。',
+          '给 Web 控制台设置 NEXT_PUBLIC_ERROR_TRACKER_DSN 和 NEXT_PUBLIC_ERROR_TRACKER_TOKEN，给 API 服务设置 ERROR_TRACKER_DSN 和 ERROR_TRACKER_TOKEN。',
           '两个服务都建议设置 environment 和 release，方便按部署批次过滤自监控事件。',
           '如需关闭某一侧，设置 NEXT_PUBLIC_ERROR_TRACKER_SELF_MONITORING_ENABLED=false 或 ERROR_TRACKER_SELF_MONITORING_ENABLED=false。',
           'API 自监控会上报 5xx 和未处理进程异常，并跳过 /ingest/* 避免递归；当前不包含后端 APM 链路追踪。',
         ],
-        code: `NEXT_PUBLIC_ERROR_TRACKER_DSN=https://tracker.example.com/ingest/self-project/web-token
-ERROR_TRACKER_DSN=https://tracker.example.com/ingest/self-project/api-token
+        code: `NEXT_PUBLIC_ERROR_TRACKER_DSN=https://tracker.example.com/ingest/self-project
+NEXT_PUBLIC_ERROR_TRACKER_TOKEN=web-token
+ERROR_TRACKER_DSN=https://tracker.example.com/ingest/self-project
+ERROR_TRACKER_TOKEN=api-token
 NEXT_PUBLIC_ERROR_TRACKER_ENVIRONMENT=production
 ERROR_TRACKER_ENVIRONMENT=production
 NEXT_PUBLIC_ERROR_TRACKER_RELEASE=web@2.8.1
@@ -355,7 +365,7 @@ ERROR_TRACKER_RELEASE=api@2.8.1`,
           '进入问题详情页，在调用栈、路径轨迹和运行上下文齐全后生成 AI 修复建议。',
           '进入 Performance 页面，在所选项目有 Web Vitals 样本后生成 AI 优化建议。',
           'OPENAI_API_KEY 留空时使用确定性的本地规则，适合演示和受限环境。',
-          '在 API 服务配置 OPENAI_API_KEY、OPENAI_MODEL，也可以配置 OPENAI_BASE_URL，以启用 OpenAI Responses API。',
+          '在 API 服务配置 OPENAI_API_KEY、OPENAI_MODEL，也可以配置 OPENAI_BASE_URL，并在 Settings 为对应项目开启外部 AI 分析。',
           '错误、请求、用户和路径轨迹上下文会在调用 provider 前脱敏，每次生成都会记录审计日志。',
         ],
         code: `OPENAI_API_KEY=sk-...

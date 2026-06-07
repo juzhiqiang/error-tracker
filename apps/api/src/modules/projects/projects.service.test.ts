@@ -95,4 +95,26 @@ describe('ProjectsService', () => {
     expect((setValues[0].dsnToken as string).length).toBe(40)
     expect(setValues[0].dsnToken).not.toBe('old-token')
   })
+
+  it('updates project AI analysis opt-in state', async () => {
+    const updatedProject = { id: 'project-1', aiAnalysisEnabled: true }
+    const setValues: Record<string, unknown>[] = []
+    const db = {
+      update: () => ({
+        set: (values: Record<string, unknown>) => {
+          setValues.push(values)
+          return {
+            where: () => ({
+              returning: mock(async () => [updatedProject]),
+            }),
+          }
+        },
+      }),
+    }
+    const service = new ProjectsService(db as never)
+
+    await expect(service.updateAiAnalysisEnabled('project-1', true)).resolves.toEqual([updatedProject])
+
+    expect(setValues).toEqual([{ aiAnalysisEnabled: true }])
+  })
 })

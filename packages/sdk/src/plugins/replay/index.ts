@@ -4,9 +4,17 @@ import type { ErrorTrackerClient } from '../../core/client'
 import { CircularBuffer } from './circular-buffer'
 import { uploadReplay } from './upload'
 
+type ReplayRecordOptions = Parameters<typeof record>[0] & {
+  maskAllText?: boolean
+  blockSelector?: string
+}
+
 export interface ReplayPluginOptions {
   bufferSeconds?: number
   sampleRate?: number
+  maskAllText?: boolean
+  maskTextSelector?: string
+  blockSelector?: string
 }
 
 export class ReplayPlugin implements Integration {
@@ -14,6 +22,7 @@ export class ReplayPlugin implements Integration {
   private buffer: CircularBuffer
   private stopFn?: () => void
   private replayDsn = ''
+  private replayToken?: string
   private readonly sampleRate: number
 
   constructor(private readonly opts: ReplayPluginOptions = {}) {
@@ -24,21 +33,26 @@ export class ReplayPlugin implements Integration {
   setup(client: ErrorTrackerClient): void {
     if (Math.random() > this.sampleRate) return
 
-    const dsn = (client as unknown as { options: { dsn: string } }).options?.dsn ?? ''
-    this.replayDsn = dsn
+    const options = (client as unknown as { options: { dsn: string; token?: string } }).options
+    this.replayDsn = options?.dsn ?? ''
+    this.replayToken = options?.token
 
-    this.stopFn = record({
+    const recordOptions: ReplayRecordOptions = {
       emit: (event) => this.buffer.push(event as { timestamp: number; type: number; data: unknown }),
       maskAllInputs: true,
-      maskTextSelector: '[data-sensitive]',
-    })
+      maskAllText: this.opts.maskAllText ?? true,
+      maskTextSelector: this.opts.maskTextSelector ?? '[data-sensitive]',
+      blockSelector: this.opts.blockSelector ?? '[data-sensitive-block],[data-private],[data-privacy="block"]',
+    }
+
+    this.stopFn = record(recordOptions)
 
     const origCapture = client.captureException.bind(client)
     client.captureException = (error: Error, extra?: Record<string, unknown>) => {
       const eventId = origCapture(error, extra)
       const events = this.buffer.drain()
       if (eventId && events.length > 0) {
-        uploadReplay(this.replayDsn, eventId, events)
+        uploadReplay(this.replayDsn, eventId, events, this.replayToken)
       }
       return eventId
     }

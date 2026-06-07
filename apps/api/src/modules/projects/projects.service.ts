@@ -28,6 +28,7 @@ export class ProjectsService {
         p.webhook_url as "webhookUrl",
         p.alert_threshold as "alertThreshold",
         p.retention_days as "retentionDays",
+        p.ai_analysis_enabled as "aiAnalysisEnabled",
         p.created_at as "createdAt"
       FROM projects p
       LEFT JOIN project_members pm ON pm.project_id = p.id AND pm.user_id = ${userId}
@@ -61,6 +62,7 @@ export class ProjectsService {
           webhook_url as "webhookUrl",
           alert_threshold as "alertThreshold",
           retention_days as "retentionDays",
+          ai_analysis_enabled as "aiAnalysisEnabled",
           created_at as "createdAt"
       `),
     )
@@ -77,6 +79,10 @@ export class ProjectsService {
   rotateToken(projectId: string) {
     const dsnToken = randomBytes(20).toString('hex')
     return this.db.update(projects).set({ dsnToken }).where(eq(projects.id, projectId)).returning()
+  }
+
+  updateAiAnalysisEnabled(projectId: string, aiAnalysisEnabled: boolean) {
+    return this.db.update(projects).set({ aiAnalysisEnabled }).where(eq(projects.id, projectId)).returning()
   }
 
   private async resolveOrganizationIdForCreate(organizationId: string | undefined, userId: string): Promise<string> {

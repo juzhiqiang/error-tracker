@@ -22,13 +22,23 @@ describe('HttpTransport', () => {
     }
   })
 
-  it('sends POST to correct URL', async () => {
+  it('sends POST to header-authenticated ingest URL', async () => {
     const t = new HttpTransport('http://localhost:3002/ingest/proj1/token1')
     t.send([{ eventId: 'e1', timestamp: 1, level: 'error', message: 'test', fingerprint: 'fp1' }])
     await new Promise((r) => setTimeout(r, 10))
     expect(fetchCalls).toHaveLength(1)
-    expect(fetchCalls[0].url).toBe('http://localhost:3002/ingest/proj1/token1')
+    expect(fetchCalls[0].url).toBe('http://localhost:3002/ingest/proj1')
     expect(fetchCalls[0].init.method).toBe('POST')
+    expect(new Headers(fetchCalls[0].init.headers).get('x-error-tracker-token')).toBe('token1')
+  })
+
+  it('supports tokens supplied separately from the ingest URL', async () => {
+    const t = new HttpTransport('http://localhost:3002/ingest/proj1', 'token1')
+    await t.send([{ eventId: 'e1', timestamp: 1, level: 'error', message: 'test', fingerprint: 'fp1' }])
+
+    expect(fetchCalls).toHaveLength(1)
+    expect(fetchCalls[0].url).toBe('http://localhost:3002/ingest/proj1')
+    expect(new Headers(fetchCalls[0].init.headers).get('x-error-tracker-token')).toBe('token1')
   })
 
   it('sends JSON body with events array', async () => {
@@ -48,7 +58,7 @@ describe('HttpTransport', () => {
     expect(fetchCalls[0].init.keepalive).toBe(true)
   })
 
-  it('uses sendBeacon when unloading and the beacon is accepted', async () => {
+  it('uses sendBeacon for unloading requests that do not need a token header', async () => {
     const beaconCalls: Array<{ url: string; data: BodyInit | null }> = []
     setNavigator({
       sendBeacon: (url: string, data: BodyInit | null) => {
@@ -57,12 +67,12 @@ describe('HttpTransport', () => {
       },
     })
 
-    const t = new HttpTransport('http://localhost:3002/ingest/proj1/token1')
+    const t = new HttpTransport('http://localhost:3002/ingest/proj1')
     await t.send([{ eventId: 'e1', timestamp: 1, level: 'error', message: 'test', fingerprint: 'fp1' }], true)
 
     expect(fetchCalls).toHaveLength(0)
     expect(beaconCalls).toHaveLength(1)
-    expect(beaconCalls[0].url).toBe('http://localhost:3002/ingest/proj1/token1')
+    expect(beaconCalls[0].url).toBe('http://localhost:3002/ingest/proj1')
     const body = JSON.parse(await (beaconCalls[0].data as Blob).text())
     expect(body.events[0].eventId).toBe('e1')
   })
@@ -77,6 +87,8 @@ describe('HttpTransport', () => {
 
     expect(fetchCalls).toHaveLength(1)
     expect(fetchCalls[0].init.keepalive).toBe(true)
+    expect(fetchCalls[0].url).toBe('http://localhost:3002/ingest/proj1')
+    expect(new Headers(fetchCalls[0].init.headers).get('x-error-tracker-token')).toBe('token1')
   })
 })
 

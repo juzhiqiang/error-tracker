@@ -81,6 +81,7 @@ export interface BlankScreenOptions {
 
 export interface SdkOptions {
   dsn: string
+  token?: string
   environment?: string
   release?: string
   sampleRate?: number

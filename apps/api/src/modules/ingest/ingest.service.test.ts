@@ -153,6 +153,42 @@ describe('IngestService', () => {
     })
   })
 
+  it('scrubs sensitive message and stacktrace values before inserting events', async () => {
+    const db = makeIngestDb()
+    const queue = { add: mock(async () => undefined) }
+    const service = new IngestService(db.db as never, queue as never, {} as never)
+
+    await service.ingestEvent('project-1', {
+      eventId: 'event-1',
+      timestamp: Date.now(),
+      level: 'error',
+      message: 'Payment failed for ada@example.com with Bearer abc.def.ghi',
+      fingerprint: 'client-fp',
+      stacktrace: [{ function: 'pay', filename: '/users/ada@example.com/app.ts', lineno: 1 }],
+    })
+
+    expect(db.insertedValues[0]).toMatchObject({
+      message: 'Payment failed for [Email] with [BearerToken]',
+      stacktrace: [{ function: 'pay', filename: '/users/[Email]/app.ts', lineno: 1 }],
+    })
+  })
+
+  it('uses scrubbed messages as issue titles', async () => {
+    const db = makeIngestDb()
+    const queue = { add: mock(async () => undefined) }
+    const service = new IngestService(db.db as never, queue as never, {} as never)
+
+    await service.ingestEvent('project-1', {
+      eventId: 'event-1',
+      timestamp: Date.now(),
+      level: 'error',
+      message: 'Failure for ada@example.com',
+      fingerprint: 'client-fp',
+    })
+
+    expect(sqlText(db.issueUpserts[0])).toContain('Failure for [Email]')
+  })
+
   it('persists scrubbed runtime context for environment and device profiles', async () => {
     const db = makeIngestDb()
     const queue = { add: mock(async () => undefined) }

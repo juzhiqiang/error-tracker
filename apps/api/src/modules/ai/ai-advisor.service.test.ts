@@ -57,4 +57,48 @@ describe('AiAdvisorService', () => {
     expect(result.summary).toContain('INP')
     expect(result.recommendations.map((item) => item.title).join('\n')).toContain('INP')
   })
+
+  it('allows external AI only when the owning project has opted in', async () => {
+    const issue = {
+      id: 'issue-1',
+      title: 'boom',
+      level: 'error',
+      status: 'unresolved',
+      count: 1,
+      userCount: 1,
+      fingerprint: 'fp-1',
+      projectId: 'project-1',
+    }
+    const event = {
+      id: 'event-1',
+      message: 'Failed for ada@example.com with Bearer secret-token',
+      stacktrace: [],
+      breadcrumbs: [],
+      request: {},
+      user: {},
+      tags: {},
+      context: {},
+      environment: 'production',
+      release: 'web@1',
+    }
+    let selectCalls = 0
+    const db = {
+      select: mock(() => {
+        selectCalls += 1
+        if (selectCalls === 1) {
+          return { from: () => ({ where: () => ({ limit: async () => [issue] }) }) }
+        }
+        return { from: () => ({ where: () => ({ orderBy: () => ({ limit: async () => [event] }) }) }) }
+      }),
+      execute: mock(async () => ({ rows: [{ aiAnalysisEnabled: true }] })),
+    }
+    const provider = { generate: mock(async (_kind: string, _context: unknown, fallback: unknown) => fallback) }
+    const service = new AiAdvisorService(provider as never, db as never)
+
+    await service.analyzeIssueById('issue-1')
+
+    expect(provider.generate.mock.calls[0][3]).toEqual({ allowExternal: true })
+    expect(provider.generate.mock.calls[0][1]).not.toContain('ada@example.com')
+    expect(provider.generate.mock.calls[0][1]).not.toContain('secret-token')
+  })
 })

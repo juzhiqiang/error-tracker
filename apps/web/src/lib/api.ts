@@ -17,6 +17,7 @@ export interface Project {
   webhookUrl?: string | null
   alertThreshold?: number | null
   retentionDays?: number | null
+  aiAnalysisEnabled?: boolean
   createdAt: string
 }
 
@@ -259,6 +260,8 @@ export const api = {
     create: (body: { name: string; slug: string }) =>
       apiFetch<Project[]>('/api/projects', { method: 'POST', body: JSON.stringify(body) }),
     rotateToken: (id: string) => apiFetch<Project[]>(`/api/projects/${id}/rotate-token`, { method: 'POST' }),
+    updateAiAnalysis: (id: string, enabled: boolean) =>
+      apiFetch<Project[]>(`/api/projects/${id}/ai-analysis`, { method: 'PATCH', body: JSON.stringify({ enabled }) }),
     members: (projectId: string) => apiFetch<ProjectMember[]>(`/api/projects/${projectId}/members`),
     addMember: (projectId: string, body: { email: string; role: ProjectRole }) =>
       apiFetch<ProjectMember>(`/api/projects/${projectId}/members`, { method: 'POST', body: JSON.stringify(body) }),

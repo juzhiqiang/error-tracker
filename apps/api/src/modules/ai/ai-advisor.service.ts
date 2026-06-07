@@ -17,24 +17,28 @@ export class AiAdvisorService {
 
   async analyzeIssueById(issueId: string): Promise<{ projectId: string; analysis: AiAnalysis }> {
     const context = await this.issueContext(issueId)
-    const analysis = await this.analyzeIssue(context)
+    const analysis = await this.analyzeIssue(context, { allowExternal: await this.externalAiEnabled(context.issue.projectId) })
     return { projectId: context.issue.projectId, analysis }
   }
 
   async analyzePerformanceByProject(projectId: string): Promise<{ projectId: string; analysis: AiAnalysis }> {
     const context = await this.performanceContext(projectId)
-    const analysis = await this.analyzePerformance(context)
+    const analysis = await this.analyzePerformance(context, { allowExternal: await this.externalAiEnabled(projectId) })
     return { projectId, analysis }
   }
 
-  async analyzeIssue(context: IssueAiContext): Promise<AiAnalysis> {
+  async analyzeIssue(context: IssueAiContext, options: { allowExternal?: boolean } = {}): Promise<AiAnalysis> {
     const scrubbed = scrubPii(context)
-    return this.provider.generate('issue', JSON.stringify(scrubbed, null, 2), localIssueAnalysis(scrubbed))
+    return this.provider.generate('issue', JSON.stringify(scrubbed, null, 2), localIssueAnalysis(scrubbed), {
+      allowExternal: options.allowExternal === true,
+    })
   }
 
-  async analyzePerformance(context: PerformanceAiContext): Promise<AiAnalysis> {
+  async analyzePerformance(context: PerformanceAiContext, options: { allowExternal?: boolean } = {}): Promise<AiAnalysis> {
     const scrubbed = scrubPii(context)
-    return this.provider.generate('performance', JSON.stringify(scrubbed, null, 2), localPerformanceAnalysis(scrubbed))
+    return this.provider.generate('performance', JSON.stringify(scrubbed, null, 2), localPerformanceAnalysis(scrubbed), {
+      allowExternal: options.allowExternal === true,
+    })
   }
 
   private async issueContext(issueId: string): Promise<IssueAiContext> {
@@ -85,6 +89,17 @@ export class AiAdvisorService {
       ORDER BY name, rating
     `)
     return { projectId, window: '24h', metrics: rowsFrom(result) }
+  }
+
+  private async externalAiEnabled(projectId: string): Promise<boolean> {
+    if (!this.db) return false
+    const result = await this.db.execute(sql`
+      SELECT ai_analysis_enabled as "aiAnalysisEnabled"
+      FROM projects
+      WHERE id = ${projectId}
+      LIMIT 1
+    `)
+    return rowsFrom<{ aiAnalysisEnabled?: boolean | null }>(result)[0]?.aiAnalysisEnabled === true
   }
 }
 

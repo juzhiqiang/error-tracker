@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import {
   ArrowRight,
+  BrainCircuit,
   CheckCircle2,
   Clipboard,
   Clock3,
@@ -43,6 +44,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [rotating, setRotating] = useState(false)
+  const [updatingAi, setUpdatingAi] = useState(false)
   const [error, setError] = useState('')
   const [activeTab, setActiveTab] = useState<SettingsTab>('access')
   const [members, setMembers] = useState<ProjectMember[]>([])
@@ -69,7 +71,8 @@ export default function SettingsPage() {
     () => projects.find((project) => project.id === selectedProjectId) ?? projects[projects.length - 1],
     [projects, selectedProjectId],
   )
-  const dsn = selectedProject ? `${API_BASE}/ingest/${selectedProject.id}/${selectedProject.dsnToken}` : ''
+  const ingestUrl = selectedProject ? `${API_BASE}/ingest/${selectedProject.id}` : ''
+  const projectToken = selectedProject?.dsnToken ?? ''
 
   useEffect(() => {
     if (!selectedProject || activeTab !== 'members') return
@@ -135,6 +138,24 @@ export default function SettingsPage() {
       toast.error(t('settings.toast.rotateFailed'))
     } finally {
       setRotating(false)
+    }
+  }
+
+  async function updateAiAnalysis(enabled: boolean) {
+    if (!selectedProject) return
+    setUpdatingAi(true)
+    try {
+      const updated = await api.projects.updateAiAnalysis(selectedProject.id, enabled)
+      const project = updated[0]
+      if (project) {
+        setProjects((current) => current.map((item) => (item.id === project.id ? project : item)))
+        setSelectedProjectId(project.id)
+      }
+      toast.success(t('settings.toast.aiUpdated'))
+    } catch {
+      toast.error(t('settings.toast.aiUpdateFailed'))
+    } finally {
+      setUpdatingAi(false)
     }
   }
 
@@ -403,12 +424,29 @@ export default function SettingsPage() {
                   <div>
                     <div className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-200">
                       <KeyRound className="h-4 w-4 text-indigo-300" />
-                      DSN
+                      Ingest URL
                     </div>
                     <div className="flex gap-2">
-                      <input readOnly value={dsn} className="app-control min-w-0 flex-1 px-3 font-mono text-xs text-slate-300" />
+                      <input readOnly value={ingestUrl} className="app-control min-w-0 flex-1 px-3 font-mono text-xs text-slate-300" />
                       <button
-                        onClick={() => copy(dsn, 'settings.toast.dsnCopied')}
+                        onClick={() => copy(ingestUrl, 'settings.toast.dsnCopied')}
+                        className="app-button inline-flex items-center gap-2 border border-slate-700 px-3 text-sm text-slate-200 hover:bg-slate-800"
+                      >
+                        <Copy className="h-4 w-4" />
+                        {t('common.copy')}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-200">
+                      <ShieldCheck className="h-4 w-4 text-emerald-300" />
+                      Token
+                    </div>
+                    <div className="flex gap-2">
+                      <input readOnly value={projectToken} className="app-control min-w-0 flex-1 px-3 font-mono text-xs text-slate-300" />
+                      <button
+                        onClick={() => copy(projectToken, 'settings.toast.tokenCopied')}
                         className="app-button inline-flex items-center gap-2 border border-slate-700 px-3 text-sm text-slate-200 hover:bg-slate-800"
                       >
                         <Copy className="h-4 w-4" />
@@ -428,6 +466,31 @@ export default function SettingsPage() {
                     label={t('settings.webhook')}
                     value={selectedProject.webhookUrl || t('settings.webhook.empty')}
                   />
+
+                  <div className="app-panel-muted flex flex-wrap items-center justify-between gap-3 p-4">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-primary/30 bg-primary/10 text-indigo-200">
+                        <BrainCircuit className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-slate-100">{t('settings.ai.title')}</div>
+                        <div className="mt-1 max-w-2xl text-xs leading-5 text-slate-500">{t('settings.ai.description')}</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => updateAiAnalysis(!(selectedProject.aiAnalysisEnabled ?? false))}
+                      disabled={updatingAi}
+                      aria-pressed={selectedProject.aiAnalysisEnabled ?? false}
+                      className={`app-button inline-flex min-h-[44px] min-w-[112px] items-center justify-center gap-2 border px-3 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
+                        selectedProject.aiAnalysisEnabled
+                          ? 'border-success/35 bg-success/10 text-emerald-200 hover:bg-success/15'
+                          : 'border-slate-700 text-slate-300 hover:bg-slate-800'
+                      }`}
+                    >
+                      <ShieldCheck className="h-4 w-4" />
+                      {selectedProject.aiAnalysisEnabled ? t('settings.ai.enabled') : t('settings.ai.disabled')}
+                    </button>
+                  </div>
                 </div>
               </Panel>
 
@@ -436,7 +499,7 @@ export default function SettingsPage() {
                 description={t('settings.sdk.description')}
                 action={
                   <button
-                    onClick={() => copy(sdkSnippet(dsn), 'settings.toast.snippetCopied')}
+                    onClick={() => copy(sdkSnippet(ingestUrl, projectToken), 'settings.toast.snippetCopied')}
                     className="app-button inline-flex items-center gap-2 border border-slate-700 px-3 text-sm text-slate-200 hover:bg-slate-800"
                   >
                     <Clipboard className="h-4 w-4" />
@@ -445,7 +508,7 @@ export default function SettingsPage() {
                 }
                 bodyClassName="p-0"
               >
-                <pre className="app-code overflow-x-auto rounded-none border-0 p-5 text-xs text-slate-300">{sdkSnippet(dsn)}</pre>
+                <pre className="app-code overflow-x-auto rounded-none border-0 p-5 text-xs text-slate-300">{sdkSnippet(ingestUrl, projectToken)}</pre>
               </Panel>
 
               <SourcemapFallbackUploader
@@ -881,11 +944,12 @@ function InvitationEmailDeliveryBadge({ delivery }: { delivery: ProjectInvitatio
   )
 }
 
-function sdkSnippet(dsn: string): string {
+function sdkSnippet(dsn: string, token: string): string {
   return `import { init } from '@error-tracker/sdk'
 
 init({
   dsn: '${dsn}',
+  token: '${token}',
   environment: process.env.NODE_ENV,
   release: process.env.NEXT_PUBLIC_RELEASE,
   integrations: {

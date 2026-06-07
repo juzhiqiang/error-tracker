@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp, jsonb, serial, uuid, unique, index } from 'drizzle-orm/pg-core'
+import { pgTable, text, integer, timestamp, jsonb, serial, uuid, unique, index, boolean } from 'drizzle-orm/pg-core'
 import { user } from './auth-schema'
 
 export const organizations = pgTable('organizations', {
@@ -70,6 +70,7 @@ export const projects = pgTable('projects', {
   webhookUrl: text('webhook_url'),
   alertThreshold: integer('alert_threshold').default(50),
   retentionDays: integer('retention_days').default(30),
+  aiAnalysisEnabled: boolean('ai_analysis_enabled').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 

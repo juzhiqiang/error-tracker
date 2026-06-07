@@ -16,6 +16,10 @@ export interface AiProviderRuntime {
   sender?: Sender
 }
 
+export interface AiProviderGenerateOptions {
+  allowExternal?: boolean
+}
+
 @Injectable()
 export class AiProviderService {
   private readonly env: AiProviderEnv
@@ -29,7 +33,16 @@ export class AiProviderService {
     this.sender = runtime.sender ?? defaultSender()
   }
 
-  async generate(kind: AiAnalysisKind, context: string, fallback: AiAnalysis): Promise<AiAnalysis> {
+  async generate(
+    kind: AiAnalysisKind,
+    context: string,
+    fallback: AiAnalysis,
+    options: AiProviderGenerateOptions = {},
+  ): Promise<AiAnalysis> {
+    if (!options.allowExternal) {
+      return { ...fallback, provider: 'local', model: 'local-rules' }
+    }
+
     const apiKey = this.env.OPENAI_API_KEY?.trim()
     const model = this.env.OPENAI_MODEL?.trim()
     if (!apiKey || !model || !this.sender) {
