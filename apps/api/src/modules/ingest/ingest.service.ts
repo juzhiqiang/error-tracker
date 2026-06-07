@@ -75,6 +75,8 @@ export class IngestService {
         ON CONFLICT (project_id, fingerprint) DO UPDATE SET
           last_seen = now(),
           count = issues.count + 1,
+          regressed_at = CASE WHEN issues.status = 'resolved' THEN now() ELSE issues.regressed_at END,
+          regressed_in_release = CASE WHEN issues.status = 'resolved' THEN ${payload.release ?? null} ELSE issues.regressed_in_release END,
           status = CASE WHEN issues.status = 'resolved' THEN 'unresolved' ELSE issues.status END
         RETURNING id
       `)

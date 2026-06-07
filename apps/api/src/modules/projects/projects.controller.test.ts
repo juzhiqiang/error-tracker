@@ -59,6 +59,38 @@ describe('ProjectsController audit logging', () => {
     ])
   })
 
+  it('records alert setting updates for webhook delivery changes', async () => {
+    const project = { id: 'project-1', webhookUrl: 'https://hook.local', alertThreshold: 20, alertUserThreshold: 5 }
+    const projectsService = {
+      updateAlertSettings: mock(async () => [project]),
+    }
+    const audit = { record: mock(async () => undefined) }
+    const { ProjectsController } = await import('./projects.controller')
+    const controller = new ProjectsController(projectsService as never, audit as never)
+    const req = { session: { user: { id: 'user-1' } } }
+
+    await controller.updateAlertSettings(
+      'project-1',
+      { webhookUrl: 'https://hook.local', alertThreshold: 20, alertUserThreshold: 5 },
+      req,
+    )
+
+    expect(projectsService.updateAlertSettings.mock.calls[0]).toEqual([
+      'project-1',
+      { webhookUrl: 'https://hook.local', alertThreshold: 20, alertUserThreshold: 5 },
+    ])
+    expect(audit.record.mock.calls[0]).toEqual([
+      {
+        actorUserId: 'user-1',
+        projectId: 'project-1',
+        action: 'project.alert_settings_updated',
+        targetType: 'project',
+        targetId: 'project-1',
+        metadata: { hasWebhook: true, alertThreshold: 20, alertUserThreshold: 5 },
+      },
+    ])
+  })
+
   it('runs the session guard before project access on token rotation', async () => {
     const { ProjectsController } = await import('./projects.controller')
     const guards = Reflect.getMetadata(GUARDS_METADATA, ProjectsController.prototype.rotateToken) as Array<{

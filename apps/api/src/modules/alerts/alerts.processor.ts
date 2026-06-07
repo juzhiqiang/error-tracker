@@ -23,8 +23,6 @@ export class AlertsProcessor extends WorkerHost {
     const [issue] = await this.db.select().from(issues).where(eq(issues.id, issueId)).limit(1)
     if (!issue) return
 
-    const isNew = issue.count === 1
-
     const result = await this.db.execute(sql`
       SELECT count(*) as "recentCount" FROM events
       WHERE issue_id = ${issueId}
@@ -32,19 +30,73 @@ export class AlertsProcessor extends WorkerHost {
     `)
     const recentCount = Number((result as unknown as { rows?: { recentCount: string }[] }).rows?.[0]?.recentCount ?? 0)
 
-    const shouldAlert = isNew || recentCount >= (project.alertThreshold ?? 50)
-    if (!shouldAlert) return
+    const reasons = alertReasons({
+      isNew: Number(issue.count ?? 0) === 1,
+      isRegression: isRecentRegression(issue.regressedAt),
+      regressedInRelease: issue.regressedInRelease,
+      recentCount,
+      spikeThreshold: project.alertThreshold ?? 50,
+      userCount: Number(issue.userCount ?? 0),
+      userThreshold: project.alertUserThreshold ?? 10,
+    })
+    if (reasons.length === 0) return
 
-    const text = isNew
-      ? `🔴 [${project.name}] 新错误首次出现: ${issue.title}`
-      : `⚠️ [${project.name}] 错误激增 (${recentCount}次/10min): ${issue.title}`
+    const text = `[${project.name}] ${reasons.join('; ')}: ${issue.title}`
 
     await fetch(project.webhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify(webhookPayload(project.webhookUrl, text)),
     }).catch(() => {
-      // 告警失败不影响主流程
+      // Alert delivery must not block ingest or queue processing.
     })
+  }
+}
+
+function alertReasons(input: {
+  isNew: boolean
+  isRegression: boolean
+  regressedInRelease?: string | null
+  recentCount: number
+  spikeThreshold: number
+  userCount: number
+  userThreshold: number
+}): string[] {
+  const reasons: string[] = []
+  if (input.isNew) reasons.push('new issue')
+  if (input.isRegression) {
+    const release = input.regressedInRelease ? ` in ${input.regressedInRelease}` : ''
+    reasons.push(`regression after resolution${release}`)
+  }
+  if (input.recentCount >= input.spikeThreshold) reasons.push(`spike ${input.recentCount}/10min`)
+  if (input.userThreshold > 0 && input.userCount >= input.userThreshold) {
+    reasons.push(`${input.userCount} users affected`)
+  }
+  return reasons
+}
+
+function isRecentRegression(value: unknown): boolean {
+  if (!value) return false
+  const timestamp = value instanceof Date ? value.getTime() : new Date(String(value)).getTime()
+  if (!Number.isFinite(timestamp)) return false
+  return Date.now() - timestamp <= 15 * 60 * 1000
+}
+
+function webhookPayload(webhookUrl: string, text: string): Record<string, unknown> {
+  const host = safeHost(webhookUrl)
+  if (host.includes('open.feishu.cn') || host.includes('open.larksuite.com')) {
+    return { msg_type: 'text', content: { text } }
+  }
+  if (host.includes('oapi.dingtalk.com') || host.includes('qyapi.weixin.qq.com')) {
+    return { msgtype: 'text', text: { content: text } }
+  }
+  return { text }
+}
+
+function safeHost(webhookUrl: string): string {
+  try {
+    return new URL(webhookUrl).host.toLowerCase()
+  } catch {
+    return webhookUrl.toLowerCase()
   }
 }

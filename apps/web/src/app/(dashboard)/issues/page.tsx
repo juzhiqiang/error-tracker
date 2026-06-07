@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight, Filter, Search } from 'lucide-react'
 import { EmptyState } from '@/components/empty-state'
@@ -179,6 +179,12 @@ export default function IssuesPage() {
                     <div className="min-w-0">
                       <div className="truncate font-mono text-sm text-slate-100">{issue.title}</div>
                       <div className="mt-1 truncate font-mono text-xs text-slate-500">{issue.fingerprint}</div>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {issue.assigneeUserId && <IssueMeta>{t('issues.meta.assignee', { id: issue.assigneeUserId })}</IssueMeta>}
+                        {issue.fixedInRelease && <IssueMeta>{t('issues.meta.fixed', { release: issue.fixedInRelease })}</IssueMeta>}
+                        {issue.regressedAt && <IssueMeta tone="danger">{t('issues.meta.regressed')}</IssueMeta>}
+                        {issue.mergedIntoIssueId && <IssueMeta>{t('issues.meta.merged', { id: issue.mergedIntoIssueId })}</IssueMeta>}
+                      </div>
                     </div>
                     <span className="font-mono text-sm text-slate-300">{issue.userCount}</span>
                     <span className="font-mono text-sm text-slate-300">{issue.count}</span>
@@ -246,4 +252,9 @@ function SummaryItem({ label, value }: { label: string; value: string | number }
       <div className="mt-1 font-mono text-2xl font-semibold text-slate-50">{value}</div>
     </div>
   )
+}
+
+function IssueMeta({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'neutral' | 'danger' }) {
+  const className = tone === 'danger' ? 'border-danger/30 bg-danger/10 text-red-200' : 'border-slate-700 bg-slate-900 text-slate-400'
+  return <span className={`rounded-md border px-2 py-0.5 font-mono text-[11px] ${className}`}>{children}</span>
 }

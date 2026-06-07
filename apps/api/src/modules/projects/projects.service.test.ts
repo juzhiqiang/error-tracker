@@ -117,4 +117,43 @@ describe('ProjectsService', () => {
 
     expect(setValues).toEqual([{ aiAnalysisEnabled: true }])
   })
+
+  it('updates webhook and alert thresholds together for IM delivery', async () => {
+    const updatedProject = {
+      id: 'project-1',
+      webhookUrl: 'https://hooks.slack.com/services/token',
+      alertThreshold: 20,
+      alertUserThreshold: 5,
+    }
+    const setValues: Record<string, unknown>[] = []
+    const db = {
+      update: () => ({
+        set: (values: Record<string, unknown>) => {
+          setValues.push(values)
+          return {
+            where: () => ({
+              returning: mock(async () => [updatedProject]),
+            }),
+          }
+        },
+      }),
+    }
+    const service = new ProjectsService(db as never)
+
+    await expect(
+      service.updateAlertSettings('project-1', {
+        webhookUrl: ' https://hooks.slack.com/services/token ',
+        alertThreshold: 20,
+        alertUserThreshold: 5,
+      }),
+    ).resolves.toEqual([updatedProject])
+
+    expect(setValues).toEqual([
+      {
+        webhookUrl: 'https://hooks.slack.com/services/token',
+        alertThreshold: 20,
+        alertUserThreshold: 5,
+      },
+    ])
+  })
 })

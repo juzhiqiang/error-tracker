@@ -189,6 +189,27 @@ describe('IngestService', () => {
     expect(sqlText(db.issueUpserts[0])).toContain('Failure for [Email]')
   })
 
+  it('marks resolved issues as regressed when a new event is grouped into them', async () => {
+    const db = makeIngestDb()
+    const queue = { add: mock(async () => undefined) }
+    const service = new IngestService(db.db as never, queue as never, {} as never)
+
+    await service.ingestEvent('project-1', {
+      eventId: 'event-1',
+      timestamp: Date.now(),
+      level: 'error',
+      message: 'boom',
+      fingerprint: 'client-fp',
+      release: 'web@3.0.0',
+    })
+
+    const upsertSql = sqlText(db.issueUpserts[0])
+    expect(upsertSql).toContain("status = CASE WHEN issues.status = 'resolved' THEN 'unresolved' ELSE issues.status END")
+    expect(upsertSql).toContain('regressed_at = CASE WHEN issues.status =')
+    expect(upsertSql).toContain('regressed_in_release = CASE WHEN issues.status =')
+    expect(upsertSql).toContain('web@3.0.0')
+  })
+
   it('persists scrubbed runtime context for environment and device profiles', async () => {
     const db = makeIngestDb()
     const queue = { add: mock(async () => undefined) }

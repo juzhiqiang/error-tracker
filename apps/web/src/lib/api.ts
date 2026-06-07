@@ -16,6 +16,7 @@ export interface Project {
   dsnToken: string
   webhookUrl?: string | null
   alertThreshold?: number | null
+  alertUserThreshold?: number | null
   retentionDays?: number | null
   aiAnalysisEnabled?: boolean
   createdAt: string
@@ -61,6 +62,16 @@ export interface Issue {
   lastSeen: string
   count: number
   userCount: number
+  assigneeUserId?: string | null
+  assignedAt?: string | null
+  assignedByUserId?: string | null
+  resolvedAt?: string | null
+  resolvedByUserId?: string | null
+  fixedInRelease?: string | null
+  regressedAt?: string | null
+  regressedInRelease?: string | null
+  mergedIntoIssueId?: string | null
+  splitFromIssueId?: string | null
 }
 
 export interface StackFrame {
@@ -99,6 +110,31 @@ export interface IssueListResponse {
   total: number
   page: number
   limit: number
+}
+
+export interface IssueComment {
+  id: number
+  issueId: string
+  authorUserId?: string | null
+  authorEmail?: string | null
+  authorName?: string | null
+  body: string
+  createdAt: string
+}
+
+export interface IssueFacet {
+  value: string
+  count: number
+}
+
+export interface IssueTagFacet extends IssueFacet {
+  key: string
+}
+
+export interface IssueFacets {
+  releases: IssueFacet[]
+  environments: IssueFacet[]
+  tags: IssueTagFacet[]
 }
 
 export interface TrendPoint {
@@ -215,6 +251,18 @@ export const api = {
     events: (id: string) => apiFetch<EventRow[]>(`/api/issues/${id}/events`),
     update: (id: string, body: { status: IssueStatus }) =>
       apiFetch<Issue>(`/api/issues/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+    assign: (id: string, body: { assigneeUserId: string | null }) =>
+      apiFetch<Issue>(`/api/issues/${id}/assignment`, { method: 'PATCH', body: JSON.stringify(body) }),
+    markFixed: (id: string, body: { release: string }) =>
+      apiFetch<Issue>(`/api/issues/${id}/fix`, { method: 'PATCH', body: JSON.stringify(body) }),
+    comments: (id: string) => apiFetch<IssueComment[]>(`/api/issues/${id}/comments`),
+    addComment: (id: string, body: { body: string }) =>
+      apiFetch<IssueComment>(`/api/issues/${id}/comments`, { method: 'POST', body: JSON.stringify(body) }),
+    facets: (id: string) => apiFetch<IssueFacets>(`/api/issues/${id}/facets`),
+    merge: (id: string, body: { targetIssueId: string }) =>
+      apiFetch<Issue>(`/api/issues/${id}/merge`, { method: 'POST', body: JSON.stringify(body) }),
+    split: (id: string, body: { eventIds: string[] }) =>
+      apiFetch<Issue>(`/api/issues/${id}/split`, { method: 'POST', body: JSON.stringify(body) }),
     aiAnalysis: (id: string) =>
       apiFetch<AiAnalysis>(`/api/issues/${encodeURIComponent(id)}/ai-analysis`, { method: 'POST' }),
   },
@@ -262,6 +310,11 @@ export const api = {
     rotateToken: (id: string) => apiFetch<Project[]>(`/api/projects/${id}/rotate-token`, { method: 'POST' }),
     updateAiAnalysis: (id: string, enabled: boolean) =>
       apiFetch<Project[]>(`/api/projects/${id}/ai-analysis`, { method: 'PATCH', body: JSON.stringify({ enabled }) }),
+    updateAlertSettings: (
+      id: string,
+      body: { webhookUrl: string | null; alertThreshold: number; alertUserThreshold: number },
+    ) =>
+      apiFetch<Project[]>(`/api/projects/${id}/alert-settings`, { method: 'PATCH', body: JSON.stringify(body) }),
     members: (projectId: string) => apiFetch<ProjectMember[]>(`/api/projects/${projectId}/members`),
     addMember: (projectId: string, body: { email: string; role: ProjectRole }) =>
       apiFetch<ProjectMember>(`/api/projects/${projectId}/members`, { method: 'POST', body: JSON.stringify(body) }),

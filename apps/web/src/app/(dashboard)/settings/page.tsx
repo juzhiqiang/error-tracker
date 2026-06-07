@@ -45,6 +45,7 @@ export default function SettingsPage() {
   const [creating, setCreating] = useState(false)
   const [rotating, setRotating] = useState(false)
   const [updatingAi, setUpdatingAi] = useState(false)
+  const [updatingAlerts, setUpdatingAlerts] = useState(false)
   const [error, setError] = useState('')
   const [activeTab, setActiveTab] = useState<SettingsTab>('access')
   const [members, setMembers] = useState<ProjectMember[]>([])
@@ -62,6 +63,9 @@ export default function SettingsPage() {
   const [sourcemapFiles, setSourcemapFiles] = useState<File[]>([])
   const [sourcemapUploading, setSourcemapUploading] = useState(false)
   const [sourcemapInputKey, setSourcemapInputKey] = useState(0)
+  const [alertWebhookUrl, setAlertWebhookUrl] = useState('')
+  const [alertThreshold, setAlertThreshold] = useState('50')
+  const [alertUserThreshold, setAlertUserThreshold] = useState('10')
 
   useEffect(() => {
     refreshProjects()
@@ -86,6 +90,9 @@ export default function SettingsPage() {
     setSourcemapRelease('')
     setSourcemapFiles([])
     setSourcemapInputKey((current) => current + 1)
+    setAlertWebhookUrl(selectedProject?.webhookUrl ?? '')
+    setAlertThreshold(String(selectedProject?.alertThreshold ?? 50))
+    setAlertUserThreshold(String(selectedProject?.alertUserThreshold ?? 10))
   }, [selectedProject?.id])
 
   async function refreshProjects() {
@@ -156,6 +163,28 @@ export default function SettingsPage() {
       toast.error(t('settings.toast.aiUpdateFailed'))
     } finally {
       setUpdatingAi(false)
+    }
+  }
+
+  async function updateAlertSettings() {
+    if (!selectedProject) return
+    setUpdatingAlerts(true)
+    try {
+      const updated = await api.projects.updateAlertSettings(selectedProject.id, {
+        webhookUrl: alertWebhookUrl.trim() || null,
+        alertThreshold: positiveInt(alertThreshold, 50),
+        alertUserThreshold: positiveInt(alertUserThreshold, 10),
+      })
+      const project = updated[0]
+      if (project) {
+        setProjects((current) => current.map((item) => (item.id === project.id ? project : item)))
+        setSelectedProjectId(project.id)
+      }
+      toast.success(t('settings.toast.alertsUpdated'))
+    } catch {
+      toast.error(t('settings.toast.alertsUpdateFailed'))
+    } finally {
+      setUpdatingAlerts(false)
     }
   }
 
@@ -466,6 +495,61 @@ export default function SettingsPage() {
                     label={t('settings.webhook')}
                     value={selectedProject.webhookUrl || t('settings.webhook.empty')}
                   />
+
+                  <div className="app-panel-muted p-4">
+                    <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 text-sm font-medium text-slate-100">
+                          <Webhook className="h-4 w-4 text-indigo-300" />
+                          {t('settings.alerts.title')}
+                        </div>
+                        <p className="mt-1 max-w-2xl text-xs leading-5 text-slate-500">{t('settings.alerts.description')}</p>
+                      </div>
+                      <button
+                        onClick={updateAlertSettings}
+                        disabled={updatingAlerts}
+                        className="app-button inline-flex items-center gap-2 border border-primary/40 bg-primary/10 px-3 text-sm text-indigo-200 hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <Webhook className="h-4 w-4" />
+                        {updatingAlerts ? t('settings.alerts.saving') : t('settings.alerts.save')}
+                      </button>
+                    </div>
+                    <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_160px_160px]">
+                      <label className="grid gap-2">
+                        <span className="text-xs font-medium text-slate-400">{t('settings.alerts.webhookUrl')}</span>
+                        <input
+                          value={alertWebhookUrl}
+                          onChange={(event) => setAlertWebhookUrl(event.target.value)}
+                          placeholder={t('settings.alerts.webhookPlaceholder')}
+                          className="app-control w-full px-3 font-mono text-xs"
+                        />
+                      </label>
+                      <label className="grid gap-2">
+                        <span className="text-xs font-medium text-slate-400">{t('settings.alerts.eventThreshold')}</span>
+                        <input
+                          value={alertThreshold}
+                          onChange={(event) => setAlertThreshold(event.target.value)}
+                          inputMode="numeric"
+                          className="app-control w-full px-3 font-mono text-sm"
+                        />
+                      </label>
+                      <label className="grid gap-2">
+                        <span className="text-xs font-medium text-slate-400">{t('settings.alerts.userThreshold')}</span>
+                        <input
+                          value={alertUserThreshold}
+                          onChange={(event) => setAlertUserThreshold(event.target.value)}
+                          inputMode="numeric"
+                          className="app-control w-full px-3 font-mono text-sm"
+                        />
+                      </label>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
+                      <span className="rounded-md border border-line bg-slate-950/30 px-2 py-1">Slack</span>
+                      <span className="rounded-md border border-line bg-slate-950/30 px-2 py-1">Feishu / Lark</span>
+                      <span className="rounded-md border border-line bg-slate-950/30 px-2 py-1">DingTalk</span>
+                      <span className="rounded-md border border-line bg-slate-950/30 px-2 py-1">WeCom</span>
+                    </div>
+                  </div>
 
                   <div className="app-panel-muted flex flex-wrap items-center justify-between gap-3 p-4">
                     <div className="flex min-w-0 items-start gap-3">
@@ -966,4 +1050,10 @@ function normalizeSlug(value: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9-]+/g, '-')
     .replace(/^-+|-+$/g, '')
+}
+
+function positiveInt(value: string, fallback: number): number {
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric) || numeric <= 0) return fallback
+  return Math.min(100_000, Math.max(1, Math.round(numeric)))
 }

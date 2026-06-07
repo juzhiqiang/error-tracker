@@ -79,4 +79,31 @@ export class ProjectsController {
     }
     return updated
   }
+
+  @Patch(':id/alert-settings')
+  @ProjectRoles('owner', 'admin')
+  @UseGuards(SessionGuard, ProjectAccessGuard)
+  async updateAlertSettings(
+    @Param('id') id: string,
+    @Body() body: { webhookUrl?: string | null; alertThreshold?: number | null; alertUserThreshold?: number | null },
+    @Req() req: SessionRequest,
+  ) {
+    const updated = await this.projectsService.updateAlertSettings(id, body)
+    const project = updated[0]
+    if (project?.id) {
+      await this.auditLogService.record({
+        actorUserId: req.session?.user?.id ?? null,
+        projectId: project.id,
+        action: 'project.alert_settings_updated',
+        targetType: 'project',
+        targetId: project.id,
+        metadata: {
+          hasWebhook: Boolean(project.webhookUrl),
+          alertThreshold: project.alertThreshold,
+          alertUserThreshold: project.alertUserThreshold,
+        },
+      })
+    }
+    return updated
+  }
 }

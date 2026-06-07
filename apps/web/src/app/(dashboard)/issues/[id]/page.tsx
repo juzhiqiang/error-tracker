@@ -33,7 +33,19 @@ import { AiAnalysisPanel } from '@/components/ai-analysis-panel'
 import { EmptyState } from '@/components/empty-state'
 import { Panel } from '@/components/panel'
 import { LevelBadge, StatusBadge } from '@/components/status-badge'
-import { api, type AiAnalysis, type Breadcrumb, type EventRow, type Issue, type IssueLevel, type IssueStatus, type StackFrame } from '@/lib/api'
+import {
+  api,
+  type AiAnalysis,
+  type Breadcrumb,
+  type EventRow,
+  type Issue,
+  type IssueComment,
+  type IssueFacets,
+  type IssueLevel,
+  type IssueStatus,
+  type ProjectMember,
+  type StackFrame,
+} from '@/lib/api'
 import { compactNumber, formatFullDateTime, formatTime, stringifyRecord } from '@/lib/format'
 import { useI18n } from '@/lib/i18n'
 
@@ -44,6 +56,8 @@ const statusActions: Array<{ status: IssueStatus; labelKey: string; icon: ReactN
 ]
 
 type UnknownRecord = Record<string, unknown>
+
+const emptyFacets: IssueFacets = { releases: [], environments: [], tags: [] }
 
 export default function IssueDetailPage() {
   const { t } = useI18n()
@@ -58,22 +72,51 @@ export default function IssueDetailPage() {
   const [aiAnalysis, setAiAnalysis] = useState<AiAnalysis | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState('')
+  const [members, setMembers] = useState<ProjectMember[]>([])
+  const [comments, setComments] = useState<IssueComment[]>([])
+  const [facets, setFacets] = useState<IssueFacets>(emptyFacets)
+  const [assigneeUserId, setAssigneeUserId] = useState('')
+  const [fixedRelease, setFixedRelease] = useState('')
+  const [commentBody, setCommentBody] = useState('')
+  const [targetIssueId, setTargetIssueId] = useState('')
+  const [selectedSplitIds, setSelectedSplitIds] = useState<string[]>([])
+  const [workflowAction, setWorkflowAction] = useState<'assign' | 'fix' | 'comment' | 'merge' | 'split' | null>(null)
 
   useEffect(() => {
     if (!issueId) return
+    let cancelled = false
     setLoading(true)
     Promise.all([api.issues.get(issueId), api.issues.events(issueId)])
-      .then(([issueResult, eventResult]) => {
+      .then(async ([issueResult, eventResult]) => {
         const ordered = [...eventResult].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        const [memberRows, commentRows, facetRows] = await Promise.all([
+          api.projects.members(issueResult.projectId).catch(() => []),
+          api.issues.comments(issueResult.id).catch(() => []),
+          api.issues.facets(issueResult.id).catch(() => emptyFacets),
+        ])
+        if (cancelled) return
         setIssue(issueResult)
         setEvents(ordered)
         setSelectedEventId((current) => current || ordered[0]?.id || '')
+        setSelectedSplitIds([])
+        setMembers(memberRows)
+        setComments(commentRows)
+        setFacets(facetRows)
+        setAssigneeUserId(issueResult.assigneeUserId ?? '')
+        setFixedRelease(issueResult.fixedInRelease ?? '')
         setAiAnalysis(null)
         setAiError('')
         setError('')
       })
-      .catch(() => setError(t('detail.loadError')))
-      .finally(() => setLoading(false))
+      .catch(() => {
+        if (!cancelled) setError(t('detail.loadError'))
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
   }, [issueId, t])
 
   const selectedEvent = useMemo(
@@ -87,11 +130,95 @@ export default function IssueDetailPage() {
     try {
       const updated = await api.issues.update(issue.id, { status })
       setIssue(updated)
+      setFixedRelease(updated.fixedInRelease ?? '')
       toast.success(t('detail.toast.updated'))
     } catch {
       toast.error(t('detail.toast.updateFailed'))
     } finally {
       setUpdating(null)
+    }
+  }
+
+  async function assignIssue() {
+    if (!issue) return
+    setWorkflowAction('assign')
+    try {
+      const updated = await api.issues.assign(issue.id, { assigneeUserId: assigneeUserId || null })
+      setIssue(updated)
+      setAssigneeUserId(updated.assigneeUserId ?? '')
+      toast.success(t('detail.toast.assigned'))
+    } catch {
+      toast.error(t('detail.toast.assignFailed'))
+    } finally {
+      setWorkflowAction(null)
+    }
+  }
+
+  async function markFixed() {
+    if (!issue || !fixedRelease.trim()) return
+    setWorkflowAction('fix')
+    try {
+      const updated = await api.issues.markFixed(issue.id, { release: fixedRelease.trim() })
+      setIssue(updated)
+      setFixedRelease(updated.fixedInRelease ?? '')
+      toast.success(t('detail.toast.fixed'))
+    } catch {
+      toast.error(t('detail.toast.fixFailed'))
+    } finally {
+      setWorkflowAction(null)
+    }
+  }
+
+  async function addComment() {
+    if (!issue || !commentBody.trim()) return
+    setWorkflowAction('comment')
+    try {
+      const comment = await api.issues.addComment(issue.id, { body: commentBody.trim() })
+      setComments((current) => [comment, ...current])
+      setCommentBody('')
+      toast.success(t('detail.toast.commentAdded'))
+    } catch {
+      toast.error(t('detail.toast.commentFailed'))
+    } finally {
+      setWorkflowAction(null)
+    }
+  }
+
+  async function mergeIssue() {
+    if (!issue || !targetIssueId.trim()) return
+    setWorkflowAction('merge')
+    try {
+      const updated = await api.issues.merge(issue.id, { targetIssueId: targetIssueId.trim() })
+      setIssue(updated)
+      setTargetIssueId('')
+      toast.success(t('detail.toast.merged'))
+    } catch {
+      toast.error(t('detail.toast.mergeFailed'))
+    } finally {
+      setWorkflowAction(null)
+    }
+  }
+
+  async function splitIssue() {
+    if (!issue || selectedSplitIds.length === 0) return
+    setWorkflowAction('split')
+    try {
+      const newIssue = await api.issues.split(issue.id, { eventIds: selectedSplitIds })
+      const remainingEvents = events.filter((event) => !selectedSplitIds.includes(event.id))
+      const [refreshedIssue, refreshedFacets] = await Promise.all([
+        api.issues.get(issue.id).catch(() => issue),
+        api.issues.facets(issue.id).catch(() => emptyFacets),
+      ])
+      setIssue(refreshedIssue)
+      setEvents(remainingEvents)
+      setSelectedEventId(remainingEvents[0]?.id || '')
+      setSelectedSplitIds([])
+      setFacets(refreshedFacets)
+      toast.success(t('detail.toast.split', { id: newIssue.id }))
+    } catch {
+      toast.error(t('detail.toast.splitFailed'))
+    } finally {
+      setWorkflowAction(null)
     }
   }
 
@@ -175,26 +302,177 @@ export default function IssueDetailPage() {
         <Fact label={t('detail.fact.lastSeen')} value={formatFullDateTime(issue.lastSeen)} icon={<Clock3 className="h-4 w-4 text-emerald-300" />} />
       </section>
 
-      <section className="app-panel p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-100">{t('detail.workflow.title')}</h2>
-            <p className="mt-1 text-xs text-slate-400">{t('detail.workflow.description')}</p>
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="app-panel p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-100">{t('detail.workflow.title')}</h2>
+              <p className="mt-1 text-xs text-slate-400">{t('detail.workflow.description')}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {statusActions.map((action) => (
+                <button
+                  key={action.status}
+                  disabled={issue.status === action.status || updating !== null}
+                  onClick={() => updateStatus(action.status)}
+                  className="app-button inline-flex items-center gap-2 border border-slate-700 px-3 text-sm text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  {action.icon}
+                  {updating === action.status ? t('detail.action.updating') : t(action.labelKey)}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {statusActions.map((action) => (
-              <button
-                key={action.status}
-                disabled={issue.status === action.status || updating !== null}
-                onClick={() => updateStatus(action.status)}
-                className="app-button inline-flex items-center gap-2 border border-slate-700 px-3 text-sm text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-45"
+
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            <label className="grid gap-2">
+              <span className="text-xs font-medium text-slate-400">{t('detail.workflow.assignee')}</span>
+              <select
+                value={assigneeUserId}
+                onChange={(event) => setAssigneeUserId(event.target.value)}
+                className="app-control w-full px-3 text-sm"
               >
-                {action.icon}
-                {updating === action.status ? t('detail.action.updating') : t(action.labelKey)}
+                <option value="">{t('detail.workflow.unassigned')}</option>
+                {members.map((member) => (
+                  <option key={member.userId} value={member.userId}>
+                    {member.name || member.email}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="grid content-end">
+              <button
+                disabled={workflowAction !== null}
+                onClick={assignIssue}
+                className="app-button inline-flex items-center justify-center gap-2 border border-slate-700 px-3 text-sm text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                <User className="h-4 w-4" />
+                {workflowAction === 'assign' ? t('detail.action.updating') : t('detail.workflow.saveAssignee')}
               </button>
-            ))}
+            </div>
+            <label className="grid gap-2">
+              <span className="text-xs font-medium text-slate-400">{t('detail.workflow.fixedRelease')}</span>
+              <input
+                value={fixedRelease}
+                onChange={(event) => setFixedRelease(event.target.value)}
+                placeholder={t('detail.workflow.releasePlaceholder')}
+                className="app-control w-full px-3 font-mono text-sm"
+              />
+            </label>
+            <div className="grid content-end">
+              <button
+                disabled={workflowAction !== null || !fixedRelease.trim()}
+                onClick={markFixed}
+                className="app-button inline-flex items-center justify-center gap-2 border border-success/35 bg-success/10 px-3 text-sm text-emerald-200 hover:bg-success/15 disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                {workflowAction === 'fix' ? t('detail.action.updating') : t('detail.workflow.markFixed')}
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-2 md:grid-cols-2">
+            <WorkflowMeta label={t('detail.workflow.assignedTo')} value={assigneeLabel(members, issue.assigneeUserId) || t('detail.workflow.unassigned')} />
+            <WorkflowMeta label={t('detail.workflow.fixedIn')} value={issue.fixedInRelease || '-'} />
+            <WorkflowMeta label={t('detail.workflow.resolvedAt')} value={issue.resolvedAt ? formatFullDateTime(issue.resolvedAt) : '-'} />
+            <WorkflowMeta
+              label={t('detail.workflow.regression')}
+              value={issue.regressedAt ? t('detail.workflow.regressionMeta', { release: issue.regressedInRelease || '-', time: formatFullDateTime(issue.regressedAt) }) : '-'}
+              tone={issue.regressedAt ? 'danger' : 'neutral'}
+            />
           </div>
         </div>
+
+        <Panel title={t('detail.facets.title')} description={t('detail.facets.description')}>
+          <FacetDistribution facets={facets} />
+        </Panel>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <Panel title={t('detail.comments.title')} description={t('detail.comments.description')}>
+          <div className="grid gap-3">
+            <textarea
+              value={commentBody}
+              onChange={(event) => setCommentBody(event.target.value)}
+              placeholder={t('detail.comments.placeholder')}
+              className="app-control min-h-24 w-full resize-y px-3 py-2 text-sm leading-6"
+            />
+            <div className="flex justify-end">
+              <button
+                disabled={workflowAction !== null || !commentBody.trim()}
+                onClick={addComment}
+                className="app-button inline-flex items-center gap-2 border border-slate-700 px-3 text-sm text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                <Code2 className="h-4 w-4" />
+                {workflowAction === 'comment' ? t('detail.comments.adding') : t('detail.comments.add')}
+              </button>
+            </div>
+            <CommentList comments={comments} />
+          </div>
+        </Panel>
+
+        <Panel title={t('detail.ops.title')} description={t('detail.ops.description')}>
+          <div className="space-y-4">
+            <div className="grid gap-2">
+              <label className="text-xs font-medium text-slate-400" htmlFor="merge-target">
+                {t('detail.ops.mergeTarget')}
+              </label>
+              <input
+                id="merge-target"
+                value={targetIssueId}
+                onChange={(event) => setTargetIssueId(event.target.value)}
+                className="app-control w-full px-3 font-mono text-sm"
+                placeholder="target issue id"
+              />
+              <button
+                disabled={workflowAction !== null || !targetIssueId.trim()}
+                onClick={mergeIssue}
+                className="app-button inline-flex items-center justify-center gap-2 border border-warning/35 bg-warning/10 px-3 text-sm text-amber-200 hover:bg-warning/15 disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                <GitBranch className="h-4 w-4" />
+                {workflowAction === 'merge' ? t('detail.ops.merging') : t('detail.ops.merge')}
+              </button>
+            </div>
+
+            <div className="border-t border-line pt-4">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="text-xs font-medium text-slate-400">{t('detail.ops.splitSamples')}</div>
+                <div className="font-mono text-xs text-slate-500">{t('detail.ops.selected', { count: selectedSplitIds.length })}</div>
+              </div>
+              <div className="max-h-52 space-y-2 overflow-y-auto pr-1">
+                {events.slice(0, 8).map((event) => {
+                  const checked = selectedSplitIds.includes(event.id)
+                  return (
+                    <label key={event.id} className="flex min-h-11 cursor-pointer items-start gap-2 rounded-md border border-line bg-slate-950/30 p-2 hover:bg-slate-800/55">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() =>
+                          setSelectedSplitIds((current) =>
+                            checked ? current.filter((id) => id !== event.id) : [...current, event.id],
+                          )
+                        }
+                        className="mt-1 h-4 w-4 accent-primary"
+                      />
+                      <span className="min-w-0">
+                        <span className="block truncate font-mono text-xs text-slate-300">{event.id}</span>
+                        <span className="mt-1 block line-clamp-1 text-xs text-slate-500">{event.message}</span>
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+              <button
+                disabled={workflowAction !== null || selectedSplitIds.length === 0}
+                onClick={splitIssue}
+                className="app-button mt-3 inline-flex w-full items-center justify-center gap-2 border border-primary/40 bg-primary/10 px-3 text-sm text-indigo-200 hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-45"
+              >
+                <GitBranch className="h-4 w-4" />
+                {workflowAction === 'split' ? t('detail.ops.splitting') : t('detail.ops.split')}
+              </button>
+            </div>
+          </div>
+        </Panel>
       </section>
 
       <AiAnalysisPanel
@@ -273,6 +551,78 @@ function Fact({ label, value, icon }: { label: string; value: string; icon: Reac
       <div className="mt-2 break-words font-mono text-sm font-semibold text-slate-100">{value}</div>
     </div>
   )
+}
+
+function WorkflowMeta({ label, value, tone = 'neutral' }: { label: string; value: string; tone?: 'neutral' | 'danger' }) {
+  const toneClass = tone === 'danger' ? 'border-danger/30 bg-danger/10 text-red-200' : 'border-line bg-slate-950/30 text-slate-300'
+  return (
+    <div className={`rounded-md border p-3 ${toneClass}`}>
+      <div className="text-xs text-slate-500">{label}</div>
+      <div className="mt-1 break-words font-mono text-xs leading-5">{value}</div>
+    </div>
+  )
+}
+
+function FacetDistribution({ facets }: { facets: IssueFacets }) {
+  const { t } = useI18n()
+  const hasFacets = facets.releases.length > 0 || facets.environments.length > 0 || facets.tags.length > 0
+  if (!hasFacets) return <EmptyState title={t('detail.facets.emptyTitle')} description={t('detail.facets.emptyDescription')} />
+  return (
+    <div className="space-y-4">
+      <FacetGroup title={t('detail.facets.releases')} items={facets.releases} />
+      <FacetGroup title={t('detail.facets.environments')} items={facets.environments} />
+      <FacetGroup title={t('detail.facets.tags')} items={facets.tags.map((tag) => ({ value: `${tag.key}: ${tag.value}`, count: tag.count }))} />
+    </div>
+  )
+}
+
+function FacetGroup({ title, items }: { title: string; items: Array<{ value: string; count: number }> }) {
+  if (items.length === 0) return null
+  const max = Math.max(...items.map((item) => item.count), 1)
+  return (
+    <div>
+      <div className="mb-2 text-xs font-medium text-slate-400">{title}</div>
+      <div className="space-y-2">
+        {items.map((item) => (
+          <div key={`${title}-${item.value}`} className="rounded-md border border-line bg-slate-950/30 p-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="truncate font-mono text-xs text-slate-300">{item.value}</span>
+              <span className="font-mono text-xs text-slate-500">{compactNumber(item.count)}</span>
+            </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-800">
+              <div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(8, (item.count / max) * 100)}%` }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function CommentList({ comments }: { comments: IssueComment[] }) {
+  const { t } = useI18n()
+  if (comments.length === 0) return <EmptyState title={t('detail.comments.emptyTitle')} description={t('detail.comments.emptyDescription')} />
+  return (
+    <div className="space-y-3">
+      {comments.map((comment) => (
+        <article key={comment.id} className="rounded-md border border-line bg-slate-950/30 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0 truncate text-sm font-medium text-slate-200">
+              {comment.authorName || comment.authorEmail || comment.authorUserId || t('common.unknown')}
+            </div>
+            <time className="font-mono text-xs text-slate-500">{formatFullDateTime(comment.createdAt)}</time>
+          </div>
+          <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-300">{comment.body}</p>
+        </article>
+      ))}
+    </div>
+  )
+}
+
+function assigneeLabel(members: ProjectMember[], assigneeUserId?: string | null): string {
+  if (!assigneeUserId) return ''
+  const member = members.find((item) => item.userId === assigneeUserId)
+  return member ? member.name || member.email : assigneeUserId
 }
 
 function StackTrace({ frames }: { frames: StackFrame[] | null }) {

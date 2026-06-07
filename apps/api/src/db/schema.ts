@@ -69,6 +69,7 @@ export const projects = pgTable('projects', {
   dsnToken: text('dsn_token').notNull().unique(),
   webhookUrl: text('webhook_url'),
   alertThreshold: integer('alert_threshold').default(50),
+  alertUserThreshold: integer('alert_user_threshold').default(10),
   retentionDays: integer('retention_days').default(30),
   aiAnalysisEnabled: boolean('ai_analysis_enabled').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -166,6 +167,16 @@ export const issues = pgTable(
     lastSeen: timestamp('last_seen').defaultNow().notNull(),
     count: integer('count').default(1).notNull(),
     userCount: integer('user_count').default(0).notNull(),
+    assigneeUserId: text('assignee_user_id').references(() => user.id, { onDelete: 'set null' }),
+    assignedAt: timestamp('assigned_at'),
+    assignedByUserId: text('assigned_by_user_id').references(() => user.id, { onDelete: 'set null' }),
+    resolvedAt: timestamp('resolved_at'),
+    resolvedByUserId: text('resolved_by_user_id').references(() => user.id, { onDelete: 'set null' }),
+    fixedInRelease: text('fixed_in_release'),
+    regressedAt: timestamp('regressed_at'),
+    regressedInRelease: text('regressed_in_release'),
+    mergedIntoIssueId: uuid('merged_into_issue_id'),
+    splitFromIssueId: uuid('split_from_issue_id'),
   },
   (table) => ({
     projectFingerprintUnique: unique('issues_project_fingerprint_unique').on(table.projectId, table.fingerprint),
@@ -185,6 +196,22 @@ export const issueUsers = pgTable(
   (table) => ({
     issueUserUnique: unique('issue_users_issue_user_unique').on(table.issueId, table.userHash),
     issueIdIdx: index('issue_users_issue_id_idx').on(table.issueId),
+  }),
+)
+
+export const issueComments = pgTable(
+  'issue_comments',
+  {
+    id: serial('id').primaryKey(),
+    issueId: uuid('issue_id')
+      .notNull()
+      .references(() => issues.id, { onDelete: 'cascade' }),
+    authorUserId: text('author_user_id').references(() => user.id, { onDelete: 'set null' }),
+    body: text('body').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    issueCreatedIdx: index('issue_comments_issue_created_idx').on(table.issueId, table.createdAt),
   }),
 )
 

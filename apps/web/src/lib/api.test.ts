@@ -77,3 +77,70 @@ describe('api project privacy settings', () => {
     expect(capturedInit?.body).toBe(JSON.stringify({ enabled: true }))
   })
 })
+
+describe('api issue workflow endpoints', () => {
+  it('calls assignment, fixed release, comment, merge, split, and facet endpoints', async () => {
+    const calls: Array<{ url: string; init?: RequestInit }> = []
+    global.fetch = mock(async (input, init) => {
+      calls.push({ url: String(input), init })
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }) as typeof fetch
+
+    await api.issues.assign('issue-1', { assigneeUserId: 'user-2' })
+    await api.issues.markFixed('issue-1', { release: 'web@2.1.0' })
+    await api.issues.comments('issue-1')
+    await api.issues.addComment('issue-1', { body: 'Investigating' })
+    await api.issues.facets('issue-1')
+    await api.issues.merge('source-1', { targetIssueId: 'target-1' })
+    await api.issues.split('source-1', { eventIds: ['event-1'] })
+
+    expect(calls.map((call) => call.url)).toEqual([
+      'http://localhost:3002/api/issues/issue-1/assignment',
+      'http://localhost:3002/api/issues/issue-1/fix',
+      'http://localhost:3002/api/issues/issue-1/comments',
+      'http://localhost:3002/api/issues/issue-1/comments',
+      'http://localhost:3002/api/issues/issue-1/facets',
+      'http://localhost:3002/api/issues/source-1/merge',
+      'http://localhost:3002/api/issues/source-1/split',
+    ])
+    expect(calls.map((call) => call.init?.method ?? 'GET')).toEqual([
+      'PATCH',
+      'PATCH',
+      'GET',
+      'POST',
+      'GET',
+      'POST',
+      'POST',
+    ])
+  })
+})
+
+describe('api project alert settings', () => {
+  it('updates webhook and alert thresholds with PATCH', async () => {
+    let capturedUrl = ''
+    let capturedInit: RequestInit | undefined
+    global.fetch = mock(async (input, init) => {
+      capturedUrl = String(input)
+      capturedInit = init
+      return new Response(JSON.stringify([{ id: 'project-1' }]), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }) as typeof fetch
+
+    await api.projects.updateAlertSettings('project-1', {
+      webhookUrl: 'https://hook.local',
+      alertThreshold: 20,
+      alertUserThreshold: 5,
+    })
+
+    expect(capturedUrl).toBe('http://localhost:3002/api/projects/project-1/alert-settings')
+    expect(capturedInit?.method).toBe('PATCH')
+    expect(capturedInit?.body).toBe(
+      JSON.stringify({ webhookUrl: 'https://hook.local', alertThreshold: 20, alertUserThreshold: 5 }),
+    )
+  })
+})

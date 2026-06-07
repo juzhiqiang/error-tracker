@@ -12,6 +12,12 @@ interface ProjectCreateBody {
   organizationId?: string
 }
 
+export interface ProjectAlertSettingsBody {
+  webhookUrl?: string | null
+  alertThreshold?: number | null
+  alertUserThreshold?: number | null
+}
+
 @Injectable()
 export class ProjectsService {
   constructor(@Inject(DB) private db: PostgresJsDatabase<typeof schema>) {}
@@ -27,6 +33,7 @@ export class ProjectsService {
         p.dsn_token as "dsnToken",
         p.webhook_url as "webhookUrl",
         p.alert_threshold as "alertThreshold",
+        p.alert_user_threshold as "alertUserThreshold",
         p.retention_days as "retentionDays",
         p.ai_analysis_enabled as "aiAnalysisEnabled",
         p.created_at as "createdAt"
@@ -61,6 +68,7 @@ export class ProjectsService {
           dsn_token as "dsnToken",
           webhook_url as "webhookUrl",
           alert_threshold as "alertThreshold",
+          alert_user_threshold as "alertUserThreshold",
           retention_days as "retentionDays",
           ai_analysis_enabled as "aiAnalysisEnabled",
           created_at as "createdAt"
@@ -83,6 +91,19 @@ export class ProjectsService {
 
   updateAiAnalysisEnabled(projectId: string, aiAnalysisEnabled: boolean) {
     return this.db.update(projects).set({ aiAnalysisEnabled }).where(eq(projects.id, projectId)).returning()
+  }
+
+  updateAlertSettings(projectId: string, body: ProjectAlertSettingsBody) {
+    const webhookUrl = body.webhookUrl?.trim() || null
+    return this.db
+      .update(projects)
+      .set({
+        webhookUrl,
+        alertThreshold: normalizeThreshold(body.alertThreshold, 50),
+        alertUserThreshold: normalizeThreshold(body.alertUserThreshold, 10),
+      })
+      .where(eq(projects.id, projectId))
+      .returning()
   }
 
   private async resolveOrganizationIdForCreate(organizationId: string | undefined, userId: string): Promise<string> {
@@ -137,4 +158,10 @@ export class ProjectsService {
 
 function rowsFrom<T>(result: unknown): T[] {
   return Array.isArray(result) ? (result as T[]) : ((result as { rows?: T[] }).rows ?? [])
+}
+
+function normalizeThreshold(value: number | null | undefined, fallback: number): number {
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric) || numeric <= 0) return fallback
+  return Math.min(100_000, Math.max(1, Math.round(numeric)))
 }
