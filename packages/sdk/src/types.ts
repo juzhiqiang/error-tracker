@@ -65,6 +65,14 @@ export interface Integration {
   teardown?(): void
 }
 
+export interface BlankScreenOptions {
+  enabled?: boolean
+  samplePointCount?: number
+  threshold?: number
+  delayMs?: number
+  blankSelectors?: string[]
+}
+
 export interface SdkOptions {
   dsn: string
   environment?: string
@@ -78,5 +86,6 @@ export interface SdkOptions {
     persistenceKey?: string
   }
   integrations?: Integration[]
+  blankScreen?: BlankScreenOptions
   beforeSend?: (event: ErrorEvent) => ErrorEvent | null
 }

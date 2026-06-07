@@ -3,11 +3,13 @@ import { BrowserErrorsIntegration } from './integrations/browser-errors'
 import { BrowserBreadcrumbsIntegration } from './integrations/browser-breadcrumbs'
 import { BrowserPerformanceIntegration } from './integrations/browser-performance'
 import { BrowserEnvironmentIntegration } from './integrations/browser-environment'
+import { BrowserBlankScreenIntegration } from './integrations/browser-blank-screen'
 import type { SdkOptions } from './types'
 
 export { ErrorTrackerClient } from './core/client'
 export { EnvironmentCollector } from './core/environment'
-export type { SdkOptions, Integration, ErrorEvent, Breadcrumb, EventContext } from './types'
+export { BrowserBlankScreenIntegration } from './integrations/browser-blank-screen'
+export type { SdkOptions, Integration, ErrorEvent, Breadcrumb, EventContext, BlankScreenOptions } from './types'
 export type { EnvironmentSnapshot } from './core/environment'
 
 let _client: ErrorTrackerClient | null = null
@@ -18,6 +20,7 @@ export function init(options: SdkOptions): ErrorTrackerClient {
     new BrowserErrorsIntegration(),
     new BrowserBreadcrumbsIntegration(),
     new BrowserPerformanceIntegration(),
+    ...(options.blankScreen?.enabled === false ? [] : [new BrowserBlankScreenIntegration(options.blankScreen)]),
   ]
   _client = new ErrorTrackerClient({
     ...options,
