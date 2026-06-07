@@ -1,9 +1,23 @@
 {
   "name": "@error-tracker/sdk",
   "version": "0.1.0",
+  "description": "Browser and Node.js SDK for Error Tracker.",
   "private": false,
+  "license": "UNLICENSED",
   "type": "module",
   "types": "./dist/types/index.d.ts",
+  "sideEffects": false,
+  "keywords": [
+    "error-tracking",
+    "monitoring",
+    "observability",
+    "sourcemap",
+    "replay",
+    "web-vitals"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "dist",
     "package.json"
@@ -13,12 +27,17 @@
       "types": "./dist/types/index.d.ts",
       "browser": "./dist/browser/index.js",
       "import": "./dist/browser/index.js",
-      "require": "./dist/node/node.js"
+      "require": "./dist/node/index.cjs"
     },
     "./node": {
       "types": "./dist/types/node.d.ts",
-      "import": "./dist/node/node.js",
-      "require": "./dist/node/node.js"
+      "import": "./dist/node/index.mjs",
+      "require": "./dist/node/index.cjs"
+    },
+    "./react": {
+      "types": "./dist/types/react.d.ts",
+      "browser": "./dist/browser/react.js",
+      "import": "./dist/browser/react.js"
     },
     "./plugins/replay": {
       "types": "./dist/types/plugins/replay/index.d.ts",
@@ -27,14 +46,20 @@
     }
   },
   "scripts": {
-    "build": "bun run build:browser && bun run build:node && bun run build:replay && bun run build:types",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build": "bun run clean && bun run build:browser && bun run build:node && bun run build:react && bun run build:replay && bun run build:types",
     "build:browser": "bun build src/index.ts --outdir dist/browser --target browser --format esm --sourcemap --external react",
-    "build:node": "bun build src/node.ts --outdir dist/node --target node --format cjs --sourcemap --external react",
+    "build:node": "bun run build:node:esm && bun run build:node:cjs",
+    "build:node:esm": "bun build src/node.ts --outdir dist/node --entry-naming '[dir]/index.mjs' --target node --format esm --sourcemap --external react",
+    "build:node:cjs": "bun build src/node.ts --outdir dist/node --entry-naming '[dir]/index.cjs' --target node --format cjs --sourcemap --external react",
+    "build:react": "bun build src/react.tsx --outdir dist/browser --entry-naming '[dir]/react.js' --target browser --format esm --sourcemap --external react",
     "build:replay": "bun build src/plugins/replay/index.ts --outdir dist/browser/plugins/replay --target browser --format esm --sourcemap --external react",
-    "build:types": "tsc --emitDeclarationOnly --declaration --declarationMap false --outDir dist/types",
+    "build:types": "tsc -p tsconfig.build.json --emitDeclarationOnly --declaration --declarationMap false --outDir dist/types",
     "dev": "bun run build --watch",
     "test": "bun test",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "pack:check": "npm pack --dry-run",
+    "prepublishOnly": "bun run lint && bun test && bun run build && npm pack --dry-run"
   },
   "dependencies": {
     "web-vitals": "^4.0.0",

@@ -4,7 +4,6 @@ import { BrowserBreadcrumbsIntegration } from './integrations/browser-breadcrumb
 import { BrowserPerformanceIntegration } from './integrations/browser-performance'
 import type { SdkOptions } from './types'
 
-export { ErrorBoundary } from './integrations/react-error-boundary'
 export { ErrorTrackerClient } from './core/client'
 export type { SdkOptions, Integration, ErrorEvent, Breadcrumb } from './types'
 
