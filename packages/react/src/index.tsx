@@ -1,18 +1,21 @@
 import React from 'react'
-import type { ErrorTrackerClient } from './core/client'
 
-interface Props {
-  client: ErrorTrackerClient
+export interface ErrorTrackerReactClient {
+  captureException(error: Error, extra?: Record<string, unknown>): unknown
+}
+
+export interface ErrorBoundaryProps {
+  client: ErrorTrackerReactClient
   fallback?: React.ReactNode
   children: React.ReactNode
 }
 
-interface State {
+interface ErrorBoundaryState {
   hasError: boolean
 }
 
-export class ErrorBoundary extends React.Component<Props, State> {
-  state: State = { hasError: false }
+export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  state: ErrorBoundaryState = { hasError: false }
 
   componentDidCatch(error: Error, info: React.ErrorInfo): void {
     this.props.client.captureException(error, {
@@ -20,7 +23,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
     })
   }
 
-  static getDerivedStateFromError(): State {
+  static getDerivedStateFromError(): ErrorBoundaryState {
     return { hasError: true }
   }
 

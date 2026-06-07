@@ -34,11 +34,6 @@
       "import": "./dist/node/index.mjs",
       "require": "./dist/node/index.cjs"
     },
-    "./react": {
-      "types": "./dist/types/react.d.ts",
-      "browser": "./dist/browser/react.js",
-      "import": "./dist/browser/react.js"
-    },
     "./plugins/replay": {
       "types": "./dist/types/plugins/replay/index.d.ts",
       "browser": "./dist/browser/plugins/replay/index.js",
@@ -47,12 +42,11 @@
   },
   "scripts": {
     "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
-    "build": "bun run clean && bun run build:browser && bun run build:node && bun run build:react && bun run build:replay && bun run build:types",
+    "build": "bun run clean && bun run build:browser && bun run build:node && bun run build:replay && bun run build:types",
     "build:browser": "bun build src/index.ts --outdir dist/browser --target browser --format esm --sourcemap",
     "build:node": "bun run build:node:esm && bun run build:node:cjs",
     "build:node:esm": "bun build src/node.ts --outdir dist/node --entry-naming '[dir]/index.mjs' --target node --format esm --sourcemap",
     "build:node:cjs": "bun build src/node.ts --outdir dist/node --entry-naming '[dir]/index.cjs' --target node --format cjs --sourcemap",
-    "build:react": "bun build src/react.tsx --outdir dist/browser --entry-naming '[dir]/react.js' --target browser --format esm --sourcemap --external react",
     "build:replay": "bun build src/plugins/replay/index.ts --outdir dist/browser/plugins/replay --target browser --format esm --sourcemap",
     "build:types": "tsc -p tsconfig.build.json --emitDeclarationOnly --declaration --declarationMap false --outDir dist/types",
     "dev": "bun run build --watch",
@@ -67,16 +61,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "@types/react": "^18.3.12",
     "bun-types": "^1.3.14",
     "typescript": "^5.7.0"
-  },
-  "peerDependencies": {
-    "react": ">=18.0.0"
-  },
-  "peerDependenciesMeta": {
-    "react": {
-      "optional": true
-    }
   }
 }

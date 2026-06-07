@@ -8,7 +8,7 @@ Browser and Node.js SDK for Error Tracker.
 npm install @error-tracker/sdk
 ```
 
-The core browser and Node.js entries do not depend on React. React is only needed when you import the optional `@error-tracker/sdk/react` entry.
+The SDK is framework-agnostic and can be used from native JavaScript, React, Vue, Svelte, Angular, or any other runtime that can call JavaScript. Framework adapters are published separately so this core package never depends on React, Vue, or other UI frameworks.
 
 ## Browser
 
@@ -46,33 +46,10 @@ init({
 
 The Node.js entry captures uncaught exceptions and unhandled promise rejections, then flushes queued events before process exit when possible.
 
-## React Error Boundary
-
-React support is intentionally isolated so non-React browser and Node consumers do not need to install React.
-Install React in the host application before using this optional entry.
-
-```tsx
-import { init } from '@error-tracker/sdk'
-import { ErrorBoundary } from '@error-tracker/sdk/react'
-
-const client = init({
-  dsn: 'https://tracker.example.com/ingest/<projectId>/<token>',
-})
-
-export function App() {
-  return (
-    <ErrorBoundary client={client} fallback={<div>Something went wrong.</div>}>
-      <Routes />
-    </ErrorBoundary>
-  )
-}
-```
-
 ## Package Entries
 
 ```text
 @error-tracker/sdk                 Browser SDK
 @error-tracker/sdk/node            Node.js SDK
-@error-tracker/sdk/react           React ErrorBoundary
 @error-tracker/sdk/plugins/replay  rrweb replay plugin
 ```

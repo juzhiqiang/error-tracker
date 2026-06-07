@@ -83,6 +83,19 @@
         "typescript": "^5.7.0",
       },
     },
+    "packages/react": {
+      "name": "@error-tracker/react",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@types/react": "^18.3.12",
+        "bun-types": "^1.3.14",
+        "typescript": "^5.7.0",
+      },
+      "peerDependencies": {
+        "@error-tracker/sdk": ">=0.1.0",
+        "react": ">=18.0.0",
+      },
+    },
     "packages/sdk": {
       "name": "@error-tracker/sdk",
       "version": "0.1.0",
@@ -92,16 +105,9 @@
       },
       "devDependencies": {
         "@types/node": "^22.0.0",
-        "@types/react": "^18.3.12",
         "bun-types": "^1.3.14",
         "typescript": "^5.7.0",
       },
-      "peerDependencies": {
-        "react": ">=18.0.0",
-      },
-      "optionalPeers": [
-        "react",
-      ],
     },
   },
   "overrides": {
@@ -212,6 +218,8 @@
     "@error-tracker/api": ["@error-tracker/api@workspace:apps/api"],
 
     "@error-tracker/cli": ["@error-tracker/cli@workspace:packages/cli"],
+
+    "@error-tracker/react": ["@error-tracker/react@workspace:packages/react"],
 
     "@error-tracker/sdk": ["@error-tracker/sdk@workspace:packages/sdk"],
 
