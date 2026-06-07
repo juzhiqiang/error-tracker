@@ -1,226 +1,381 @@
 # Error Tracker
 
-Error Tracker 是一个轻量级、高性能的错误监控、回归检测、性能监控与会话录屏回放平台（类似于轻量版自托管 Sentry）。它专为开发、SRE、QA 和产品支持团队设计，支持快速异常聚合、调用栈解析、用户行为面包屑重建、rrweb 录屏还原以及前端 Web Vitals 性能分析。
+Error Tracker 是一个自托管的错误监控、性能分析、Source Map 反解和会话回放平台。它面向工程、SRE、QA 和产品支持团队，目标是在一次生产异常发生后，把错误聚合、调用栈、用户行为轨迹、Web Vitals、版本信息和修复建议放到同一个可追踪的工作台里。
 
----
+当前仓库是独立 monorepo，包含 SDK、NestJS API、Next.js Dashboard、Source Map CLI、运维脚本和端到端验证脚本。`unitls-plane` 是第一个真实接入样例项目。
 
-## 🚀 核心特性
+## 当前完成度
 
-- **多端 SDK 收集**：通用 SDK（`@error-tracker/sdk`）支持前端浏览器（自动捕获 `window.onerror`、`unhandledrejection`、点击/网络请求/路由面包屑）及 Node.js 后端服务。
-- **智能错误指纹 (Fingerprint)**：
-  - **客户端去重**：5秒内存 TTL 降噪，防止异常突发流量冲垮上报通道。
-  - **服务端聚合**：基于异常类型、错误消息和过滤掉构建差异的调用栈信息（前 3 帧文件名与函数名），跨用户、跨版本聚合为相同的 `Issue`。
-- **环形录屏回放 (Session Replay)**：基于 `rrweb` 实现持续录制，仅在**发生错误时**才将最近 30 秒的录屏缓冲区上传至对象存储（MinIO），降低存储消耗，精准回溯用户出错前的操作轨迹。
-- **性能指标监控 (Web Vitals)**：自动采集 LCP、FID、CLS、INP、TTFB，并根据 Google 标准进行 Good / Needs Improvement / Poor 分级统计。
-- **Source Map 还原**：支持上传 Source Map，通过 `packages/cli` 命令行工具在 CI/CD 流程中自动提交，服务端接收错误时自动反解混淆后的调用栈。
-- **Dark Professional 控制台**：基于 Next.js 14、TailwindCSS 和 shadcn/ui 打造的高密深色专业级控制台，支持错误检索、多维度筛选、Breadcrumbs 时间线还原、录屏播放和性能分析。
+Plan 1 和 Plan 2 的核心链路已经完成并验证：
 
----
+- 浏览器 SDK：自动捕获 `window.onerror`、`unhandledrejection`、点击、导航、fetch breadcrumbs、Web Vitals 和 rrweb replay。
+- Node SDK：捕获未处理异常和 rejection，并在异常发生后主动 flush。
+- API：接收 error/performance/replay，聚合 issue，保存事件详情，处理 Source Map、成员权限、邀请、审计、队列运维、AI Advisor 和自监控。
+- Dashboard：登录、项目设置、成员与权限、错误列表、错误详情、replay、性能、Source Map 文档、审计和运维页面。
+- Source Map：支持控制台上传、CI 上传和 CLI 上传。
+- utils-plane 集成：浏览器 SDK、Node SDK、Source Map 上传脚本和 replay 均已接入验证。
+- 本地验证：migration、SDK/API 测试、web/api build、Source Map 上传和浏览器 e2e 已通过。
 
-## 🛠 技术栈
+仍建议在正式生产前继续补强：
 
-| 模块 | 技术选型 |
-|----|------|
-| **包管理器与运行时** | Bun 1.3.13 + Turborepo |
-| **后端 API 服务** | NestJS 11 + Express + BullMQ (异步上报队列) |
-| **前端 控制台** | Next.js 14 App Router + TailwindCSS + Radix UI / shadcn/ui |
-| **数据库** | PostgreSQL 16 + Drizzle ORM |
-| **对象存储** | MinIO (用于存储二进制 rrweb 录屏文件) |
-| **缓存与消息队列** | Redis 7 + BullMQ |
-| **测试框架** | `bun test` + Playwright (E2E 测试) |
+- 把关键 e2e 固化进 CI，而不是只依赖本地脚本。
+- 按生产域名、HTTPS、反向代理和密钥管理重审环境配置。
+- 为 Postgres、Redis、MinIO、API 和队列增加持续监控和告警。
+- 定期演练备份恢复、Source Map 回滚、replay 清理和容量压测。
+- 明确多租户配额、保留期、审计策略和数据导出策略。
 
----
-
-## 📁 项目目录结构
+## Monorepo 结构
 
 ```text
 error-tracker/
 ├── apps/
-│   ├── api/                    # NestJS API 服务 (运行端口: 3002)
-│   └── web/                    # Next.js Dashboard 管理台 (运行端口: 3003)
+│   ├── api/                 # NestJS API, default port 3002
+│   └── web/                 # Next.js Dashboard, default port 3003
 ├── packages/
-│   ├── sdk/                    # 浏览器 & Node.js 通用上报 SDK
-│   └── cli/                    # CLI 工具 (用于 Source Map 上传等)
+│   ├── sdk/                 # Browser + Node SDK
+│   └── cli/                 # Source Map upload CLI
 ├── scripts/
-│   ├── e2e/                    # E2E 自动化测试脚本与数据填充
-│   ├── load/                   # Ingest / Replay / Sourcemap 压测与容量分析脚本
-│   └── ops/                    # 生产环境备份、恢复运维脚本
-├── docker-compose.yml          # 本地开发所需的基础服务镜像 (Postgres, Redis, MinIO)
-├── package.json                # Monorepo 工作区定义与全局脚本
-├── turbo.json                  # Turborepo 任务管道配置
-└── tsconfig.base.json          # TypeScript 基础配置
+│   ├── e2e/                 # Local stack + Playwright style verification helpers
+│   ├── load/                # Ingest, replay, sourcemap, dashboard load scripts
+│   └── ops/                 # Backup and restore scripts
+├── docs/
+│   ├── operations/          # Runbooks, capacity baseline, restore reports
+│   └── superpowers/         # Plans and design specs
+├── task/                    # Task-by-task implementation records
+├── docker-compose.yml       # Postgres, Redis, MinIO for local development
+├── package.json             # Workspace scripts
+├── PRODUCT.md               # Product and UX principles
+└── AGENTS.md                # AI agent execution guide
 ```
 
----
+## Runtime Architecture
 
-## ⚡ 快速开始
+```text
+Customer app / service
+  ├─ Browser SDK
+  │   ├─ errors + breadcrumbs + web vitals
+  │   └─ rrweb replay buffer
+  └─ Node SDK
+      └─ exceptions + unhandled rejections
+        │
+        ▼
+API ingest endpoints
+  ├─ POST /ingest/:projectId/:token
+  └─ POST /ingest/:projectId/:token/replay
+        │
+        ├─ PostgreSQL: projects, issues, events, metrics, members, audit
+        ├─ Redis/BullMQ: alert, cleanup and operations queues
+        └─ MinIO: replay payloads and Source Map objects
+        │
+        ▼
+Next.js Dashboard
+  ├─ issues, event detail, replay, performance
+  ├─ settings, members, invitations, source maps
+  ├─ audit logs and queue operations
+  └─ AI Advisor for error and performance suggestions
+```
 
-### 1. 准备工作
+## Applications
 
-确保你的开发机已安装以下环境：
-- [Bun](https://bun.sh/) (推荐 >= 1.3.13)
-- [Docker](https://www.docker.com/) (用于运行本地 Postgres/Redis/MinIO)
+### `apps/api`
 
-### 2. 复制配置并运行本地服务
+NestJS 11 API 服务，默认监听 `http://localhost:3002`。
 
-在项目根目录下复制环境变量模板，并启动外部服务容器：
+Main responsibilities:
+
+- `ingest`: DSN token 认证、body size 限制、项目级限流、事件校验、PII scrub、error/performance/replay 入库。
+- `issues`: issue 列表、详情、状态更新和事件分页。
+- `events`: event 详情、Source Map 反解、replay 读取。
+- `sourcemaps`: 控制台上传、CI 上传、删除和 MinIO 存储。
+- `projects`: 项目创建、token 轮换、成员管理、邀请、角色切换和移除。
+- `organizations`: 组织、团队、团队成员和项目绑定。
+- `stats`: issue 趋势和 Web Vitals 统计。
+- `ai`: 错误修复建议和性能优化建议，支持本地规则引擎和 OpenAI provider。
+- `alerts` / `cleanup`: BullMQ worker，负责告警和数据生命周期处理。
+- `operations`: 队列状态、失败任务重试和删除。
+- `audit`: 审计日志查询和 CSV 导出。
+- `auth`: Better-Auth 邮箱密码登录，挂载在 `/api/auth/*`。
+- `self-monitoring`: 平台自身异常捕获，可通过 DSN 上报到自己的项目。
+- `health`: API、DB、Redis、MinIO 和队列健康检查。
+
+Important API routes:
+
+```text
+POST   /ingest/:projectId/:token
+POST   /ingest/:projectId/:token/replay
+GET    /health
+GET    /api/issues
+GET    /api/issues/:id
+GET    /api/issues/:id/events
+PATCH  /api/issues/:id
+GET    /api/events/:id
+GET    /api/events/:id/replay
+GET    /api/stats/issues
+GET    /api/stats/performance
+POST   /api/issues/:id/ai-analysis
+POST   /api/stats/performance/ai-analysis
+GET    /api/projects
+POST   /api/projects
+POST   /api/projects/:id/rotate-token
+GET    /api/projects/:projectId/members
+POST   /api/projects/:projectId/members
+PATCH  /api/projects/:projectId/members/:userId
+DELETE /api/projects/:projectId/members/:userId
+POST   /api/sourcemaps/:projectId/:release
+POST   /api/sourcemaps/:projectId/:release/ci
+DELETE /api/sourcemaps/:projectId/:release
+GET    /api/audit-logs
+GET    /api/audit-logs/export.csv
+GET    /api/operations/queues
+```
+
+### `apps/web`
+
+Next.js 14 Dashboard，默认监听 `http://localhost:3003`。
+
+Primary routes:
+
+```text
+/welcome                         # 产品介绍页
+/login                           # 登录
+/accept-invite/:token            # 接受项目邀请
+/                                # Dashboard overview
+/issues                          # Issue 列表
+/issues/:id                      # Issue 详情
+/issues/:id/replay               # rrweb replay 播放
+/performance                     # Web Vitals 性能页
+/settings                        # 项目、成员、DSN、Source Map 设置
+/docs                            # SDK 接入文档
+/audit                           # 审计日志
+/operations                      # 队列运维
+```
+
+Dashboard 设计原则见 [PRODUCT.md](./PRODUCT.md)。当前 UI 目标是专业密集型观测平台：信息优先、状态清晰、减少装饰性页面，支持亮色/暗色模式和国际化。
+
+## Packages
+
+### `packages/sdk`
+
+`@error-tracker/sdk` 同时提供 browser 和 Node.js 入口：
+
+```text
+@error-tracker/sdk                 # browser ESM
+@error-tracker/sdk/node            # Node entry
+@error-tracker/sdk/plugins/replay  # rrweb replay plugin
+```
+
+Core modules:
+
+- `core/client`: 事件构造、采样、beforeSend、集成管理。
+- `core/fingerprint`: 客户端错误指纹。
+- `core/breadcrumbs`: breadcrumbs ring buffer。
+- `core/queue`: 队列、重试、可选持久化。
+- `core/dedupe`: 客户端 TTL 去重。
+- `transports/http`: JSON ingest transport，页面隐藏时使用 keepalive。
+- `integrations/browser-*`: 浏览器错误、breadcrumbs、performance。
+- `integrations/node-errors`: Node 异常和 rejection 捕获。
+- `plugins/replay`: rrweb 环形缓冲，错误发生时上传最近 replay。
+
+Replay 注意点：
+
+- replay 上传不使用 `keepalive`，避免浏览器对大 body 的限制。
+- API body parser 默认跟随 `REPLAY_MAX_BODY_BYTES`，避免 Express 默认 100KB 拦截。
+- replay 先于 event 到达时，event 入库后会回填 `replays.event_id`。
+
+### `packages/cli`
+
+`@error-tracker/cli` 提供 Source Map 上传命令：
 
 ```bash
-# 复制环境变量模板
-cp .env.example .env.local
-
-# 启动 Postgres, Redis 和 MinIO
-bun run services:up
-```
-
-### 3. 执行数据库迁移
-
-首次运行或更新 schema 后，需要对 PostgreSQL 执行 Drizzle 迁移：
-
-```bash
-# 生成并运行数据库 Migration
-bun --cwd apps/api db:migrate
-```
-
-### 4. 启动开发服务器
-
-通过 Turborepo 一键启动 API 和 Web 端的开发服务器：
-
-```bash
-bun run dev
-```
-启动成功后：
-- API 服务运行在 `http://localhost:3002`
-- Dashboard 运行在 `http://localhost:3003`
-
----
-
-## 🧪 测试与质量验证
-
-### 1. 单元测试
-
-运行 SDK 的核心功能单元测试（指纹、面包屑、限流队列等）：
-
-```bash
-bun test packages/sdk
-```
-
-### 2. E2E 自动化回归测试
-
-运行完整的 E2E 流程（会启动临时 Docker 服务、跑 migration、Seed 测试用户，然后通过 Playwright 自动化测试所有核心操作流程）：
-
-```bash
-bun run e2e
-```
-
-### 3. 压测与容量基线
-
-如果需要评估平台的负载能力，可以使用 `scripts/load` 下的压力测试脚本：
-
-```bash
-# 测试 Ingest 接口的吞吐量
-bun run load:ingest
-
-# 测试 Replay 录屏上报
-bun run load:replay
-
-# 测试 Source Map 解析与上传性能
-bun run load:sourcemap
-```
-
----
-
-## 📦 SDK 使用指南
-
-### 1. 初始化 SDK
-
-在你的前端应用入口（如 `layout.tsx` 或 `main.ts`）中引入并配置：
-
-```typescript
-import { init } from '@error-tracker/sdk'
-import { ReplayPlugin } from '@error-tracker/sdk/plugins/replay'
-
-init({
-  dsn: 'http://localhost:3002/ingest/<projectId>/<dsnToken>',
-  environment: 'production',
-  release: '1.0.0',
-  sampleRate: 1.0,
-  integrations: [
-    // 启用 30 秒环形缓冲录屏，只在出错时上报，采样率 10%
-    new ReplayPlugin({ bufferSeconds: 30, sampleRate: 0.1 })
-  ]
-})
-```
-
-### 2. 手动上报异常与消息
-
-你可以在代码中捕获到特定逻辑异常时手动上报：
-
-```typescript
-import { captureException, captureMessage, setContext } from '@error-tracker/sdk'
-
-// 附加额外上下文信息
-setContext({
-  user: { id: 'user_9527', email: 'dev@example.com' },
-  tags: { feature: 'checkout' }
-})
-
-try {
-  doSomethingDangerous()
-} catch (error) {
-  // 上报异常
-  captureException(error)
-}
-
-// 仅记录特定状态消息
-captureMessage('User completed the onboarding flow', 'info')
-```
-
----
-
-## 🛠 Source Map 命令行上传
-
-前端发布生产环境时，可以通过 `@error-tracker/cli` 自动上传生成的 `.map` 文件，以便控制台能清晰地显示真实的 TypeScript 源文件栈：
-
-```bash
-# 编译 CLI 工具
 bun run cli:build
-
-# 使用命令行上传 Source Map
 bun exec error-tracker sourcemaps upload \
   --api-url http://localhost:3002 \
-  --project-id <your-project-id> \
-  --token <your-dsn-token> \
-  --release 1.0.0 \
+  --project-id <project-id> \
+  --token <dsn-token> \
+  --release <release> \
   --dist ./dist
 ```
 
----
+CI 也可以直接调用 API：
 
-## 🗄 备份与灾备恢复 (Ops)
+```text
+POST /api/sourcemaps/:projectId/:release/ci
+Header: x-error-tracker-token: <dsn-token>
+```
 
-为了保证生产环境的数据安全，提供了自动化备份和灾难恢复脚本（支持 Windows PowerShell）：
+## Data Flow
+
+### Error event flow
+
+1. SDK 捕获异常并生成 `eventId`、fingerprint、stacktrace、breadcrumbs、environment、release。
+2. SDK queue 在正常 flush 或 `document.visibilityState === 'hidden'` 时发送到 `/ingest/:projectId/:token`。
+3. API 的 `DsnAuthGuard` 校验 token，`IngestLimitsService` 执行 body size、速率和日配额限制。
+4. API 服务端重新计算聚合 fingerprint，写入或更新 `issues`。
+5. 原始事件写入 `events`，敏感字段经过 PII scrub。
+6. Dashboard 按项目权限读取 issue、event、breadcrumbs 和反解后的 stack。
+
+### Replay flow
+
+1. Browser SDK 的 `ReplayPlugin` 使用 rrweb 记录最近 N 秒事件。
+2. 发生错误时，SDK 使用同一个 `eventId` 上传 replay 到 `/ingest/:projectId/:token/replay`。
+3. API 将 rrweb events 写入 MinIO：`replays/<projectId>/<eventId>.json`。
+4. 如果 event 已存在，直接写入 `replays.event_id`；如果 replay 先到，event 入库后回填关联。
+5. Dashboard 的 replay 页面从 `/api/events/:id/replay` 读取并播放。
+
+### Performance flow
+
+1. Browser SDK 通过 `web-vitals` 收集 LCP、FID、CLS、INP、TTFB。
+2. Performance event 和错误事件共用 ingest 批量上报。
+3. API 写入 `performance_metrics`。
+4. `/performance` 页面和 `/api/stats/performance/ai-analysis` 提供趋势和优化建议。
+
+### Source Map flow
+
+1. Web build 生成 `.map` 文件。
+2. CLI、CI 或 Dashboard 上传 Source Map 到 API。
+3. API 将文件存储到 MinIO，并在 `source_maps` 表记录 release、filename、checksum、size。
+4. Event detail 读取 stack frame 后，按 release 和文件名查找 Source Map 并反解原始位置。
+
+## Security And Access Model
+
+- Dashboard 使用 Better-Auth session。
+- API Dashboard 路由使用 `SessionGuard` 和项目访问控制。
+- SDK ingest 使用 DSN token，不依赖用户 session。
+- `/ingest` 和 `/api/sourcemaps` 支持 SDK/CI 跨域；Dashboard API 使用 `CORS_ORIGIN` allowlist 和 credentials。
+- 项目列表只返回当前用户可访问的项目。
+- Settings 中支持成员邀请、角色切换、移除成员和邀请重发。
+- 邀请邮件可配置 SMTP；未配置时保留可复制邀请链接。
+- PII scrub 会过滤 password、token、secret、authorization、api key 等敏感字段。
+
+## Local Development
+
+### Requirements
+
+- Bun 1.3.13+
+- Docker Desktop
+- Node.js for running built API with source maps when needed
+
+### Environment
 
 ```bash
-# 备份 PostgreSQL 数据库结构与数据
-powershell -File scripts/ops/backup-postgres.ps1
-
-# 备份 MinIO 对象存储中的录屏数据
-powershell -File scripts/ops/backup-minio.ps1
-
-# 从指定文件还原 PostgreSQL
-powershell -File scripts/ops/restore-postgres.ps1 -BackupFile ./backups/db-xxx.sql
-
-# 从指定目录还原 MinIO
-powershell -File scripts/ops/restore-minio.ps1 -BackupDir ./backups/minio-xxx
+cp .env.example .env.local
 ```
-详细方案及 RTO/RPO 演练指标请参考：[灾备运维手册 (docs/operations/backup-restore-runbook.md)](file:///D:/myProject/error-tracker/docs/operations/backup-restore-runbook.md)。
 
----
+Important local defaults:
 
-## 📄 设计规范与开发指南
+```env
+DATABASE_URL=postgresql://tracker:tracker@localhost:5434/error_tracker
+REDIS_HOST=localhost
+REDIS_PORT=6380
+MINIO_ENDPOINT=localhost
+MINIO_PORT=9011
+MINIO_ACCESS_KEY=tracker
+MINIO_SECRET_KEY=tracker123
+MINIO_BUCKET=error-tracker
+BETTER_AUTH_URL=http://localhost:3003
+CORS_ORIGIN=http://localhost:3003
+NEXT_PUBLIC_API_URL=http://localhost:3002
+```
 
-团队协作及 AI Agent 开发时请务必遵循：
-- [AI Agent 开发规约与并行控制方案 (AGENTS.md)](file:///D:/myProject/error-tracker/AGENTS.md)
-- [控制台 UI/UX 与设计规范 (PRODUCT.md)](file:///D:/myProject/error-tracker/PRODUCT.md)
-- [系统架构与设计说明书 (docs/superpowers/specs/2026-05-27-error-tracker-design.md)](file:///D:/myProject/error-tracker/docs/superpowers/specs/2026-05-27-error-tracker-design.md)
+### Start services
+
+```bash
+bun install
+bun run services:up
+bun run --cwd apps/api db:migrate
+bun run dev
+```
+
+Local URLs:
+
+```text
+API:       http://localhost:3002
+Dashboard: http://localhost:3003
+MinIO:     http://localhost:9012
+```
+
+## Verification
+
+Frequently used checks:
+
+```bash
+bun test packages/sdk
+bun run --cwd packages/sdk lint
+bun run --cwd packages/sdk build
+
+bun test apps/api/src/config/cors.test.ts
+bun test apps/api/src/config/body-parser.test.ts apps/api/src/modules/self-monitoring/self-monitoring.filter.test.ts
+bun test apps/api/src/modules/ingest/ingest.service.test.ts
+bun run --cwd apps/api lint
+bun run --cwd apps/api build
+
+bun run --cwd apps/web build
+bun run cli:test
+bun run e2e
+```
+
+Load and capacity scripts:
+
+```bash
+bun run load:ingest
+bun run load:replay
+bun run load:sourcemap
+bun run load:dashboard
+```
+
+## Operations
+
+Runbooks live under [docs/operations](./docs/operations):
+
+- [backup-restore-runbook.md](./docs/operations/backup-restore-runbook.md)
+- [capacity-baseline.md](./docs/operations/capacity-baseline.md)
+- [production-deployment.md](./docs/operations/production-deployment.md)
+- [restore-drill-report.md](./docs/operations/restore-drill-report.md)
+
+Common scripts:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/ops/backup-postgres.ps1
+powershell -ExecutionPolicy Bypass -File scripts/ops/backup-minio.ps1
+powershell -ExecutionPolicy Bypass -File scripts/ops/restore-postgres.ps1 -BackupFile <dump>
+powershell -ExecutionPolicy Bypass -File scripts/ops/restore-minio.ps1 -BackupDir <dir>
+```
+
+## External Integration: unitls-plane
+
+`D:/myProject/unitls-plane` 已完成本地接入：
+
+- Browser SDK 初始化在 `apps/web/src/components/error-tracker-init.tsx`。
+- Node SDK 初始化在 `apps/api/src/main.ts`。
+- Source Map 上传脚本在 `scripts/upload-sourcemaps.ts`。
+- Web build 启用 `productionBrowserSourceMaps: true`。
+- 本地 `.env.local` 使用 error-tracker 项目的 DSN。
+- replay sample rate 可通过 `NEXT_PUBLIC_ERROR_TRACKER_REPLAY_SAMPLE_RATE` 配置。
+
+Verified local project:
+
+```text
+projectId: 1f1c3df9-de83-4c7e-9c9f-711a05a930a5
+release:   dev
+```
+
+## Documentation Map
+
+- [PRODUCT.md](./PRODUCT.md): 产品定位、用户、设计原则和产品架构边界。
+- [AGENTS.md](./AGENTS.md): AI Agent 执行规则、任务顺序和代码规范。
+- [task/](./task): 任务实现记录和完成状态。
+- [docs/superpowers/plans](./docs/superpowers/plans): 详细实施计划。
+- [docs/superpowers/specs](./docs/superpowers/specs): 设计规格文档。
+- [docs/operations](./docs/operations): 生产和运维手册。
+
+## Production Readiness Summary
+
+这套系统已经具备自托管错误追踪平台的核心闭环：采集、聚合、查询、回放、性能分析、Source Map 反解、成员权限、审计、自监控和 AI 建议。
+
+若要作为正式企业生产平台上线，建议至少完成并复核：
+
+- CI 中的 API/Web/SDK/e2e 全链路自动验证。
+- 生产 HTTPS、CORS allowlist、Better-Auth secret、SMTP、OpenAI key、DSN secret 的密钥管理。
+- Postgres、Redis、MinIO 的托管、备份、恢复、监控和容量扩展策略。
+- 队列失败任务告警、dead letter 处理和 replay/source map 生命周期策略。
+- 多租户配额、保留期、审计导出和合规说明。

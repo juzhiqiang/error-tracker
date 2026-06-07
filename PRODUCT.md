@@ -12,6 +12,21 @@ Engineering, SRE, QA, and product support teams use Error Tracker while investig
 
 Error Tracker collects frontend and backend error events, groups them into issues, preserves breadcrumbs, replay, stack traces, and performance metrics, then presents the data in a dashboard for triage and incident investigation. Success means teams can identify impact, priority, environment, ownership, and next action within seconds.
 
+## Product Architecture Boundary
+
+Error Tracker is an observability workbench, not a general analytics suite or incident command center. Its product surface should stay focused on:
+
+- collecting errors, performance metrics, breadcrumbs, replay, and Source Maps;
+- turning raw events into grouped issues and actionable investigation context;
+- managing projects, members, invitations, roles, audit logs, and DSN tokens;
+- helping teams move from signal to diagnosis through stack traces, replay, Web Vitals, and AI suggestions.
+
+Features outside that boundary should be treated carefully. Long-form incident timelines, billing, broad business analytics, feature flags, or full APM tracing belong in later platform modules only if they strengthen the error investigation workflow.
+
+## Completion Bar
+
+The current product has the core self-hosted loop in place: SDK ingestion, API persistence, Dashboard triage, Source Map resolution, replay, performance monitoring, member permissions, audit trail, self-monitoring, and AI Advisor. For formal enterprise production use, the remaining bar is operational hardening: CI e2e, deployment security, backups and restore drills, monitoring, quota policy, data retention, and documented incident runbooks.
+
 ## Brand Personality
 
 Precise, calm, technical. The interface should feel like a trusted observability console: dense enough for expert work, restrained enough for long sessions, and sharp enough to communicate risk clearly.
