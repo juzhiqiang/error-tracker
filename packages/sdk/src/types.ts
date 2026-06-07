@@ -65,6 +65,12 @@ export interface Integration {
   teardown?(): void
 }
 
+export interface CaptureMessageOptions {
+  fingerprint?: string
+  tags?: Record<string, string>
+  context?: EventContext
+}
+
 export interface BlankScreenOptions {
   enabled?: boolean
   samplePointCount?: number

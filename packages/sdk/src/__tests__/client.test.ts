@@ -64,4 +64,24 @@ describe('ErrorTrackerClient', () => {
     await new Promise((r) => setTimeout(r, 10))
     expect(fetchMock().mock.calls).toHaveLength(0)
   })
+
+  it('captureMessage supports an explicit fingerprint and tags', async () => {
+    const client = new ErrorTrackerClient({
+      dsn: 'http://localhost:3002/ingest/p1/t1',
+    })
+
+    client.captureMessage('Blank screen detected', 'warning', {
+      fingerprint: 'blank-screen',
+      tags: { mechanism: 'blank-screen', samplePoints: '9' },
+    })
+    await client.flush()
+    await new Promise((r) => setTimeout(r, 10))
+
+    const body = JSON.parse(fetchMock().mock.calls[0][1]?.body as string)
+    expect(body.events[0].fingerprint).toBe('blank-screen')
+    expect(body.events[0].tags).toMatchObject({
+      mechanism: 'blank-screen',
+      samplePoints: '9',
+    })
+  })
 })

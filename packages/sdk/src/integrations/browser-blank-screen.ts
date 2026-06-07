@@ -30,7 +30,15 @@ export class BrowserBlankScreenIntegration implements Integration {
       const result = inspectBlankScreen(doc, win, this.options)
       if (!result.isBlank) return
       this.reported = true
-      client.captureMessage('Blank screen detected', 'warning')
+      client.captureMessage('Blank screen detected', 'warning', {
+        fingerprint: 'blank-screen',
+        tags: {
+          mechanism: 'blank-screen',
+          blankPoints: String(result.blankPoints),
+          samplePoints: String(result.samplePoints),
+          threshold: String(result.threshold),
+        },
+      })
     }, Math.max(0, delayMs))
   }
 

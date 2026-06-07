@@ -4,12 +4,20 @@ import { BrowserBreadcrumbsIntegration } from './integrations/browser-breadcrumb
 import { BrowserPerformanceIntegration } from './integrations/browser-performance'
 import { BrowserEnvironmentIntegration } from './integrations/browser-environment'
 import { BrowserBlankScreenIntegration } from './integrations/browser-blank-screen'
-import type { SdkOptions } from './types'
+import type { CaptureMessageOptions, ErrorEvent, SdkOptions } from './types'
 
 export { ErrorTrackerClient } from './core/client'
 export { EnvironmentCollector } from './core/environment'
 export { BrowserBlankScreenIntegration } from './integrations/browser-blank-screen'
-export type { SdkOptions, Integration, ErrorEvent, Breadcrumb, EventContext, BlankScreenOptions } from './types'
+export type {
+  SdkOptions,
+  Integration,
+  ErrorEvent,
+  Breadcrumb,
+  EventContext,
+  BlankScreenOptions,
+  CaptureMessageOptions,
+} from './types'
 export type { EnvironmentSnapshot } from './core/environment'
 
 let _client: ErrorTrackerClient | null = null
@@ -44,8 +52,12 @@ export function captureException(error: Error): void {
   _client?.captureException(error)
 }
 
-export function captureMessage(message: string): void {
-  _client?.captureMessage(message)
+export function captureMessage(
+  message: string,
+  level?: ErrorEvent['level'],
+  options?: CaptureMessageOptions,
+): void {
+  _client?.captureMessage(message, level, options)
 }
 
 export function getClient(): ErrorTrackerClient | null {

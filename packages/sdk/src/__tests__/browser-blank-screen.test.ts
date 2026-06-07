@@ -14,10 +14,10 @@ describe('BrowserBlankScreenIntegration', () => {
       },
     }
     const windowStub = { innerWidth: 900, innerHeight: 600 }
-    const messages: Array<{ message: string; level: string }> = []
+    const messages: Array<{ message: string; level: string; options?: Record<string, unknown> }> = []
     const client = {
-      captureMessage: (message: string, level: string) => {
-        messages.push({ message, level })
+      captureMessage: (message: string, level: string, options?: Record<string, unknown>) => {
+        messages.push({ message, level, options })
       },
     } as unknown as ErrorTrackerClient
 
@@ -28,7 +28,21 @@ describe('BrowserBlankScreenIntegration', () => {
     await nextTick()
 
     expect(elementsFromPointCalls).toHaveLength(9)
-    expect(messages).toEqual([{ message: 'Blank screen detected', level: 'warning' }])
+    expect(messages).toEqual([
+      {
+        message: 'Blank screen detected',
+        level: 'warning',
+        options: {
+          fingerprint: 'blank-screen',
+          tags: {
+            mechanism: 'blank-screen',
+            blankPoints: '8',
+            samplePoints: '9',
+            threshold: '0.8',
+          },
+        },
+      },
+    ])
   })
 
   it('does not report when fewer than 80 percent of sample points are blank', async () => {

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'bun:test'
+import type { ErrorTrackerClient } from '../core/client'
 import { EnvironmentCollector } from '../core/environment'
+import { Scope } from '../core/scope'
+import { BrowserEnvironmentIntegration } from '../integrations/browser-environment'
 
 describe('EnvironmentCollector', () => {
   it('collects detailed browser device and network context', () => {
@@ -124,5 +127,53 @@ describe('EnvironmentCollector', () => {
     expect(snapshot.network.quality).toBe('unknown')
     expect(snapshot.performance.tier).toBe('unknown')
     expect(snapshot.storage.localStorage).toBe(false)
+  })
+})
+
+describe('BrowserEnvironmentIntegration', () => {
+  it('injects compact device and network tags into the client scope', () => {
+    const scope = new Scope()
+    const context: Record<string, unknown> = {}
+    const client = {
+      scope,
+      setContext: (key: string, value: unknown) => {
+        context[key] = value
+      },
+    } as unknown as ErrorTrackerClient
+
+    new BrowserEnvironmentIntegration().setup(client, {
+      navigator: {
+        userAgent:
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+        platform: 'Win32',
+        hardwareConcurrency: 8,
+        deviceMemory: 8,
+        onLine: true,
+        connection: {
+          effectiveType: '4g',
+          downlink: 20,
+          rtt: 40,
+        },
+      },
+      window: {
+        innerWidth: 1440,
+        innerHeight: 900,
+      },
+      document: {
+        visibilityState: 'visible',
+      },
+      now: () => 1_700_000_000_000,
+    })
+
+    expect(context.environment).toBeDefined()
+    expect(scope.getTags()).toMatchObject({
+      'browser.name': 'Chrome',
+      'os.name': 'Windows',
+      'device.type': 'desktop',
+      'network.effectiveType': '4g',
+      'network.quality': 'excellent',
+      'performance.tier': 'high',
+    })
+    expect(scope.getTags()['userAgent.raw']).toBeUndefined()
   })
 })

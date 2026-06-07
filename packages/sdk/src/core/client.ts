@@ -1,4 +1,4 @@
-import type { EventContext, SdkOptions, ErrorEvent, TrackerEvent } from '../types'
+import type { CaptureMessageOptions, EventContext, SdkOptions, ErrorEvent, TrackerEvent } from '../types'
 import { BreadcrumbManager } from './breadcrumbs'
 import { DedupeFilter } from './dedupe'
 import { EventQueue } from './queue'
@@ -67,17 +67,19 @@ export class ErrorTrackerClient {
     return event.eventId
   }
 
-  captureMessage(message: string, level: ErrorEvent['level'] = 'info'): void {
+  captureMessage(message: string, level: ErrorEvent['level'] = 'info', options: CaptureMessageOptions = {}): void {
     const event: ErrorEvent = {
       eventId: randomId(),
       timestamp: Date.now(),
       level,
       message,
-      fingerprint: randomId(),
+      fingerprint: options.fingerprint ?? randomId(),
       environment: this.options.environment,
       release: this.options.release,
+      user: this.scope.getUser() as ErrorEvent['user'],
+      tags: { ...this.scope.getTags(), ...(options.tags ?? {}) },
       breadcrumbs: this.breadcrumbs.getAll(),
-      context: this.getContext(),
+      context: { ...this.getContext(), ...(options.context ?? {}) },
     }
     this.queue.enqueue(event)
   }
