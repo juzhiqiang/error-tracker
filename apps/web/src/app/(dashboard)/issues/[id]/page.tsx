@@ -18,10 +18,12 @@ import {
   GitBranch,
   Globe2,
   HardDrive,
+  ImageOff,
   Monitor,
   Network,
   Play,
   RotateCcw,
+  ShieldCheck,
   Smartphone,
   Tags,
   User,
@@ -248,6 +250,10 @@ export default function IssueDetailPage() {
             <BreadcrumbTimeline items={selectedEvent?.breadcrumbs ?? []} />
           </Panel>
 
+          <Panel title={t('detail.sdkSignals.title')} description={t('detail.sdkSignals.description')}>
+            {selectedEvent ? <SdkSignals event={selectedEvent} /> : <EmptyState title={t('detail.sdkSignals.emptyTitle')} description={t('detail.sdkSignals.emptyDescription')} />}
+          </Panel>
+
           <Panel title={t('detail.context.title')} description={t('detail.context.description')}>
             {selectedEvent ? <EventContext event={selectedEvent} issue={issue} /> : <EmptyState title={t('detail.context.emptyTitle')} description={t('detail.context.emptyDescription')} />}
           </Panel>
@@ -299,6 +305,98 @@ function BreadcrumbTimeline({ items }: { items: Breadcrumb[] | null }) {
           <div className="mt-1 break-words text-sm leading-6 text-slate-200">{item.message || stringifyRecord(item.data)}</div>
         </div>
       ))}
+    </div>
+  )
+}
+
+function SdkSignals({ event }: { event: EventRow }) {
+  const { t } = useI18n()
+  const tags = event.tags ?? {}
+  const environmentProfile = getEnvironmentProfile(event.context)
+  const browser = readEnvironmentValue(environmentProfile, ['userAgent', 'browser', 'name']) ?? tags['browser.name']
+  const device = readEnvironmentValue(environmentProfile, ['userAgent', 'device', 'type']) ?? tags['device.type']
+  const network = readEnvironmentValue(environmentProfile, ['network', 'quality']) ?? tags['network.quality']
+  const tier = readEnvironmentValue(environmentProfile, ['performance', 'tier']) ?? tags['performance.tier']
+  const environmentSummary = joinDefined([browser, device, network, tier], ' / ')
+  const isResourceError = tags.mechanism === 'resource'
+  const isBlankScreen = tags.mechanism === 'blank-screen'
+
+  return (
+    <div className="grid gap-3 md:grid-cols-2">
+      <SdkSignalItem
+        icon={<ImageOff className="h-4 w-4" />}
+        title={t('detail.sdkSignals.resource.title')}
+        status={isResourceError ? t('detail.sdkSignals.status.detected') : t('detail.sdkSignals.status.notSeen')}
+        tone={isResourceError ? 'danger' : 'neutral'}
+        summary={
+          isResourceError
+            ? joinDefined([tags.resourceType, tags.resourceUrl], ' ') ?? t('detail.sdkSignals.resource.empty')
+            : t('detail.sdkSignals.resource.empty')
+        }
+      />
+      <SdkSignalItem
+        icon={<Monitor className="h-4 w-4" />}
+        title={t('detail.sdkSignals.blank.title')}
+        status={isBlankScreen ? t('detail.sdkSignals.status.detected') : t('detail.sdkSignals.status.notSeen')}
+        tone={isBlankScreen ? 'warning' : 'neutral'}
+        summary={
+          isBlankScreen
+            ? t('detail.sdkSignals.blank.summary', {
+                blank: tags.blankPoints ?? '-',
+                total: tags.samplePoints ?? '-',
+                threshold: tags.threshold ?? '-',
+              })
+            : t('detail.sdkSignals.blank.empty')
+        }
+      />
+      <SdkSignalItem
+        icon={<Tags className="h-4 w-4" />}
+        title={t('detail.sdkSignals.env.title')}
+        status={environmentSummary ? t('detail.sdkSignals.status.ready') : t('detail.sdkSignals.status.notSeen')}
+        tone={environmentSummary ? 'success' : 'neutral'}
+        summary={environmentSummary ?? t('detail.sdkSignals.env.empty')}
+      />
+      <SdkSignalItem
+        icon={<ShieldCheck className="h-4 w-4" />}
+        title={t('detail.sdkSignals.delivery.title')}
+        status={t('detail.sdkSignals.status.enabled')}
+        tone="success"
+        summary={t('detail.sdkSignals.delivery.summary')}
+      />
+    </div>
+  )
+}
+
+function SdkSignalItem({
+  icon,
+  title,
+  status,
+  tone,
+  summary,
+}: {
+  icon: ReactNode
+  title: string
+  status: string
+  tone: 'success' | 'warning' | 'danger' | 'neutral'
+  summary: string
+}) {
+  const toneClass = {
+    success: 'border-success/35 bg-success/10 text-emerald-200',
+    warning: 'border-warning/35 bg-warning/10 text-amber-200',
+    danger: 'border-danger/35 bg-danger/10 text-red-200',
+    neutral: 'border-slate-700 bg-slate-900/70 text-slate-300',
+  }[tone]
+
+  return (
+    <div className="rounded-md border border-line bg-slate-950/30 p-3">
+      <div className="flex min-h-[28px] items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-slate-100">
+          <span className="text-slate-400">{icon}</span>
+          <span className="truncate">{title}</span>
+        </div>
+        <span className={`shrink-0 rounded-md border px-2 py-1 text-xs ${toneClass}`}>{status}</span>
+      </div>
+      <div className="mt-2 break-all font-mono text-xs leading-5 text-slate-400">{summary}</div>
     </div>
   )
 }
@@ -543,6 +641,16 @@ function normalizeTimestamp(timestamp: number): number {
 function getEnvironmentProfile(context: Record<string, unknown> | null): UnknownRecord | null {
   const environment = asRecord(context?.environment)
   return environment && Object.keys(environment).length > 0 ? environment : null
+}
+
+function readEnvironmentValue(profile: UnknownRecord | null, path: string[]): string | undefined {
+  let current: unknown = profile
+  for (const key of path) {
+    const record = asRecord(current)
+    if (!record) return undefined
+    current = record[key]
+  }
+  return textValue(current)
 }
 
 function asRecord(value: unknown): UnknownRecord | null {
