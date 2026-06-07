@@ -187,24 +187,31 @@ export const issueUsers = pgTable(
   }),
 )
 
-export const events = pgTable('events', {
-  id: text('id').primaryKey(),
-  issueId: uuid('issue_id').references(() => issues.id),
-  projectId: uuid('project_id')
-    .notNull()
-    .references(() => projects.id),
-  timestamp: timestamp('timestamp').defaultNow().notNull(),
-  level: text('level').notNull().default('error'),
-  message: text('message').notNull(),
-  stacktrace: jsonb('stacktrace'),
-  breadcrumbs: jsonb('breadcrumbs'),
-  request: jsonb('request'),
-  user: jsonb('user'),
-  tags: jsonb('tags'),
-  context: jsonb('context'),
-  environment: text('environment'),
-  release: text('release'),
-})
+export const events = pgTable(
+  'events',
+  {
+    id: text('id').primaryKey(),
+    issueId: uuid('issue_id').references(() => issues.id),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id),
+    timestamp: timestamp('timestamp').defaultNow().notNull(),
+    level: text('level').notNull().default('error'),
+    message: text('message').notNull(),
+    stacktrace: jsonb('stacktrace'),
+    breadcrumbs: jsonb('breadcrumbs'),
+    request: jsonb('request'),
+    user: jsonb('user'),
+    tags: jsonb('tags'),
+    context: jsonb('context'),
+    environment: text('environment'),
+    release: text('release'),
+  },
+  (table) => ({
+    issueIdIdx: index('events_issue_id_idx').on(table.issueId),
+    projectTimestampIdx: index('events_project_timestamp_idx').on(table.projectId, table.timestamp),
+  }),
+)
 
 export const replays = pgTable('replays', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -214,17 +221,27 @@ export const replays = pgTable('replays', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 })
 
-export const performanceMetrics = pgTable('performance_metrics', {
-  id: serial('id').primaryKey(),
-  projectId: uuid('project_id')
-    .notNull()
-    .references(() => projects.id),
-  name: text('name', { enum: ['LCP', 'FID', 'CLS', 'INP', 'TTFB'] }).notNull(),
-  value: integer('value').notNull(),
-  rating: text('rating', { enum: ['good', 'needs-improvement', 'poor'] }).notNull(),
-  url: text('url'),
-  timestamp: timestamp('timestamp').defaultNow().notNull(),
-})
+export const performanceMetrics = pgTable(
+  'performance_metrics',
+  {
+    id: serial('id').primaryKey(),
+    projectId: uuid('project_id')
+      .notNull()
+      .references(() => projects.id),
+    name: text('name', { enum: ['LCP', 'FID', 'CLS', 'INP', 'TTFB'] }).notNull(),
+    value: integer('value').notNull(),
+    rating: text('rating', { enum: ['good', 'needs-improvement', 'poor'] }).notNull(),
+    url: text('url'),
+    timestamp: timestamp('timestamp').defaultNow().notNull(),
+  },
+  (table) => ({
+    projectNameTimestampIdx: index('performance_metrics_project_name_timestamp_idx').on(
+      table.projectId,
+      table.name,
+      table.timestamp,
+    ),
+  }),
+)
 
 export const sourceMaps = pgTable(
   'source_maps',
