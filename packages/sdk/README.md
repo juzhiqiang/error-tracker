@@ -8,6 +8,8 @@ Browser and Node.js SDK for Error Tracker.
 npm install @error-tracker/sdk
 ```
 
+The core browser and Node.js entries do not depend on React. React is only needed when you import the optional `@error-tracker/sdk/react` entry.
+
 ## Browser
 
 ```ts
@@ -47,6 +49,7 @@ The Node.js entry captures uncaught exceptions and unhandled promise rejections,
 ## React Error Boundary
 
 React support is intentionally isolated so non-React browser and Node consumers do not need to install React.
+Install React in the host application before using this optional entry.
 
 ```tsx
 import { init } from '@error-tracker/sdk'
