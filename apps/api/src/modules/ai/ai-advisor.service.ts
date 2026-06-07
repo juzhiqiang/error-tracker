@@ -67,6 +67,7 @@ export class AiAdvisorService {
         request: event.request,
         user: event.user,
         tags: event.tags,
+        context: event.context,
         environment: event.environment,
         release: event.release,
       })),
@@ -90,11 +91,13 @@ export class AiAdvisorService {
 function localIssueAnalysis(context: IssueAiContext): AiAnalysis {
   const topEvent = context.events[0]
   const topFrame = firstStackFrame(topEvent?.stacktrace)
+  const runtimeEvidence = runtimeEnvironmentEvidence(topEvent?.context)
   const evidence = [
     `${context.issue.count} events across ${context.issue.userCount} users`,
     `Level ${context.issue.level}, status ${context.issue.status}`,
     topFrame ? `Top frame ${topFrame.function} in ${topFrame.filename}:${topFrame.lineno ?? '-'}` : 'No stack frame reported',
-  ]
+    runtimeEvidence,
+  ].filter((item): item is string => Boolean(item))
   return {
     summary: `${context.issue.title} is affecting ${context.issue.userCount} users with ${context.issue.count} events.`,
     probableCause: topFrame
@@ -121,6 +124,24 @@ function localIssueAnalysis(context: IssueAiContext): AiAnalysis {
     ],
     testsToAdd: ['Unit test for the failing function input shape', 'Integration test for the affected route or workflow'],
   }
+}
+
+function runtimeEnvironmentEvidence(context: unknown): string | null {
+  if (!isRecord(context)) return null
+  const environment = isRecord(context.environment) ? context.environment : null
+  if (!environment) return null
+  const network = isRecord(environment.network) ? environment.network : null
+  const performance = isRecord(environment.performance) ? environment.performance : null
+  const userAgent = isRecord(environment.userAgent) ? environment.userAgent : null
+  const browser = isRecord(userAgent?.browser) ? userAgent.browser : null
+  const os = isRecord(userAgent?.os) ? userAgent.os : null
+  const parts = [
+    textPart('browser', browser?.name),
+    textPart('os', os?.name),
+    textPart('network', network?.quality),
+    textPart('performance', performance?.tier),
+  ].filter(Boolean)
+  return parts.length ? `Runtime profile: ${parts.join(', ')}` : null
 }
 
 function localPerformanceAnalysis(context: PerformanceAiContext): AiAnalysis {
@@ -169,6 +190,14 @@ function probableMetricCause(name: string): string {
 
 function firstStackFrame(stacktrace: unknown): { function?: string; filename?: string; lineno?: number } | null {
   return Array.isArray(stacktrace) && stacktrace[0] ? (stacktrace[0] as never) : null
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function textPart(label: string, value: unknown): string | null {
+  return typeof value === 'string' && value ? `${label} ${value}` : null
 }
 
 function rowsFrom<T>(result: unknown): T[] {

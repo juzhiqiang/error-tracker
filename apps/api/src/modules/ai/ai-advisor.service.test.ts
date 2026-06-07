@@ -23,6 +23,7 @@ describe('AiAdvisorService', () => {
           stacktrace: [{ function: 'CheckoutButton', filename: 'src/checkout.tsx', lineno: 42, colno: 7 }],
           breadcrumbs: [{ type: 'ui.click', message: 'Clicked pay', data: { token: 'secret' } }],
           request: { headers: { authorization: 'Bearer hidden' } },
+          context: { environment: { network: { quality: 'poor' }, user: { token: 'environment-token' } } },
           tags: { route: '/checkout' },
           release: 'web@2.8.1',
           environment: 'production',
@@ -35,6 +36,8 @@ describe('AiAdvisorService', () => {
     expect(result.recommendations[0].steps.length).toBeGreaterThan(0)
     expect(provider.generate.mock.calls[0][1]).not.toContain('secret')
     expect(provider.generate.mock.calls[0][1]).not.toContain('Bearer hidden')
+    expect(provider.generate.mock.calls[0][1]).not.toContain('environment-token')
+    expect(provider.generate.mock.calls[0][1]).toContain('"quality": "poor"')
   })
 
   it('prioritizes poor performance samples with metric-specific optimization guidance', async () => {

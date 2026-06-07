@@ -100,13 +100,23 @@ init({
       },
       'capture-context': {
         title: 'Capture context',
-        description: 'Breadcrumbs, tags, user identity, and release metadata make grouped issues actionable.',
+        description: 'Breadcrumbs, tags, user identity, release metadata, and environment profiles make grouped issues actionable.',
         bullets: [
           'Attach stable user identifiers, not raw sensitive profile data.',
           'Tag tenant, route, feature flag, and deployment channel where available.',
           'Use breadcrumbs for navigation, important UI actions, and failed requests.',
+          'The browser SDK automatically captures parsed UA, browser, OS, device class, CPU, memory, screen, viewport, network, storage quota and usage ratio, persistent storage status, locale, timezone, and page visibility.',
+          'Use beforeSend to remove or coarsen environment fields when policy requires stricter collection.',
         ],
-        code: `ErrorTracker.setUser({ id: user.id, email: user.email })
+        code: `init({
+  dsn,
+  beforeSend(event) {
+    delete event.context?.environment?.userAgent.raw
+    return event
+  },
+})
+
+ErrorTracker.setUser({ id: user.id, email: user.email })
 ErrorTracker.setTag('tenant', tenant.slug)
 ErrorTracker.addBreadcrumb({
   category: 'navigation',
@@ -265,6 +275,8 @@ init({
           '上报稳定用户标识，避免直接上传敏感画像数据。',
           '尽量补充 tenant、route、feature flag 和部署通道等标签。',
           '用 breadcrumbs 记录导航、关键点击和失败请求。',
+          '浏览器 SDK 会自动采集 UA 解析、浏览器、系统、设备类型、CPU、内存、屏幕、视口、网络、存储配额和使用率、持久化存储、区域、时区和页面可见性。',
+          '如需更严格的数据策略，可用 beforeSend 删除或粗化环境字段。',
         ],
         code: `ErrorTracker.setUser({ id: user.id, email: user.email })
 ErrorTracker.setTag('tenant', tenant.slug)

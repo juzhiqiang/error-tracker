@@ -2,10 +2,10 @@
 
 import { useEffect } from 'react'
 import { init } from '@error-tracker/sdk'
+import type { ErrorEvent } from '@error-tracker/sdk'
 import { getWebSelfMonitoringOptions } from '@/lib/self-monitoring'
 
 let initialized = false
-type CapturedErrorEvent = { tags?: Record<string, string> }
 
 export function SelfMonitoringProvider() {
   useEffect(() => {
@@ -26,7 +26,7 @@ export function SelfMonitoringProvider() {
         dsn: options.dsn,
         environment: options.environment,
         release: options.release,
-        beforeSend(event: CapturedErrorEvent) {
+        beforeSend(event: ErrorEvent) {
           return { ...event, tags: { ...event.tags, ...options.tags } }
         },
       })

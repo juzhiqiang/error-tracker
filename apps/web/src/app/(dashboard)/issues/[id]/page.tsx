@@ -11,13 +11,21 @@ import {
   CheckCircle2,
   Clock3,
   Code2,
+  Cpu,
+  Database,
   Fingerprint,
+  Gauge,
   GitBranch,
   Globe2,
+  HardDrive,
+  Monitor,
+  Network,
   Play,
   RotateCcw,
+  Smartphone,
   Tags,
   User,
+  Wifi,
 } from 'lucide-react'
 import { AiAnalysisPanel } from '@/components/ai-analysis-panel'
 import { EmptyState } from '@/components/empty-state'
@@ -32,6 +40,8 @@ const statusActions: Array<{ status: IssueStatus; labelKey: string; icon: ReactN
   { status: 'resolved', labelKey: 'detail.action.resolve', icon: <CheckCircle2 className="h-4 w-4" /> },
   { status: 'ignored', labelKey: 'detail.action.ignore', icon: <Ban className="h-4 w-4" /> },
 ]
+
+type UnknownRecord = Record<string, unknown>
 
 export default function IssueDetailPage() {
   const { t } = useI18n()
@@ -296,12 +306,15 @@ function BreadcrumbTimeline({ items }: { items: Breadcrumb[] | null }) {
 function EventContext({ event, issue }: { event: EventRow; issue: Issue }) {
   const { t } = useI18n()
   const tags = Object.entries(event.tags ?? {})
+  const environmentProfile = getEnvironmentProfile(event.context)
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <ContextBlock icon={<Globe2 className="h-4 w-4" />} label={t('detail.context.environment')} value={event.environment || '-'} />
       <ContextBlock icon={<GitBranch className="h-4 w-4" />} label={t('detail.context.release')} value={event.release || '-'} />
       <ContextBlock icon={<Code2 className="h-4 w-4" />} label={t('detail.context.eventId')} value={event.id} />
       <ContextBlock icon={<Fingerprint className="h-4 w-4" />} label={t('detail.context.fingerprint')} value={issue.fingerprint} />
+
+      <EnvironmentProfile profile={environmentProfile} />
 
       <ContextPre icon={<User className="h-4 w-4" />} label={t('detail.context.user')} value={stringifyRecord(event.user)} />
       <ContextPre icon={<Globe2 className="h-4 w-4" />} label={t('detail.context.request')} value={stringifyRecord(event.request)} />
@@ -324,6 +337,174 @@ function EventContext({ event, issue }: { event: EventRow; issue: Issue }) {
         )}
       </div>
     </div>
+  )
+}
+
+function EnvironmentProfile({ profile }: { profile: UnknownRecord | null }) {
+  const { t } = useI18n()
+  if (!profile) {
+    return (
+      <div className="app-panel-muted p-4 lg:col-span-2">
+        <div className="mb-2 flex items-center gap-2 text-xs text-slate-400">
+          <Monitor className="h-4 w-4" />
+          {t('detail.env.title')}
+        </div>
+        <div className="text-sm text-slate-500">{t('detail.env.empty')}</div>
+      </div>
+    )
+  }
+
+  const userAgent = asRecord(profile.userAgent)
+  const browser = asRecord(userAgent?.browser)
+  const os = asRecord(userAgent?.os)
+  const deviceFromUa = asRecord(userAgent?.device)
+  const engine = asRecord(userAgent?.engine)
+  const device = asRecord(profile.device)
+  const screen = asRecord(device?.screen)
+  const viewport = asRecord(device?.viewport)
+  const network = asRecord(profile.network)
+  const performance = asRecord(profile.performance)
+  const storage = asRecord(profile.storage)
+  const locale = asRecord(profile.locale)
+  const page = asRecord(profile.page)
+
+  const browserText = joinDefined([textValue(browser?.name), textValue(browser?.version)], ' ')
+  const osText = joinDefined([textValue(os?.name), textValue(os?.version)], ' ')
+  const deviceType = textValue(deviceFromUa?.type)
+  const networkQuality = textValue(network?.quality)
+  const performanceTier = textValue(performance?.tier)
+
+  return (
+    <div className="app-panel-muted overflow-hidden lg:col-span-2">
+      <div className="border-b border-line px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-xs text-slate-400">
+              <Monitor className="h-4 w-4" />
+              {t('detail.env.title')}
+            </div>
+            <div className="mt-2 break-words font-mono text-sm text-slate-100">
+              {joinDefined([browserText, osText, deviceType], ' / ') || t('common.unknown')}
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <SignalPill icon={<Gauge className="h-3.5 w-3.5" />} label={t('detail.env.performanceTier')} value={performanceTier} tone={tierTone(performanceTier)} />
+            <SignalPill icon={<Wifi className="h-3.5 w-3.5" />} label={t('detail.env.networkQuality')} value={networkQuality} tone={qualityTone(networkQuality)} />
+            <SignalPill icon={<Smartphone className="h-3.5 w-3.5" />} label={t('detail.env.deviceType')} value={deviceType} tone="neutral" />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-3 p-4 xl:grid-cols-2">
+        <ProfileGroup
+          icon={<Globe2 className="h-4 w-4" />}
+          title={t('detail.env.browserGroup')}
+          rows={[
+            [t('detail.env.browser'), browserText],
+            [t('detail.env.os'), osText],
+            [t('detail.env.engine'), joinDefined([textValue(engine?.name), textValue(engine?.version)], ' ')],
+            [t('detail.env.ua'), textValue(userAgent?.raw)],
+          ]}
+        />
+        <ProfileGroup
+          icon={<Cpu className="h-4 w-4" />}
+          title={t('detail.env.hardwareGroup')}
+          rows={[
+            [t('detail.env.deviceType'), deviceType],
+            [t('detail.env.vendor'), textValue(deviceFromUa?.vendor)],
+            [t('detail.env.model'), textValue(deviceFromUa?.model)],
+            [t('detail.env.platform'), textValue(device?.platform)],
+            [t('detail.env.cpu'), numberWithUnit(device?.cpuCores, t('detail.env.cores'))],
+            [t('detail.env.memory'), numberWithUnit(device?.memoryGb, 'GB')],
+            [t('detail.env.touch'), numberWithUnit(device?.touchPoints, '')],
+            [t('detail.env.screen'), formatSize(screen?.width, screen?.height)],
+            [t('detail.env.availableScreen'), formatSize(screen?.availWidth, screen?.availHeight)],
+            [t('detail.env.viewport'), formatSize(viewport?.width, viewport?.height)],
+            [t('detail.env.pixelRatio'), textValue(screen?.pixelRatio)],
+            [t('detail.env.colorDepth'), numberWithUnit(screen?.colorDepth, 'bit')],
+            [t('detail.env.orientation'), textValue(screen?.orientation)],
+            [t('detail.env.performanceScore'), textValue(performance?.score)],
+            [t('detail.env.performanceReasons'), Array.isArray(performance?.reasons) ? performance.reasons.join(', ') : undefined],
+          ]}
+        />
+        <ProfileGroup
+          icon={<Network className="h-4 w-4" />}
+          title={t('detail.env.networkGroup')}
+          rows={[
+            [t('detail.env.networkQuality'), networkQuality],
+            [t('detail.env.online'), booleanText(network?.online, t)],
+            [t('detail.env.effectiveType'), textValue(network?.effectiveType)],
+            [t('detail.env.rtt'), numberWithUnit(network?.rttMs, 'ms')],
+            [t('detail.env.downlink'), numberWithUnit(network?.downlinkMbps, 'Mbps')],
+            [t('detail.env.saveData'), booleanText(network?.saveData, t)],
+          ]}
+        />
+        <ProfileGroup
+          icon={<HardDrive className="h-4 w-4" />}
+          title={t('detail.env.storageGroup')}
+          rows={[
+            [t('detail.env.persistentStorage'), booleanText(storage?.persisted, t)],
+            [t('detail.env.cookies'), booleanText(storage?.cookies, t)],
+            [t('detail.env.localStorage'), booleanText(storage?.localStorage, t)],
+            [t('detail.env.sessionStorage'), booleanText(storage?.sessionStorage, t)],
+            [t('detail.env.indexedDB'), booleanText(storage?.indexedDB, t)],
+            [t('detail.env.quota'), formatBytes(storage?.quotaBytes)],
+            [t('detail.env.usage'), formatBytes(storage?.usageBytes)],
+            [t('detail.env.usageRatio'), formatPercent(storage?.usageRatio)],
+          ]}
+        />
+        <ProfileGroup
+          className="xl:col-span-2"
+          icon={<Database className="h-4 w-4" />}
+          title={t('detail.env.localePageGroup')}
+          rows={[
+            [t('detail.env.collectedAt'), formatProfileTime(profile.collectedAt)],
+            [t('detail.env.language'), textValue(locale?.language)],
+            [t('detail.env.languages'), Array.isArray(locale?.languages) ? locale.languages.join(', ') : undefined],
+            [t('detail.env.timezone'), textValue(locale?.timezone)],
+            [t('detail.env.offset'), numberWithUnit(locale?.timezoneOffsetMinutes, 'min')],
+            [t('detail.env.url'), textValue(page?.url)],
+            [t('detail.env.referrer'), textValue(page?.referrer)],
+            [t('detail.env.visibility'), textValue(page?.visibilityState)],
+          ]}
+        />
+      </div>
+    </div>
+  )
+}
+
+function ProfileGroup({ icon, title, rows, className = '' }: { icon: ReactNode; title: string; rows: Array<[string, string | undefined]>; className?: string }) {
+  return (
+    <div className={`rounded-md border border-line bg-slate-950/30 p-3 ${className}`}>
+      <div className="mb-3 flex items-center gap-2 text-xs font-medium text-slate-300">
+        {icon}
+        {title}
+      </div>
+      <dl className="grid gap-2">
+        {rows.map(([label, value]) => (
+          <div key={label} className="grid gap-1 sm:grid-cols-[150px_minmax(0,1fr)]">
+            <dt className="text-xs text-slate-500">{label}</dt>
+            <dd className="break-words font-mono text-xs leading-5 text-slate-300">{value || '-'}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  )
+}
+
+function SignalPill({ icon, label, value, tone }: { icon: ReactNode; label: string; value?: string; tone: 'success' | 'warning' | 'danger' | 'neutral' }) {
+  const classes = {
+    success: 'border-success/35 bg-success/10 text-emerald-200',
+    warning: 'border-warning/35 bg-warning/10 text-amber-200',
+    danger: 'border-danger/35 bg-danger/10 text-red-200',
+    neutral: 'border-slate-700 bg-slate-900/70 text-slate-300',
+  }[tone]
+  return (
+    <span className={`inline-flex min-h-[32px] items-center gap-1.5 rounded-md border px-2.5 font-mono text-xs ${classes}`}>
+      {icon}
+      <span className="text-slate-500">{label}</span>
+      <span>{value || '-'}</span>
+    </span>
   )
 }
 
@@ -357,4 +538,76 @@ function asIssueLevel(level: string): IssueLevel {
 
 function normalizeTimestamp(timestamp: number): number {
   return timestamp < 10_000_000_000 ? timestamp * 1000 : timestamp
+}
+
+function getEnvironmentProfile(context: Record<string, unknown> | null): UnknownRecord | null {
+  const environment = asRecord(context?.environment)
+  return environment && Object.keys(environment).length > 0 ? environment : null
+}
+
+function asRecord(value: unknown): UnknownRecord | null {
+  return typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as UnknownRecord) : null
+}
+
+function textValue(value: unknown): string | undefined {
+  if (typeof value === 'string' && value.trim()) return value
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+  if (typeof value === 'boolean') return value ? 'true' : 'false'
+  return undefined
+}
+
+function joinDefined(values: Array<string | undefined>, separator: string): string | undefined {
+  const filtered = values.filter((value): value is string => Boolean(value))
+  return filtered.length ? filtered.join(separator) : undefined
+}
+
+function numberWithUnit(value: unknown, unit: string): string | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined
+  return unit ? `${value} ${unit}` : String(value)
+}
+
+function formatSize(width: unknown, height: unknown): string | undefined {
+  if (typeof width !== 'number' || typeof height !== 'number') return undefined
+  return `${width} x ${height}`
+}
+
+function formatBytes(value: unknown): string | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  let next = value
+  let unit = 0
+  while (next >= 1024 && unit < units.length - 1) {
+    next /= 1024
+    unit += 1
+  }
+  return `${next >= 10 || unit === 0 ? next.toFixed(0) : next.toFixed(1)} ${units[unit]}`
+}
+
+function formatPercent(value: unknown): string | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return undefined
+  return `${(value * 100).toFixed(value < 0.1 ? 1 : 0)}%`
+}
+
+function formatProfileTime(value: unknown): string | undefined {
+  if (typeof value !== 'number' && typeof value !== 'string') return undefined
+  return formatFullDateTime(value)
+}
+
+function booleanText(value: unknown, t: (key: string) => string): string | undefined {
+  if (typeof value !== 'boolean') return undefined
+  return value ? t('common.yes') : t('common.no')
+}
+
+function tierTone(value?: string): 'success' | 'warning' | 'danger' | 'neutral' {
+  if (value === 'high') return 'success'
+  if (value === 'medium') return 'warning'
+  if (value === 'low') return 'danger'
+  return 'neutral'
+}
+
+function qualityTone(value?: string): 'success' | 'warning' | 'danger' | 'neutral' {
+  if (value === 'excellent' || value === 'good') return 'success'
+  if (value === 'fair') return 'warning'
+  if (value === 'poor' || value === 'offline') return 'danger'
+  return 'neutral'
 }

@@ -38,6 +38,7 @@ export interface ErrorEvent {
     userAgent?: string
   }
   tags?: Record<string, string>
+  context?: EventContext
 }
 
 export interface PerformanceEvent {
@@ -48,9 +49,15 @@ export interface PerformanceEvent {
   value: number
   rating: 'good' | 'needs-improvement' | 'poor'
   url?: string
+  context?: EventContext
 }
 
 export type TrackerEvent = ErrorEvent | PerformanceEvent
+
+export interface EventContext {
+  environment?: import('./core/environment').EnvironmentSnapshot
+  [key: string]: unknown
+}
 
 export interface Integration {
   name: string

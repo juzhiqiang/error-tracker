@@ -88,6 +88,7 @@ export interface EventRow {
   request: Record<string, unknown> | null
   user: Record<string, unknown> | null
   tags: Record<string, string> | null
+  context: Record<string, unknown> | null
   environment: string | null
   release: string | null
 }

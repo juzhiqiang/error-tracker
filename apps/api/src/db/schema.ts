@@ -185,6 +185,7 @@ export const events = pgTable('events', {
   request: jsonb('request'),
   user: jsonb('user'),
   tags: jsonb('tags'),
+  context: jsonb('context'),
   environment: text('environment'),
   release: text('release'),
 })

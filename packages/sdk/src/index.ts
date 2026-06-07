@@ -2,15 +2,19 @@ import { ErrorTrackerClient } from './core/client'
 import { BrowserErrorsIntegration } from './integrations/browser-errors'
 import { BrowserBreadcrumbsIntegration } from './integrations/browser-breadcrumbs'
 import { BrowserPerformanceIntegration } from './integrations/browser-performance'
+import { BrowserEnvironmentIntegration } from './integrations/browser-environment'
 import type { SdkOptions } from './types'
 
 export { ErrorTrackerClient } from './core/client'
-export type { SdkOptions, Integration, ErrorEvent, Breadcrumb } from './types'
+export { EnvironmentCollector } from './core/environment'
+export type { SdkOptions, Integration, ErrorEvent, Breadcrumb, EventContext } from './types'
+export type { EnvironmentSnapshot } from './core/environment'
 
 let _client: ErrorTrackerClient | null = null
 
 export function init(options: SdkOptions): ErrorTrackerClient {
   const defaultIntegrations = [
+    new BrowserEnvironmentIntegration(),
     new BrowserErrorsIntegration(),
     new BrowserBreadcrumbsIntegration(),
     new BrowserPerformanceIntegration(),

@@ -70,6 +70,48 @@ describe('IngestService', () => {
     })
   })
 
+  it('persists scrubbed runtime context for environment and device profiles', async () => {
+    const insertedValues: unknown[] = []
+    const db = {
+      execute: mock(async () => ({ rows: [{ id: 'issue-1' }] })),
+      insert: () => ({
+        values: mock(async (value: unknown) => {
+          insertedValues.push(value)
+        }),
+      }),
+      update: () => ({
+        set: mock(() => ({ where: mock(async () => undefined) })),
+      }),
+    }
+    const queue = { add: mock(async () => undefined) }
+    const service = new IngestService(db as never, queue as never, {} as never)
+
+    await service.ingestEvent('project-1', {
+      eventId: 'event-1',
+      timestamp: Date.now(),
+      level: 'error',
+      message: 'boom',
+      fingerprint: 'client-fp',
+      context: {
+        environment: {
+          network: { effectiveType: '4g', rttMs: 40, quality: 'excellent' },
+          performance: { tier: 'high' },
+          user: { token: 'secret' },
+        },
+      },
+    })
+
+    expect(insertedValues[0]).toMatchObject({
+      context: {
+        environment: {
+          network: { effectiveType: '4g', rttMs: 40, quality: 'excellent' },
+          performance: { tier: 'high' },
+          user: { token: '[Filtered]' },
+        },
+      },
+    })
+  })
+
   it('links an orphan replay row when the matching event is ingested later', async () => {
     const updateValues: unknown[] = []
     const db = {

@@ -1,4 +1,4 @@
-import type { SdkOptions, ErrorEvent, TrackerEvent } from '../types'
+import type { EventContext, SdkOptions, ErrorEvent, TrackerEvent } from '../types'
 import { BreadcrumbManager } from './breadcrumbs'
 import { DedupeFilter } from './dedupe'
 import { EventQueue } from './queue'
@@ -14,6 +14,7 @@ export class ErrorTrackerClient {
   private readonly transport: HttpTransport
   readonly scope: Scope
   private readonly options: Required<Pick<SdkOptions, 'dsn' | 'sampleRate'>> & SdkOptions
+  private readonly context: EventContext = {}
 
   constructor(options: SdkOptions) {
     this.options = { sampleRate: 1.0, ...options }
@@ -53,6 +54,7 @@ export class ErrorTrackerClient {
       breadcrumbs: this.breadcrumbs.getAll(),
       user: this.scope.getUser() as ErrorEvent['user'],
       tags: { ...this.scope.getTags(), ...(extra as Record<string, string> | undefined) },
+      context: this.getContext(),
     }
 
     if (this.options.beforeSend) {
@@ -75,12 +77,13 @@ export class ErrorTrackerClient {
       environment: this.options.environment,
       release: this.options.release,
       breadcrumbs: this.breadcrumbs.getAll(),
+      context: this.getContext(),
     }
     this.queue.enqueue(event)
   }
 
   capturePerformance(event: TrackerEvent): void {
-    this.queue.enqueue(event)
+    this.queue.enqueue({ ...event, context: event.context ?? this.getContext() })
   }
 
   async flush(isUnloading = false): Promise<void> {
@@ -94,5 +97,13 @@ export class ErrorTrackerClient {
 
   setupIntegrations(): void {
     this.options.integrations?.forEach((i) => i.setup(this))
+  }
+
+  setContext(key: string, value: unknown): void {
+    this.context[key] = value
+  }
+
+  getContext(): EventContext {
+    return { ...this.context }
   }
 }

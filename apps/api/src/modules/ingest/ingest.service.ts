@@ -28,6 +28,7 @@ interface IncomingEvent {
   request?: Record<string, unknown>
   user?: Record<string, unknown>
   tags?: Record<string, string>
+  context?: Record<string, unknown>
   environment?: string
   release?: string
 }
@@ -80,6 +81,7 @@ export class IngestService {
       request: payload.request ? scrubPii(payload.request) : null,
       user: payload.user ? scrubPii(payload.user) : null,
       tags: payload.tags ? scrubPii(payload.tags) : null,
+      context: payload.context ? scrubPii(payload.context) : null,
       environment: payload.environment,
       release: payload.release,
     })

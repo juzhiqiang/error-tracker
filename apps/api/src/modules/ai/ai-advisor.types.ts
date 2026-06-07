@@ -39,6 +39,7 @@ export interface IssueAiContext {
     request?: unknown
     user?: unknown
     tags?: unknown
+    context?: unknown
     environment?: string | null
     release?: string | null
   }>

@@ -32,6 +32,8 @@ try {
 
 The browser entry captures errors, unhandled rejections, breadcrumbs, and Web Vitals. Replay support is provided by the separate `@error-tracker/sdk/plugins/replay` subpath.
 
+Browser events also include a framework-agnostic environment profile under `event.context.environment`: parsed user agent, browser and OS, device class, CPU cores, memory, screen and viewport, network effective type, RTT, downlink, network quality, storage capability, storage quota and usage ratio, persistent storage status, locale, timezone, and page visibility. Use `beforeSend` if your data policy needs to remove or coarsen any field before upload.
+
 ## Node.js
 
 ```ts
