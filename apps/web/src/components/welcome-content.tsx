@@ -96,6 +96,8 @@ export function WelcomeContent({ user }: { user?: SessionUserSummary | null }) {
 
       <section className="welcome-hero welcome-flagship-hero">
         <div className="welcome-orbit-field" aria-hidden="true">
+          <span className="welcome-noise-layer" />
+          <span className="welcome-sweep-layer" />
           <span className="welcome-orbit welcome-orbit-one" />
           <span className="welcome-orbit welcome-orbit-two" />
           <span className="welcome-orbit welcome-orbit-three" />
@@ -108,6 +110,7 @@ export function WelcomeContent({ user }: { user?: SessionUserSummary | null }) {
             <span />
             {t('welcome.hero.kicker')}
           </div>
+          <div className="welcome-hero-technical">{t('welcome.hero.technical')}</div>
           <h1>{t('welcome.hero.title')}</h1>
           <p>{t('welcome.hero.description')}</p>
           <div className="welcome-hero-actions">
