@@ -1,67 +1,40 @@
 'use client'
 
-import type { CSSProperties, PointerEvent } from 'react'
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
-  Activity,
   AlertTriangle,
   ArrowRight,
+  BellRing,
   CheckCircle2,
-  Clock3,
   Code2,
-  Database,
   Fingerprint,
-  Gauge,
   GitBranch,
   MousePointerClick,
-  Play,
   RadioTower,
   ShieldCheck,
   Terminal,
+  Users,
   Zap,
 } from 'lucide-react'
 import { LanguageToggle } from '@/components/language-toggle'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { useI18n } from '@/lib/i18n'
-import { createSignalParticles } from '@/lib/welcome-particles'
 import {
   getSessionDisplayName,
   getSessionInitials,
   getWelcomePrimaryAction,
   type SessionUserSummary,
 } from '@/lib/session-ui'
+import { welcomeCapabilities, welcomePreviewRows, welcomeWorkflowSteps } from '@/lib/welcome-tour'
 
-const signalRows = [
-  { icon: AlertTriangle, titleKey: 'welcome.signal.exception.title', metaKey: 'welcome.signal.exception.meta', tone: 'danger' },
-  { icon: Play, titleKey: 'welcome.signal.replay.title', metaKey: 'welcome.signal.replay.meta', tone: 'primary' },
-  { icon: Gauge, titleKey: 'welcome.signal.vital.title', metaKey: 'welcome.signal.vital.meta', tone: 'warning' },
-  { icon: GitBranch, titleKey: 'welcome.signal.deploy.title', metaKey: 'welcome.signal.deploy.meta', tone: 'success' },
-] as const
+const capabilityIcons = [RadioTower, Fingerprint, MousePointerClick, GitBranch] as const
+const workflowIcons = [BellRing, AlertTriangle, Users, CheckCircle2, Zap] as const
 
-const runtimeCards = [
-  { icon: Terminal, titleKey: 'welcome.runtime.sdk.title', bodyKey: 'welcome.runtime.sdk.body' },
-  { icon: Fingerprint, titleKey: 'welcome.runtime.queue.title', bodyKey: 'welcome.runtime.queue.body' },
-  { icon: MousePointerClick, titleKey: 'welcome.runtime.replay.title', bodyKey: 'welcome.runtime.replay.body' },
-  { icon: Activity, titleKey: 'welcome.runtime.vitals.title', bodyKey: 'welcome.runtime.vitals.body' },
-  { icon: RadioTower, titleKey: 'welcome.runtime.alerts.title', bodyKey: 'welcome.runtime.alerts.body' },
-  { icon: ShieldCheck, titleKey: 'welcome.runtime.privacy.title', bodyKey: 'welcome.runtime.privacy.body' },
-] as const
-
-const contextCards = [
-  { icon: RadioTower, titleKey: 'welcome.context.card1.title', bodyKey: 'welcome.context.card1.body' },
-  { icon: Database, titleKey: 'welcome.context.card2.title', bodyKey: 'welcome.context.card2.body' },
-  { icon: Zap, titleKey: 'welcome.context.card3.title', bodyKey: 'welcome.context.card3.body' },
-] as const
-
-const connectedNodes = [
-  { key: 'welcome.connected.issue', x: 50, y: 12 },
-  { key: 'welcome.connected.breadcrumb', x: 18, y: 36 },
-  { key: 'welcome.connected.stack', x: 80, y: 36 },
-  { key: 'welcome.connected.replay', x: 28, y: 72 },
-  { key: 'welcome.connected.vitals', x: 72, y: 72 },
-  { key: 'welcome.connected.release', x: 50, y: 90 },
-] as const
+const severityClasses = {
+  fatal: 'welcome-severity-fatal',
+  error: 'welcome-severity-error',
+  warning: 'welcome-severity-warning',
+} as const
 
 const stackKeys = [
   'welcome.stack.errors',
@@ -73,39 +46,12 @@ const stackKeys = [
   'welcome.stack.privacy',
 ]
 
-const consoleKeys = [
-  'welcome.console.intake',
-  'welcome.console.grouped',
-  'welcome.console.replay',
-  'welcome.console.context',
-]
-
-const signalParticles = createSignalParticles()
-
 export function WelcomeContent({ user }: { user?: SessionUserSummary | null }) {
   const { t } = useI18n()
-  const [activeSignal, setActiveSignal] = useState(0)
   const primaryAction = getWelcomePrimaryAction(user)
   const displayName = getSessionDisplayName(user, t('app.signedInUser'))
   const initials = getSessionInitials(user)
   const email = user?.email ?? ''
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setActiveSignal((current) => (current + 1) % signalRows.length)
-    }, 2600)
-    return () => window.clearInterval(timer)
-  }, [])
-
-  function moveScene(event: PointerEvent<HTMLElement>) {
-    const rect = event.currentTarget.getBoundingClientRect()
-    const x = ((event.clientX - rect.left) / rect.width) * 100
-    const y = ((event.clientY - rect.top) / rect.height) * 100
-    event.currentTarget.style.setProperty('--mx', `${x}%`)
-    event.currentTarget.style.setProperty('--my', `${y}%`)
-    event.currentTarget.style.setProperty('--tilt-x', `${(50 - y) / 28}deg`)
-    event.currentTarget.style.setProperty('--tilt-y', `${(x - 50) / 24}deg`)
-  }
 
   return (
     <main className="welcome-page min-h-screen overflow-hidden bg-background text-slate-100">
@@ -117,8 +63,8 @@ export function WelcomeContent({ user }: { user?: SessionUserSummary | null }) {
           <span className="welcome-brand-text">Error Tracker</span>
         </Link>
         <div className="welcome-nav-links">
-          <a href="#signals">{t('welcome.nav.signals')}</a>
-          <a href="#context">{t('welcome.nav.context')}</a>
+          <a href="#capabilities">{t('welcome.nav.signals')}</a>
+          <a href="#workflow">{t('welcome.nav.workflow')}</a>
           <a href="#start">{t('welcome.nav.setup')}</a>
         </div>
         <div className="welcome-nav-actions">
@@ -128,9 +74,7 @@ export function WelcomeContent({ user }: { user?: SessionUserSummary | null }) {
           </div>
           {user && (
             <div className="welcome-user-chip">
-              <span className="welcome-user-avatar">
-                {initials}
-              </span>
+              <span className="welcome-user-avatar">{initials}</span>
               <span className="welcome-user-meta">
                 <span>{t('welcome.nav.signedIn')}</span>
                 <strong>{displayName}</strong>
@@ -138,30 +82,30 @@ export function WelcomeContent({ user }: { user?: SessionUserSummary | null }) {
               </span>
             </div>
           )}
-          <Link href={primaryAction.href} className="app-button welcome-nav-cta inline-flex items-center justify-center gap-2 px-4 text-sm font-semibold">
+          <Link href={primaryAction.href} className="welcome-nav-cta app-button inline-flex items-center justify-center gap-2 px-4 text-sm font-semibold">
             {t(primaryAction.labelKey)}
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </nav>
 
-      <section className="welcome-hero" onPointerMove={moveScene}>
-        <SignalScene activeSignal={activeSignal} />
+      <section className="welcome-hero">
         <div className="welcome-hero-copy">
           <div className="welcome-kicker">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_18px_rgba(28,232,158,0.75)]" />
+            <span />
             {t('welcome.hero.kicker')}
           </div>
           <h1>{t('welcome.hero.title')}</h1>
           <p>{t('welcome.hero.description')}</p>
           <div className="welcome-hero-actions">
-            <Link href={primaryAction.href} className="app-button welcome-primary-action inline-flex items-center justify-center gap-2 px-5 text-sm font-semibold text-white">
+            <Link href={primaryAction.href} className="welcome-primary-action app-button inline-flex items-center justify-center gap-2 px-5 text-sm font-semibold text-white">
               {t(primaryAction.labelKey)}
               <ArrowRight className="h-4 w-4" />
             </Link>
-            <a href="#start" className="app-button inline-flex items-center justify-center gap-2 border border-slate-700 px-5 text-sm font-semibold text-slate-200 hover:bg-slate-900">
+            <Link href="/docs" className="welcome-secondary-action app-button inline-flex items-center justify-center gap-2 px-5 text-sm font-semibold">
               {t('welcome.hero.secondary')}
-            </a>
+              <Code2 className="h-4 w-4" />
+            </Link>
           </div>
           <div className="welcome-stack-strip" aria-label={t('welcome.hero.live')}>
             {stackKeys.map((key) => (
@@ -169,69 +113,52 @@ export function WelcomeContent({ user }: { user?: SessionUserSummary | null }) {
             ))}
           </div>
         </div>
+
+        <DashboardPreview />
       </section>
 
-      <section id="signals" className="welcome-section welcome-section-tight">
+      <section id="capabilities" className="welcome-section welcome-capabilities">
         <div className="welcome-section-heading">
           <h2>{t('welcome.runtime.title')}</h2>
           <p>{t('welcome.runtime.description')}</p>
         </div>
-        <div className="welcome-runtime-grid">
-          {runtimeCards.map((card) => {
-            const Icon = card.icon
+        <div className="welcome-capability-list">
+          {welcomeCapabilities.map((item, index) => {
+            const Icon = capabilityIcons[index] ?? RadioTower
             return (
-              <article key={card.titleKey} className="welcome-feature">
-                <div className="welcome-feature-icon"><Icon className="h-4 w-4" /></div>
-                <h3>{t(card.titleKey)}</h3>
-                <p>{t(card.bodyKey)}</p>
+              <article key={item.titleKey} className="welcome-capability">
+                <div className="welcome-capability-icon">
+                  <Icon className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3>{t(item.titleKey)}</h3>
+                  <p>{t(item.bodyKey)}</p>
+                </div>
               </article>
             )
           })}
         </div>
       </section>
 
-      <section className="welcome-section welcome-connected">
+      <section id="workflow" className="welcome-section welcome-workflow-section">
         <div className="welcome-section-heading">
-          <h2>{t('welcome.connected.title')}</h2>
-          <p>{t('welcome.connected.description')}</p>
+          <h2>{t('welcome.workflow.title')}</h2>
+          <p>{t('welcome.workflow.description')}</p>
         </div>
-        <div className="welcome-map">
-          <div className="welcome-map-lines" />
-          {connectedNodes.map((node) => (
-            <div key={node.key} className="welcome-node" style={{ left: `${node.x}%`, top: `${node.y}%` }}>
-              {t(node.key)}
-            </div>
-          ))}
-          <div className="welcome-root-view">
-            <div className="flex items-center gap-2 text-xs text-emerald-200">
-              <CheckCircle2 className="h-4 w-4" />
-              {t('welcome.connected.fixTitle')}
-            </div>
-            <p>{t('welcome.connected.fixBody')}</p>
-          </div>
-        </div>
-      </section>
-
-      <section id="context" className="welcome-section">
-        <div className="welcome-context-layout">
-          <div className="welcome-section-heading">
-            <h2>{t('welcome.context.title')}</h2>
-            <p>{t('welcome.context.description')}</p>
-          </div>
-          <div className="welcome-context-cards">
-            {contextCards.map((card) => {
-              const Icon = card.icon
-              return (
-                <article key={card.titleKey} className="welcome-context-card">
-                  <Icon className="h-5 w-5 text-indigo-300" />
-                  <div>
-                    <h3>{t(card.titleKey)}</h3>
-                    <p>{t(card.bodyKey)}</p>
-                  </div>
-                </article>
-              )
-            })}
-          </div>
+        <div className="welcome-workflow">
+          {welcomeWorkflowSteps.map((step, index) => {
+            const Icon = workflowIcons[index] ?? BellRing
+            return (
+              <article key={step.labelKey} className="welcome-workflow-step">
+                <div className="welcome-workflow-index">{String(index + 1).padStart(2, '0')}</div>
+                <div className="welcome-workflow-icon">
+                  <Icon className="h-4 w-4" />
+                </div>
+                <h3>{t(step.labelKey)}</h3>
+                <p>{t(step.detailKey)}</p>
+              </article>
+            )
+          })}
         </div>
       </section>
 
@@ -247,27 +174,27 @@ export function WelcomeContent({ user }: { user?: SessionUserSummary | null }) {
               </div>
             ))}
           </div>
-          <Link href={primaryAction.href} className="app-button welcome-primary-action inline-flex items-center justify-center gap-2 px-5 text-sm font-semibold text-white">
+          <Link href={primaryAction.href} className="welcome-primary-action app-button inline-flex items-center justify-center gap-2 px-5 text-sm font-semibold text-white">
             {t(primaryAction.labelKey)}
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
         <div className="welcome-code-panel">
           <div className="welcome-code-title">
-            <Code2 className="h-4 w-4" />
+            <Terminal className="h-4 w-4" />
             {t('welcome.start.codeTitle')}
           </div>
           <pre>{`import { init } from '@error-tracker/sdk'
 
 init({
-  dsn: 'https://api.example.com/ingest/project',
-  token: 'project-token',
+  dsn: process.env.ERROR_TRACKER_DSN,
+  token: process.env.ERROR_TRACKER_TOKEN,
   environment: 'production',
-  release: 'web@2.8.1',
+  release: 'web@2.9.3',
   integrations: {
-    console: true,
     performance: true,
     replay: true,
+    blankScreen: true,
   },
 })`}</pre>
         </div>
@@ -281,63 +208,65 @@ init({
   )
 }
 
-function SignalScene({ activeSignal }: { activeSignal: number }) {
+function DashboardPreview() {
   const { t } = useI18n()
-  return (
-    <div className="welcome-scene" aria-hidden="true">
-      <div className="welcome-grid-plane" />
-      <div className="welcome-scanline" />
-      <SignalParticleField />
-      <div className="welcome-command">
-        <div className="welcome-command-header">
-          <span>{t('welcome.hero.live')}</span>
-          <Clock3 className="h-4 w-4" />
-        </div>
-        <div className="space-y-3">
-          {signalRows.map((row, index) => {
-            const Icon = row.icon
-            return (
-              <div key={row.titleKey} className={`welcome-signal-row ${row.tone} ${activeSignal === index ? 'active' : ''}`}>
-                <div className="welcome-signal-icon"><Icon className="h-4 w-4" /></div>
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold text-slate-100">{t(row.titleKey)}</div>
-                  <div className="mt-1 truncate font-mono text-xs text-slate-500">{t(row.metaKey)}</div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-      <div className="welcome-terminal">
-        <Terminal className="h-4 w-4 text-emerald-300" />
-        <div>
-          {consoleKeys.map((key, index) => (
-            <div key={key} style={{ animationDelay: `${index * 420}ms` }}>
-              <span>0{index + 1}</span> {t(key)}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
 
-function SignalParticleField() {
   return (
-    <div className="welcome-particle-field">
-      {signalParticles.map((particle) => (
-        <span
-          key={particle.id}
-          className={`welcome-particle ${particle.tone}`}
-          style={{
-            '--particle-x': `${particle.x}%`,
-            '--particle-y': `${particle.y}%`,
-            '--particle-size': `${particle.size}px`,
-            '--particle-delay': `${particle.delayMs}ms`,
-            '--particle-duration': `${particle.durationMs}ms`,
-          } as CSSProperties}
-        />
-      ))}
+    <div className="welcome-dashboard-preview" aria-label={t('welcome.preview.label')}>
+      <div className="welcome-preview-topbar">
+        <div>
+          <span>{t('welcome.preview.project')}</span>
+          <strong>{t('welcome.preview.title')}</strong>
+        </div>
+        <span className="welcome-preview-live">
+          <span />
+          {t('welcome.preview.live')}
+        </span>
+      </div>
+
+      <div className="welcome-preview-metrics">
+        <div>
+          <span>{t('welcome.preview.metric.issues')}</span>
+          <strong>24</strong>
+        </div>
+        <div>
+          <span>{t('welcome.preview.metric.users')}</span>
+          <strong>118</strong>
+        </div>
+        <div>
+          <span>{t('welcome.preview.metric.release')}</span>
+          <strong>2.9.4</strong>
+        </div>
+      </div>
+
+      <div className="welcome-preview-table">
+        {welcomePreviewRows.map((row) => (
+          <div key={row.titleKey} className="welcome-preview-row">
+            <span className={`welcome-severity ${severityClasses[row.severity]}`}>{row.severity}</span>
+            <div className="welcome-preview-row-main">
+              <strong>{t(row.titleKey)}</strong>
+              <span>{t(row.metaKey)}</span>
+            </div>
+            <span className="welcome-preview-owner">{row.owner}</span>
+            <span className="welcome-preview-status">{t(row.statusKey)}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="welcome-preview-evidence">
+        <div>
+          <span>{t('welcome.preview.evidence.stack')}</span>
+          <code>CheckoutButton.tsx:84</code>
+        </div>
+        <div>
+          <span>{t('welcome.preview.evidence.replay')}</span>
+          <code>{t('welcome.preview.evidence.replayValue')}</code>
+        </div>
+        <div>
+          <span>{t('welcome.preview.evidence.alert')}</span>
+          <code>{t('welcome.preview.evidence.alertValue')}</code>
+        </div>
+      </div>
     </div>
   )
 }
