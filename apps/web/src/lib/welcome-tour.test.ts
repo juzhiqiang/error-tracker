@@ -1,7 +1,20 @@
 import { describe, expect, it } from 'bun:test'
-import { welcomeCapabilities, welcomeWorkflowSteps, welcomePreviewRows } from './welcome-tour'
+import {
+  welcomeCapabilities,
+  welcomeHeroStats,
+  welcomePreviewRows,
+  welcomeWorkflowSteps,
+} from './welcome-tour'
 
 describe('welcome product tour content', () => {
+  it('leads the flagship hero with three operational proof points', () => {
+    expect(welcomeHeroStats.map((item) => item.labelKey)).toEqual([
+      'welcome.hero.stat.capture',
+      'welcome.hero.stat.route',
+      'welcome.hero.stat.regression',
+    ])
+  })
+
   it('keeps the tour focused on core investigation capabilities', () => {
     expect(welcomeCapabilities.map((item) => item.titleKey)).toEqual([
       'welcome.capability.capture.title',

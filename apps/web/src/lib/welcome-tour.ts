@@ -1,3 +1,9 @@
+export const welcomeHeroStats = [
+  { value: '9pt', labelKey: 'welcome.hero.stat.capture' },
+  { value: '4ch', labelKey: 'welcome.hero.stat.route' },
+  { value: '1rl', labelKey: 'welcome.hero.stat.regression' },
+] as const
+
 export const welcomeCapabilities = [
   {
     titleKey: 'welcome.capability.capture.title',

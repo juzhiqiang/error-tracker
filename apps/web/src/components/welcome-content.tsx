@@ -25,7 +25,12 @@ import {
   getWelcomePrimaryAction,
   type SessionUserSummary,
 } from '@/lib/session-ui'
-import { welcomeCapabilities, welcomePreviewRows, welcomeWorkflowSteps } from '@/lib/welcome-tour'
+import {
+  welcomeCapabilities,
+  welcomeHeroStats,
+  welcomePreviewRows,
+  welcomeWorkflowSteps,
+} from '@/lib/welcome-tour'
 
 const capabilityIcons = [RadioTower, Fingerprint, MousePointerClick, GitBranch] as const
 const workflowIcons = [BellRing, AlertTriangle, Users, CheckCircle2, Zap] as const
@@ -89,7 +94,15 @@ export function WelcomeContent({ user }: { user?: SessionUserSummary | null }) {
         </div>
       </nav>
 
-      <section className="welcome-hero">
+      <section className="welcome-hero welcome-flagship-hero">
+        <div className="welcome-orbit-field" aria-hidden="true">
+          <span className="welcome-orbit welcome-orbit-one" />
+          <span className="welcome-orbit welcome-orbit-two" />
+          <span className="welcome-orbit welcome-orbit-three" />
+          <span className="welcome-beam welcome-beam-one" />
+          <span className="welcome-beam welcome-beam-two" />
+        </div>
+
         <div className="welcome-hero-copy">
           <div className="welcome-kicker">
             <span />
@@ -114,7 +127,18 @@ export function WelcomeContent({ user }: { user?: SessionUserSummary | null }) {
           </div>
         </div>
 
-        <DashboardPreview />
+        <div className="welcome-hero-stats" aria-label={t('welcome.hero.statsLabel')}>
+          {welcomeHeroStats.map((item) => (
+            <div key={item.labelKey}>
+              <strong>{item.value}</strong>
+              <span>{t(item.labelKey)}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="welcome-hero-stage">
+          <DashboardPreview />
+        </div>
       </section>
 
       <section id="capabilities" className="welcome-section welcome-capabilities">
@@ -213,6 +237,11 @@ function DashboardPreview() {
 
   return (
     <div className="welcome-dashboard-preview" aria-label={t('welcome.preview.label')}>
+      <div className="welcome-preview-chrome" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
       <div className="welcome-preview-topbar">
         <div>
           <span>{t('welcome.preview.project')}</span>
