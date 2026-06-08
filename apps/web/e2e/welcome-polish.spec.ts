@@ -19,3 +19,24 @@ test('welcome page renders without client errors or horizontal overflow', async 
   expect(width.scrollWidth).toBeLessThanOrEqual(width.clientWidth)
   expect(messages).toEqual([])
 })
+
+test('welcome first screen background fills the initial viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/welcome')
+  await expect(page.locator('.welcome-flagship-hero')).toBeVisible()
+
+  const firstScreen = await page.evaluate(() => {
+    const hero = document.querySelector('.welcome-flagship-hero')?.getBoundingClientRect()
+    const field = document.querySelector('.welcome-orbit-field')?.getBoundingClientRect()
+
+    return {
+      heroHeight: hero?.height ?? 0,
+      fieldTop: field?.top ?? Number.NaN,
+      viewportHeight: window.innerHeight,
+    }
+  })
+
+  expect(firstScreen.heroHeight).toBeGreaterThanOrEqual(firstScreen.viewportHeight)
+  expect(firstScreen.heroHeight).toBeLessThanOrEqual(firstScreen.viewportHeight + 180)
+  expect(firstScreen.fieldTop).toBe(0)
+})
