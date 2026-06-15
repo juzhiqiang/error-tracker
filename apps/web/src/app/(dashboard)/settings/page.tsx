@@ -456,7 +456,7 @@ export default function SettingsPage() {
                       Ingest URL
                     </div>
                     <div className="flex gap-2">
-                      <input readOnly value={ingestUrl} className="app-control min-w-0 flex-1 px-3 font-mono text-xs text-slate-300" />
+                      <input readOnly aria-label="Ingest URL" value={ingestUrl} className="app-control min-w-0 flex-1 px-3 font-mono text-xs text-slate-300" />
                       <button
                         onClick={() => copy(ingestUrl, 'settings.toast.dsnCopied')}
                         className="app-button inline-flex items-center gap-2 border border-slate-700 px-3 text-sm text-slate-200 hover:bg-slate-800"
@@ -473,7 +473,7 @@ export default function SettingsPage() {
                       Token
                     </div>
                     <div className="flex gap-2">
-                      <input readOnly value={projectToken} className="app-control min-w-0 flex-1 px-3 font-mono text-xs text-slate-300" />
+                      <input readOnly aria-label="DSN Token" value={projectToken} className="app-control min-w-0 flex-1 px-3 font-mono text-xs text-slate-300" />
                       <button
                         onClick={() => copy(projectToken, 'settings.toast.tokenCopied')}
                         className="app-button inline-flex items-center gap-2 border border-slate-700 px-3 text-sm text-slate-200 hover:bg-slate-800"

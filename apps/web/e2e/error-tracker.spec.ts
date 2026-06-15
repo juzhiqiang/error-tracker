@@ -24,10 +24,13 @@ test('production smoke path creates project, uploads sourcemap, ingests event, a
   await expect(page.getByText(/project created/i)).toBeVisible()
   await expect(page.getByRole('heading', { name: projectName })).toBeVisible()
 
-  const dsn = await page.locator('input[readonly]').first().inputValue()
-  const match = dsn.match(/\/ingest\/([^/]+)\/([^/]+)$/)
+  // The settings page exposes the DSN as two fields: the token-less Ingest URL and the DSN token.
+  const ingestUrl = await page.getByLabel('Ingest URL').inputValue()
+  const token = await page.getByLabel('DSN Token').inputValue()
+  const match = ingestUrl.match(/\/ingest\/([^/]+)$/)
   expect(match).not.toBeNull()
-  const [, projectId, token] = match!
+  const projectId = match![1]
+  expect(token).not.toBe('')
 
   await page.getByLabel(/release/i).fill('web@e2e')
   await page.locator('input[type="file"]').setInputFiles({

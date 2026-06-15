@@ -1,26 +1,10 @@
 import { describe, expect, it, mock } from 'bun:test'
 
-class TestHttpException extends Error {}
-
-const decorator = () => () => undefined
-
-mock.module('@nestjs/common', () => ({
-  Controller: decorator,
-  Global: decorator,
-  Module: decorator,
-  Post: decorator,
-  Param: decorator,
-  Query: decorator,
-  Req: decorator,
-  UseGuards: decorator,
-  Injectable: decorator,
-  Inject: decorator,
-  Optional: decorator,
-  ForbiddenException: TestHttpException,
-  NotFoundException: TestHttpException,
-  UnauthorizedException: TestHttpException,
-}))
-
+// NOTE: do not mock '@nestjs/common'. Bun's mock.module is process-global and persists
+// across files, so replacing the whole module here used to drop exports (e.g. Logger) that
+// other test files load lazily — any later test importing @nestjs/platform-express then hit
+// `new Logger(...)` against an undefined constructor. The real decorators work fine for a
+// direct `new Controller(...)` unit test, so we only stub the auth guard's import chain.
 mock.module('../../common/guards/session.guard', () => ({
   SessionGuard: class SessionGuard {},
 }))

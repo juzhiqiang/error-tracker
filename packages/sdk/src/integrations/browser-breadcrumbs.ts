@@ -29,7 +29,7 @@ export class BrowserBreadcrumbsIntegration implements Integration {
     window.addEventListener('popstate', addNav)
     window.addEventListener('hashchange', addNav)
 
-    this.origFetch = window.fetch
+    this.origFetch = window.fetch.bind(window)
     const patchedFetch = async (...args: Parameters<typeof fetch>) => {
       const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request).url
       const method = (args[1]?.method ?? 'GET').toUpperCase()
