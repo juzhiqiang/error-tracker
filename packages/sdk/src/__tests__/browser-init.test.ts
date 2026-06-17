@@ -14,13 +14,6 @@ mock.module('../integrations/browser-breadcrumbs', () => ({
   },
 }))
 
-mock.module('../integrations/browser-performance', () => ({
-  BrowserPerformanceIntegration: class BrowserPerformanceIntegration {
-    name = 'BrowserPerformance'
-    setup() {}
-  },
-}))
-
 describe('browser init lifecycle', () => {
   afterEach(() => {
     delete (globalThis as unknown as { window?: unknown }).window

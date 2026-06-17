@@ -22,11 +22,13 @@ export class BrowserPerformanceIntegration implements Integration {
       client.capturePerformance(event)
     }
 
-    onLCP(report)
-    onFID(report)
-    onCLS(report)
-    onINP(report)
-    onTTFB(report)
+    if (supportsWebVitals()) {
+      onLCP(report)
+      onFID(report)
+      onCLS(report)
+      onINP(report)
+      onTTFB(report)
+    }
     this.observeResources(client)
     this.observeLongTasks(client)
   }
@@ -88,5 +90,13 @@ function supportsEntry(type: string): boolean {
     typeof PerformanceObserver !== 'undefined' &&
     Array.isArray(PerformanceObserver.supportedEntryTypes) &&
     PerformanceObserver.supportedEntryTypes.includes(type)
+  )
+}
+
+function supportsWebVitals(): boolean {
+  return (
+    typeof document !== 'undefined' &&
+    typeof addEventListener === 'function' &&
+    typeof PerformanceObserver !== 'undefined'
   )
 }
