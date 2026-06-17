@@ -670,9 +670,18 @@ function SdkSignals({ event }: { event: EventRow }) {
   const environmentSummary = joinDefined([browser, device, network, tier], ' / ')
   const isResourceError = tags.mechanism === 'resource'
   const isBlankScreen = tags.mechanism === 'blank-screen'
+  const grouped = groupBreadcrumbs(event)
+  const traceId = firstTraceId(event)
 
   return (
     <div className="grid gap-3 md:grid-cols-2">
+      <SdkSignalItem
+        icon={<Network className="h-4 w-4" />}
+        title={t('detail.sdkSignals.trace.title')}
+        status={traceId ? t('detail.sdkSignals.status.ready') : t('detail.sdkSignals.status.notSeen')}
+        tone={traceId ? 'success' : 'neutral'}
+        summary={traceId ?? t('detail.sdkSignals.trace.empty')}
+      />
       <SdkSignalItem
         icon={<ImageOff className="h-4 w-4" />}
         title={t('detail.sdkSignals.resource.title')}
@@ -713,6 +722,10 @@ function SdkSignals({ event }: { event: EventRow }) {
         tone="success"
         summary={t('detail.sdkSignals.delivery.summary')}
       />
+      <SdkSignalList title={t('detail.sdkSignals.http.title')} items={grouped.http} empty={t('detail.sdkSignals.http.empty')} />
+      <SdkSignalList title={t('detail.sdkSignals.console.title')} items={grouped.console} empty={t('detail.sdkSignals.console.empty')} />
+      <SdkSignalList title={t('detail.sdkSignals.navigation.title')} items={grouped.navigation} empty={t('detail.sdkSignals.navigation.empty')} />
+      <SdkSignalList title={t('detail.sdkSignals.interaction.title')} items={grouped.interaction} empty={t('detail.sdkSignals.interaction.empty')} />
     </div>
   )
 }
@@ -749,6 +762,53 @@ function SdkSignalItem({
       <div className="mt-2 break-all font-mono text-xs leading-5 text-slate-400">{summary}</div>
     </div>
   )
+}
+
+function SdkSignalList({ title, items, empty }: { title: string; items: Breadcrumb[]; empty: string }) {
+  return (
+    <div className="rounded-md border border-line bg-slate-950/30 p-3 md:col-span-2">
+      <div className="flex min-h-[28px] items-center justify-between gap-3">
+        <div className="text-sm font-medium text-slate-100">{title}</div>
+        <span className="rounded-md border border-slate-700 bg-slate-900/70 px-2 py-1 font-mono text-xs text-slate-300">
+          {items.length}
+        </span>
+      </div>
+      {items.length === 0 ? (
+        <div className="mt-2 text-xs leading-5 text-slate-500">{empty}</div>
+      ) : (
+        <div className="mt-3 space-y-2">
+          {items.slice(-5).map((item, index) => (
+            <div key={`${item.timestamp}-${item.type}-${index}`} className="rounded-md border border-slate-800 bg-slate-900/50 px-3 py-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-mono text-[11px] text-slate-500">{formatTime(normalizeTimestamp(item.timestamp))}</span>
+                <span className="rounded border border-slate-700 px-1.5 py-0.5 font-mono text-[11px] text-slate-300">{item.type}</span>
+              </div>
+              <div className="mt-1 break-words font-mono text-xs leading-5 text-slate-300">
+                {item.message || stringifyRecord(item.data)}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function groupBreadcrumbs(event: EventRow) {
+  const breadcrumbs = event.breadcrumbs ?? []
+  return {
+    http: breadcrumbs.filter((item) => item.type === 'http'),
+    console: breadcrumbs.filter((item) => item.type === 'console'),
+    navigation: breadcrumbs.filter((item) => item.type === 'navigation'),
+    interaction: breadcrumbs.filter((item) => item.type === 'ui.click' || item.type === 'ui.input'),
+  }
+}
+
+function firstTraceId(event: EventRow): string | null {
+  const fromTags = event.tags?.traceId ?? event.tags?.['trace.id']
+  if (fromTags) return fromTags
+  const http = (event.breadcrumbs ?? []).find((item) => typeof item.data?.traceId === 'string')
+  return typeof http?.data?.traceId === 'string' ? http.data.traceId : null
 }
 
 function EventContext({ event, issue }: { event: EventRow; issue: Issue }) {
