@@ -79,15 +79,17 @@ export default function OverviewPage() {
   const affectedUsers = issues.reduce((sum, issue) => sum + Number(issue.userCount ?? 0), 0)
   const recentIssues = issues.slice(0, 7)
   const healthItems = useMemo(() => Object.entries(health?.checks ?? {}), [health])
-  const poorVitals = performance.filter((item) => item.rating === 'poor').reduce((sum, item) => sum + toNumber(item.count), 0)
+  const webVitals = performance.filter((item) => (item.kind ?? 'web-vital') === 'web-vital')
+  const poorVitals = webVitals.filter((item) => item.rating === 'poor').reduce((sum, item) => sum + toNumber(item.count), 0)
   const trendRows = trend.map((item) => ({
     hour: formatDateTime(item.hour),
     count: toNumber(item.count),
   }))
-  const topVital = [...performance].sort((a, b) => {
+  const topVital = [...webVitals].sort((a, b) => {
     const ratingWeight = { poor: 3, 'needs-improvement': 2, good: 1 }
-    return ratingWeight[b.rating] - ratingWeight[a.rating] || toNumber(b.count) - toNumber(a.count)
+    return ratingWeight[b.rating ?? 'good'] - ratingWeight[a.rating ?? 'good'] || toNumber(b.count) - toNumber(a.count)
   })[0]
+  const topVitalRating = topVital?.rating ?? 'good'
 
   return (
     <div className="space-y-5">
@@ -191,7 +193,7 @@ export default function OverviewPage() {
               <div className="app-panel-muted p-4">
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <div className="text-xs text-slate-400">{t('overview.health.topVital')}</div>
-                  <RatingBadge rating={topVital.rating} />
+                  <RatingBadge rating={topVitalRating} />
                 </div>
                 <div className="font-mono text-lg text-slate-100">
                   {topVital.name} / {formatMetricValue(topVital.name, topVital.avg_value)}

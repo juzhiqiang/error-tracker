@@ -64,17 +64,21 @@ export default function PerformancePage() {
       .finally(() => setLoading(false))
   }, [projectId, t])
 
+  const webVitalRows = useMemo(() => data.filter((item) => (item.kind ?? 'web-vital') === 'web-vital'), [data])
+  const networkRows = useMemo(() => data.filter((item) => ['resource', 'http'].includes(item.kind ?? '')), [data])
+  const longTaskRows = useMemo(() => data.filter((item) => item.kind === 'longtask'), [data])
+
   const metricCards = useMemo(
     () =>
       metricNames.map((name) => {
-        const rows = data.filter((item) => item.name === name)
+        const rows = webVitalRows.filter((item) => item.name === name)
         const count = rows.reduce((sum, item) => sum + toNumber(item.count), 0)
         const weighted = rows.reduce((sum, item) => sum + toNumber(item.avg_value) * toNumber(item.count), 0)
         const avg = count ? weighted / count : 0
         const rating = rows.find((item) => item.rating === 'poor')?.rating ?? rows.find((item) => item.rating === 'needs-improvement')?.rating ?? rows[0]?.rating ?? 'good'
         return { name, rows, count, avg, rating }
       }),
-    [data],
+    [webVitalRows],
   )
 
   const chartRows = metricCards.map((metric) => ({
@@ -85,8 +89,17 @@ export default function PerformancePage() {
   }))
 
   const totalSamples = metricCards.reduce((sum, metric) => sum + metric.count, 0)
-  const poorSamples = data.filter((item) => item.rating === 'poor').reduce((sum, item) => sum + toNumber(item.count), 0)
+  const poorSamples = webVitalRows.filter((item) => item.rating === 'poor').reduce((sum, item) => sum + toNumber(item.count), 0)
   const coveredMetrics = metricCards.filter((metric) => metric.count > 0).length
+  const networkTotal = networkRows.reduce((sum, item) => sum + toNumber(item.count), 0)
+  const networkAvg = weightedAverage(networkRows)
+  const networkSlowest = Math.max(0, ...networkRows.map((item) => toNumber(item.slowest ?? item.avg_value)))
+  const networkErrors = networkRows
+    .filter((item) => Number(item.status) >= 400)
+    .reduce((sum, item) => sum + toNumber(item.count), 0)
+  const longTaskTotal = longTaskRows.reduce((sum, item) => sum + toNumber(item.count), 0)
+  const longTaskAvg = weightedAverage(longTaskRows)
+  const longTaskSlowest = Math.max(0, ...longTaskRows.map((item) => toNumber(item.slowest ?? item.avg_value)))
 
   async function generateAiAnalysis() {
     if (!projectId) return
@@ -199,6 +212,51 @@ export default function PerformancePage() {
           </div>
         ))}
       </section>
+
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+        <Panel title={t('performance.network.title')} description={t('performance.network.description')}>
+          {loading ? (
+            <div className="h-[260px] animate-pulse rounded-md bg-slate-800/70" />
+          ) : networkTotal === 0 ? (
+            <EmptyState title={t('performance.network.emptyTitle')} description={t('performance.network.emptyDescription')} />
+          ) : (
+            <div className="space-y-4">
+              <div className="grid gap-3 md:grid-cols-4">
+                <MetricCard icon={<SignalHigh className="h-5 w-5 text-indigo-300" />} label={t('performance.network.total')} value={compactNumber(networkTotal)} tone="primary" />
+                <MetricCard icon={<Gauge className="h-5 w-5 text-emerald-300" />} label={t('performance.network.avg')} value={formatMetricValue('LCP', networkAvg)} tone="success" />
+                <MetricCard icon={<TimerReset className="h-5 w-5 text-amber-300" />} label={t('performance.network.slowest')} value={formatMetricValue('LCP', networkSlowest)} tone="warning" />
+                <MetricCard icon={<Activity className="h-5 w-5 text-red-300" />} label={t('performance.network.errors')} value={compactNumber(networkErrors)} tone="danger" />
+              </div>
+              <div className="overflow-hidden rounded-md border border-slate-800">
+                {networkRows.slice(0, 8).map((row, index) => (
+                  <div key={`${row.kind}-${row.name}-${row.status}-${row.method}-${index}`} className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-3 border-b border-slate-800 px-3 py-2 text-sm last:border-b-0 hover:bg-slate-800/60">
+                    <div className="min-w-0">
+                      <div className="truncate text-slate-100">{row.name}</div>
+                      <div className="font-mono text-xs text-slate-500">{row.method ?? row.initiator_type ?? row.kind}</div>
+                    </div>
+                    <div className="font-mono text-slate-300">{row.status ?? '-'}</div>
+                    <div className="font-mono text-slate-100">{formatMetricValue('LCP', toNumber(row.slowest ?? row.avg_value))}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </Panel>
+
+        <Panel title={t('performance.longtask.title')} description={t('performance.longtask.description')}>
+          {loading ? (
+            <div className="h-[180px] animate-pulse rounded-md bg-slate-800/70" />
+          ) : longTaskTotal === 0 ? (
+            <EmptyState title={t('performance.longtask.emptyTitle')} description={t('performance.longtask.emptyDescription')} />
+          ) : (
+            <div className="grid gap-3">
+              <MetricCard icon={<Activity className="h-5 w-5 text-red-300" />} label={t('performance.longtask.count')} value={compactNumber(longTaskTotal)} tone="danger" />
+              <MetricCard icon={<Gauge className="h-5 w-5 text-indigo-300" />} label={t('performance.longtask.avg')} value={formatMetricValue('LCP', longTaskAvg)} tone="primary" />
+              <MetricCard icon={<TimerReset className="h-5 w-5 text-amber-300" />} label={t('performance.longtask.slowest')} value={formatMetricValue('LCP', longTaskSlowest)} tone="warning" />
+            </div>
+          )}
+        </Panel>
+      </section>
     </div>
   )
 }
@@ -227,4 +285,10 @@ function ratingLabelKey(rating?: string): string {
       poor: 'rating.poor',
     }[rating ?? ''] ?? 'common.unknown'
   )
+}
+
+function weightedAverage(rows: PerformanceSummary[]): number {
+  const count = rows.reduce((sum, item) => sum + toNumber(item.count), 0)
+  const weighted = rows.reduce((sum, item) => sum + toNumber(item.avg_value) * toNumber(item.count), 0)
+  return count ? weighted / count : 0
 }
