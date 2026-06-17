@@ -1,6 +1,6 @@
 export type Level = 'fatal' | 'error' | 'warning' | 'info' | 'debug'
 
-export type BreadcrumbType = 'ui.click' | 'navigation' | 'http' | 'console' | 'error'
+export type BreadcrumbType = 'ui.click' | 'ui.input' | 'navigation' | 'http' | 'console' | 'error'
 
 export interface Breadcrumb {
   timestamp: number
