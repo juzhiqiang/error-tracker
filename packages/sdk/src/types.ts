@@ -41,16 +41,48 @@ export interface ErrorEvent {
   context?: EventContext
 }
 
-export interface PerformanceEvent {
+export interface WebVitalPerformanceEvent {
   eventId: string
   timestamp: number
   type: 'performance'
+  kind?: 'web-vital'
   name: 'LCP' | 'FID' | 'CLS' | 'INP' | 'TTFB'
   value: number
   rating: 'good' | 'needs-improvement' | 'poor'
   url?: string
   context?: EventContext
 }
+
+export interface ResourcePerformanceEvent {
+  eventId: string
+  timestamp: number
+  type: 'performance'
+  kind: 'resource'
+  name: 'resource'
+  value: number
+  duration: number
+  url: string
+  initiatorType?: string
+  transferSize?: number
+  encodedBodySize?: number
+  decodedBodySize?: number
+  traceId?: string
+  context?: EventContext
+}
+
+export interface LongTaskPerformanceEvent {
+  eventId: string
+  timestamp: number
+  type: 'performance'
+  kind: 'longtask'
+  name: 'longtask'
+  value: number
+  duration: number
+  startTime?: number
+  context?: EventContext
+}
+
+export type PerformanceEvent = WebVitalPerformanceEvent | ResourcePerformanceEvent | LongTaskPerformanceEvent
 
 export type TrackerEvent = ErrorEvent | PerformanceEvent
 
