@@ -47,6 +47,53 @@ describe('ingest validation', () => {
     expect(validateIngestBody(body)).toBe(body)
   })
 
+  it('accepts resource and longtask performance events', () => {
+    const body = {
+      events: [
+        {
+          eventId: 'resource-1',
+          timestamp: Date.now(),
+          type: 'performance',
+          kind: 'resource',
+          name: 'resource',
+          value: 123.4,
+          duration: 123.4,
+          url: 'https://cdn.example.com/app.js',
+          initiatorType: 'script',
+        },
+        {
+          eventId: 'longtask-1',
+          timestamp: Date.now(),
+          type: 'performance',
+          kind: 'longtask',
+          name: 'longtask',
+          value: 88,
+          duration: 88,
+          startTime: 12,
+        },
+      ],
+    }
+
+    expect(validateIngestBody(body)).toBe(body)
+  })
+
+  it('rejects performance events without a finite numeric value', () => {
+    expect(() =>
+      validateIngestBody({
+        events: [
+          {
+            eventId: 'bad-1',
+            timestamp: Date.now(),
+            type: 'performance',
+            kind: 'resource',
+            name: 'resource',
+            value: Number.NaN,
+          },
+        ],
+      }),
+    ).toThrow('events[0].value must be a finite number')
+  })
+
   it('rejects replay bodies without rrweb events', () => {
     expect(() => validateReplayBody({ eventId: 'event-1', events: [] })).toThrow(BadRequestException)
   })

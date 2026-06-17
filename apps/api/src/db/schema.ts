@@ -256,13 +256,27 @@ export const performanceMetrics = pgTable(
     projectId: uuid('project_id')
       .notNull()
       .references(() => projects.id),
-    name: text('name', { enum: ['LCP', 'FID', 'CLS', 'INP', 'TTFB'] }).notNull(),
+    kind: text('kind', { enum: ['web-vital', 'resource', 'http', 'longtask'] })
+      .notNull()
+      .default('web-vital'),
+    name: text('name').notNull(),
     value: integer('value').notNull(),
-    rating: text('rating', { enum: ['good', 'needs-improvement', 'poor'] }).notNull(),
+    rating: text('rating', { enum: ['good', 'needs-improvement', 'poor'] }),
     url: text('url'),
+    method: text('method'),
+    status: integer('status'),
+    duration: integer('duration'),
+    initiatorType: text('initiator_type'),
+    traceId: text('trace_id'),
+    metadata: jsonb('metadata'),
     timestamp: timestamp('timestamp').defaultNow().notNull(),
   },
   (table) => ({
+    projectKindTimestampIdx: index('performance_metrics_project_kind_timestamp_idx').on(
+      table.projectId,
+      table.kind,
+      table.timestamp,
+    ),
     projectNameTimestampIdx: index('performance_metrics_project_name_timestamp_idx').on(
       table.projectId,
       table.name,

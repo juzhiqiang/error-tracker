@@ -1,0 +1,10 @@
+ALTER TABLE "performance_metrics" ADD COLUMN IF NOT EXISTS "kind" text DEFAULT 'web-vital' NOT NULL;
+ALTER TABLE "performance_metrics" ALTER COLUMN "name" TYPE text;
+ALTER TABLE "performance_metrics" ALTER COLUMN "rating" DROP NOT NULL;
+ALTER TABLE "performance_metrics" ADD COLUMN IF NOT EXISTS "method" text;
+ALTER TABLE "performance_metrics" ADD COLUMN IF NOT EXISTS "status" integer;
+ALTER TABLE "performance_metrics" ADD COLUMN IF NOT EXISTS "duration" integer;
+ALTER TABLE "performance_metrics" ADD COLUMN IF NOT EXISTS "initiator_type" text;
+ALTER TABLE "performance_metrics" ADD COLUMN IF NOT EXISTS "trace_id" text;
+ALTER TABLE "performance_metrics" ADD COLUMN IF NOT EXISTS "metadata" jsonb;
+CREATE INDEX IF NOT EXISTS "performance_metrics_project_kind_timestamp_idx" ON "performance_metrics" USING btree ("project_id","kind","timestamp");

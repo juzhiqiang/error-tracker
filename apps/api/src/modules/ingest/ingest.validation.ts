@@ -3,7 +3,8 @@ import { BadRequestException } from '@nestjs/common'
 const MAX_EVENTS_PER_BATCH = 50
 const MAX_REPLAY_EVENTS = 10_000
 const LEVELS = new Set(['fatal', 'error', 'warning', 'info', 'debug'])
-const PERFORMANCE_NAMES = new Set(['LCP', 'FID', 'CLS', 'INP', 'TTFB'])
+const PERFORMANCE_KINDS = new Set(['web-vital', 'resource', 'http', 'longtask'])
+const WEB_VITAL_NAMES = new Set(['LCP', 'FID', 'CLS', 'INP', 'TTFB'])
 const RATINGS = new Set(['good', 'needs-improvement', 'poor'])
 
 interface IngestBody {
@@ -63,11 +64,18 @@ function validatePerformanceEvent(event: Record<string, unknown>, index: number)
   requireString(event.eventId, `events[${index}].eventId`)
   requireNumber(event.timestamp, `events[${index}].timestamp`)
   requireNumber(event.value, `events[${index}].value`)
-  if (typeof event.name !== 'string' || !PERFORMANCE_NAMES.has(event.name)) {
-    throw new BadRequestException(`events[${index}].name is invalid`)
+  const kind = typeof event.kind === 'string' ? event.kind : 'web-vital'
+  if (!PERFORMANCE_KINDS.has(kind)) {
+    throw new BadRequestException(`events[${index}].kind is invalid`)
   }
-  if (typeof event.rating !== 'string' || !RATINGS.has(event.rating)) {
-    throw new BadRequestException(`events[${index}].rating is invalid`)
+  requireString(event.name, `events[${index}].name`)
+  if (kind === 'web-vital') {
+    if (typeof event.name !== 'string' || !WEB_VITAL_NAMES.has(event.name)) {
+      throw new BadRequestException(`events[${index}].name is invalid`)
+    }
+    if (typeof event.rating !== 'string' || !RATINGS.has(event.rating)) {
+      throw new BadRequestException(`events[${index}].rating is invalid`)
+    }
   }
 }
 

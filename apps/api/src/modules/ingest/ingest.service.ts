@@ -36,11 +36,18 @@ interface IncomingEvent {
 interface PerformancePayload {
   eventId: string
   type: 'performance'
-  name: 'LCP' | 'FID' | 'CLS' | 'INP' | 'TTFB'
+  kind?: 'web-vital' | 'resource' | 'http' | 'longtask'
+  name: string
   value: number
-  rating: 'good' | 'needs-improvement' | 'poor'
+  rating?: 'good' | 'needs-improvement' | 'poor'
   url?: string
+  method?: string
+  status?: number
+  duration?: number
+  initiatorType?: string
+  traceId?: string
   timestamp: number
+  [key: string]: unknown
 }
 
 @Injectable()
@@ -139,10 +146,17 @@ export class IngestService {
     await this.db.insert(performanceMetrics).values(
       metrics.map((m) => ({
         projectId,
+        kind: m.kind ?? 'web-vital',
         name: m.name,
         value: Math.round(m.value),
         rating: m.rating,
-        url: m.url,
+        url: m.url ? scrubPii(m.url) : undefined,
+        method: m.method,
+        status: typeof m.status === 'number' ? Math.round(m.status) : undefined,
+        duration: typeof m.duration === 'number' ? Math.round(m.duration) : undefined,
+        initiatorType: m.initiatorType,
+        traceId: m.traceId,
+        metadata: scrubPii(performanceMetadata(m)),
         timestamp: new Date(m.timestamp),
       })),
     )
@@ -235,4 +249,23 @@ export class IngestService {
       removeOnFail: false,
     }
   }
+}
+
+function performanceMetadata(metric: PerformancePayload): Record<string, unknown> {
+  const reserved = new Set([
+    'eventId',
+    'type',
+    'kind',
+    'name',
+    'value',
+    'rating',
+    'url',
+    'method',
+    'status',
+    'duration',
+    'initiatorType',
+    'traceId',
+    'timestamp',
+  ])
+  return Object.fromEntries(Object.entries(metric).filter(([key]) => !reserved.has(key)))
 }

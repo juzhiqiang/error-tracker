@@ -358,4 +358,40 @@ describe('IngestService', () => {
 
     expect(issueFingerprint(firstDb.issueUpserts[0])).toBe(issueFingerprint(secondDb.issueUpserts[0]))
   })
+
+  it('stores expanded performance metrics with telemetry fields', async () => {
+    const insertedValues: unknown[] = []
+    const db = {
+      insert: mock(() => ({
+        values: mock(async (rows: unknown[]) => {
+          insertedValues.push(...rows)
+        }),
+      })),
+    }
+    const service = new IngestService(db as never, {} as never, {} as never)
+
+    await service.ingestPerformance('project-1', [
+      {
+        eventId: 'resource-1',
+        type: 'performance',
+        kind: 'resource',
+        name: 'resource',
+        value: 42.2,
+        duration: 42.2,
+        url: 'https://cdn.example.com/app.js',
+        initiatorType: 'script',
+        timestamp: 1_700_000_000_000,
+      } as never,
+    ])
+
+    expect(insertedValues[0]).toMatchObject({
+      projectId: 'project-1',
+      kind: 'resource',
+      name: 'resource',
+      value: 42,
+      duration: 42,
+      url: 'https://cdn.example.com/app.js',
+      initiatorType: 'script',
+    })
+  })
 })
