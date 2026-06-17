@@ -176,7 +176,23 @@ export class BrowserBreadcrumbsIntegration implements Integration {
         url: String(url),
         headers: new Set<string>(),
       }
-      return originalOpen.call(this, method, url, ...(rest as [boolean?, string?, string?]))
+      const open = originalOpen as unknown as (
+        this: XMLHttpRequest,
+        method: string,
+        url: string | URL,
+        async?: boolean,
+        username?: string | null,
+        password?: string | null,
+      ) => void
+      if (rest.length === 0) return open.call(this, method, url)
+      return open.call(
+        this,
+        method,
+        url,
+        rest[0] === undefined ? true : Boolean(rest[0]),
+        rest[1] as string | null | undefined,
+        rest[2] as string | null | undefined,
+      )
     }
 
     XMLHttpRequest.prototype.setRequestHeader = function (name: string, value: string) {
