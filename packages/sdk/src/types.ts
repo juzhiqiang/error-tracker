@@ -79,6 +79,11 @@ export interface BlankScreenOptions {
   blankSelectors?: string[]
 }
 
+export interface TracingOptions {
+  enabled?: boolean
+  tracePropagationTargets?: Array<string | RegExp>
+}
+
 export interface SdkOptions {
   dsn: string
   token?: string
@@ -94,5 +99,6 @@ export interface SdkOptions {
   }
   integrations?: Integration[]
   blankScreen?: BlankScreenOptions
+  tracing?: TracingOptions
   beforeSend?: (event: ErrorEvent) => ErrorEvent | null
 }
