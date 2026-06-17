@@ -21,11 +21,21 @@ export class StatsService {
 
   async performanceSummary(projectId: string) {
     const result = await this.db.execute(sql`
-      SELECT name, rating, count(*) as count, avg(value) as avg_value
+      SELECT
+        kind,
+        name,
+        rating,
+        method,
+        status,
+        initiator_type,
+        count(*) as count,
+        avg(value) as avg_value,
+        max(COALESCE(duration, value)) as slowest
       FROM performance_metrics
       WHERE project_id = ${projectId}
         AND timestamp >= now() - interval '24 hours'
-      GROUP BY name, rating ORDER BY name, rating
+      GROUP BY kind, name, rating, method, status, initiator_type
+      ORDER BY kind, name, rating, method, status, initiator_type
     `)
     return sqlRows(result)
   }

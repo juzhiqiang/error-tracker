@@ -57,6 +57,18 @@ describe('api AI advisor', () => {
   })
 })
 
+describe('api performance stats', () => {
+  it('loads expanded performance summaries', async () => {
+    global.fetch = mock(async () =>
+      Response.json([{ kind: 'longtask', name: 'longtask', count: '1', avg_value: '90', slowest: '90' }]),
+    ) as typeof fetch
+
+    const result = await api.stats.performance('project-1')
+
+    expect(result[0]).toMatchObject({ kind: 'longtask', name: 'longtask', slowest: '90' })
+  })
+})
+
 describe('api project privacy settings', () => {
   it('updates the project AI analysis opt-in with PATCH', async () => {
     let capturedUrl = ''

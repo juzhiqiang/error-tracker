@@ -142,11 +142,18 @@ export interface TrendPoint {
   count: number | string
 }
 
+export type PerformanceKind = 'web-vital' | 'resource' | 'http' | 'longtask'
+
 export interface PerformanceSummary {
-  name: 'LCP' | 'FID' | 'CLS' | 'INP' | 'TTFB'
-  rating: 'good' | 'needs-improvement' | 'poor'
+  kind?: PerformanceKind
+  name: 'LCP' | 'FID' | 'CLS' | 'INP' | 'TTFB' | 'resource' | 'http' | 'longtask' | string
+  rating?: 'good' | 'needs-improvement' | 'poor' | null
+  method?: string | null
+  status?: number | string | null
+  initiator_type?: string | null
   count: number | string
   avg_value: number | string
+  slowest?: number | string | null
 }
 
 export type AiPriority = 'low' | 'medium' | 'high'

@@ -29,4 +29,38 @@ describe('StatsService', () => {
 
     await expect(service.performanceSummary('project-1')).resolves.toEqual(rows)
   })
+
+  it('returns expanded performance summary groups', async () => {
+    const calls: string[] = []
+    const rows = [
+      { kind: 'web-vital', name: 'LCP', rating: 'good', count: '2', avg_value: '1200' },
+      { kind: 'resource', name: 'resource', rating: null, count: '3', avg_value: '140', slowest: 500 },
+      { kind: 'longtask', name: 'longtask', rating: null, count: '1', avg_value: '90', slowest: 90 },
+    ]
+    const db = {
+      execute: mock(async (query: unknown) => {
+        calls.push(sqlText(query))
+        return { rows }
+      }),
+    }
+    const service = new StatsService(db as never)
+
+    await expect(service.performanceSummary('project-1')).resolves.toEqual(rows)
+    expect(calls[0]).toContain('kind')
+    expect(calls[0]).toContain('slowest')
+  })
 })
+
+function sqlText(query: unknown): string {
+  const chunks = (query as { queryChunks?: unknown[] } | undefined)?.queryChunks
+  if (!Array.isArray(chunks)) return String(query)
+
+  return chunks
+    .map((chunk) => {
+      if (typeof chunk === 'string' || typeof chunk === 'number') return String(chunk)
+      const value = (chunk as { value?: unknown } | undefined)?.value
+      if (Array.isArray(value)) return value.join('')
+      return typeof value === 'string' ? value : ''
+    })
+    .join('')
+}
