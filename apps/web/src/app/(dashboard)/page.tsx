@@ -110,7 +110,7 @@ export default function OverviewPage() {
     (sum, item) => sum + toNumber(item.counts?.failed) + (item.failedJobs?.length ?? 0),
     0,
   )
-  const riskScore = severe + poorVitals + rejectedIngest + failedQueueJobs
+  const activeSignals = [severe, poorVitals, rejectedIngest, failedQueueJobs].filter((value) => value > 0).length
   const trendRows = trend.map((item) => ({
     hour: formatDateTime(item.hour),
     count: toNumber(item.count),
@@ -209,9 +209,9 @@ export default function OverviewPage() {
             <RiskBlock
               icon={<ShieldAlert className="h-4 w-4" />}
               label={t('overview.risk.score')}
-              value={loading ? '...' : compactNumber(riskScore)}
-              detail={riskScore > 0 ? t('overview.risk.review') : t('overview.risk.clear')}
-              tone={riskScore > 0 ? 'danger' : 'success'}
+              value={loading ? '...' : `${activeSignals} / 4`}
+              detail={activeSignals > 0 ? t('overview.risk.review') : t('overview.risk.clear')}
+              tone={activeSignals > 0 ? 'danger' : 'success'}
             />
             <RiskBlock
               icon={<Activity className="h-4 w-4" />}

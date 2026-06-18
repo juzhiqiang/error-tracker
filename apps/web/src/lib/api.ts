@@ -146,7 +146,7 @@ export type PerformanceKind = 'web-vital' | 'resource' | 'http' | 'longtask'
 
 export interface PerformanceSummary {
   kind?: PerformanceKind
-  name: 'LCP' | 'FID' | 'CLS' | 'INP' | 'TTFB' | 'resource' | 'http' | 'longtask' | string
+  name: 'LCP' | 'FID' | 'CLS' | 'INP' | 'TTFB' | 'FCP' | 'resource' | 'http' | 'longtask' | string
   rating?: 'good' | 'needs-improvement' | 'poor' | null
   method?: string | null
   status?: number | string | null

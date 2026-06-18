@@ -388,10 +388,42 @@ describe('IngestService', () => {
       projectId: 'project-1',
       kind: 'resource',
       name: 'resource',
-      value: 42,
+      value: 42.2,
       duration: 42,
       url: 'https://cdn.example.com/app.js',
       initiatorType: 'script',
+    })
+  })
+
+  it('preserves fractional web vital values such as CLS', async () => {
+    const insertedValues: unknown[] = []
+    const db = {
+      insert: mock(() => ({
+        values: mock(async (rows: unknown[]) => {
+          insertedValues.push(...rows)
+        }),
+      })),
+    }
+    const service = new IngestService(db as never, {} as never, {} as never)
+
+    await service.ingestPerformance('project-1', [
+      {
+        eventId: 'cls-1',
+        type: 'performance',
+        kind: 'web-vital',
+        name: 'CLS',
+        value: 0.12,
+        rating: 'needs-improvement',
+        timestamp: 1_700_000_000_000,
+      } as never,
+    ])
+
+    expect(insertedValues[0]).toMatchObject({
+      projectId: 'project-1',
+      kind: 'web-vital',
+      name: 'CLS',
+      value: 0.12,
+      rating: 'needs-improvement',
     })
   })
 })

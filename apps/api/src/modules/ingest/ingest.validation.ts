@@ -4,7 +4,7 @@ const MAX_EVENTS_PER_BATCH = 50
 const MAX_REPLAY_EVENTS = 10_000
 const LEVELS = new Set(['fatal', 'error', 'warning', 'info', 'debug'])
 const PERFORMANCE_KINDS = new Set(['web-vital', 'resource', 'http', 'longtask'])
-const WEB_VITAL_NAMES = new Set(['LCP', 'FID', 'CLS', 'INP', 'TTFB'])
+const WEB_VITAL_NAMES = new Set(['LCP', 'FID', 'CLS', 'INP', 'TTFB', 'FCP'])
 const RATINGS = new Set(['good', 'needs-improvement', 'poor'])
 
 interface IngestBody {

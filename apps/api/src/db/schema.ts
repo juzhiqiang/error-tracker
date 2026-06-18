@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp, jsonb, serial, uuid, unique, index, boolean } from 'drizzle-orm/pg-core'
+import { pgTable, text, integer, timestamp, jsonb, serial, uuid, unique, index, boolean, doublePrecision } from 'drizzle-orm/pg-core'
 import { user } from './auth-schema'
 
 export const organizations = pgTable('organizations', {
@@ -260,7 +260,7 @@ export const performanceMetrics = pgTable(
       .notNull()
       .default('web-vital'),
     name: text('name').notNull(),
-    value: integer('value').notNull(),
+    value: doublePrecision('value').notNull(),
     rating: text('rating', { enum: ['good', 'needs-improvement', 'poor'] }),
     url: text('url'),
     method: text('method'),

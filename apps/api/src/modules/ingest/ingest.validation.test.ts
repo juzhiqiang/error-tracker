@@ -30,7 +30,7 @@ describe('ingest validation', () => {
   it('rejects unsupported performance metric names', () => {
     expect(() =>
       validateIngestBody({
-        events: [{ eventId: 'perf-1', type: 'performance', name: 'FCP', value: 12, rating: 'good', timestamp: Date.now() }],
+        events: [{ eventId: 'perf-1', type: 'performance', name: 'NAV', value: 12, rating: 'good', timestamp: Date.now() }],
       }),
     ).toThrow(BadRequestException)
   })
@@ -42,6 +42,22 @@ describe('ingest validation', () => {
         { eventId: 'perf-1', type: 'performance', name: 'LCP', value: 1200, rating: 'good', timestamp: Date.now() },
       ],
       sentAt: new Date().toISOString(),
+    }
+
+    expect(validateIngestBody(body)).toBe(body)
+  })
+
+  it('accepts all SDK web-vitals metric names', () => {
+    const body = {
+      events: ['LCP', 'FID', 'CLS', 'INP', 'TTFB', 'FCP'].map((name) => ({
+        eventId: `perf-${name}`,
+        timestamp: Date.now(),
+        type: 'performance',
+        kind: 'web-vital',
+        name,
+        value: name === 'CLS' ? 0.12 : 1200,
+        rating: 'good',
+      })),
     }
 
     expect(validateIngestBody(body)).toBe(body)

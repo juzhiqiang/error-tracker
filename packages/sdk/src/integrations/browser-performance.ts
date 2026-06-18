@@ -1,4 +1,4 @@
-import { onLCP, onFID, onCLS, onINP, onTTFB } from 'web-vitals'
+import { onLCP, onFID, onCLS, onINP, onTTFB, onFCP } from 'web-vitals'
 import type { Integration, PerformanceEvent } from '../types'
 import type { ErrorTrackerClient } from '../core/client'
 import { randomId } from '../core/utils'
@@ -14,7 +14,7 @@ export class BrowserPerformanceIntegration implements Integration {
         timestamp: Date.now(),
         type: 'performance',
         kind: 'web-vital',
-        name: metric.name as 'LCP' | 'FID' | 'CLS' | 'INP' | 'TTFB',
+        name: metric.name as 'LCP' | 'FID' | 'CLS' | 'INP' | 'TTFB' | 'FCP',
         value: metric.value,
         rating: metric.rating as 'good' | 'needs-improvement' | 'poor',
         url: typeof location !== 'undefined' ? location.href : undefined,
@@ -28,6 +28,7 @@ export class BrowserPerformanceIntegration implements Integration {
       onCLS(report)
       onINP(report)
       onTTFB(report)
+      onFCP(report)
     }
     this.observeResources(client)
     this.observeLongTasks(client)

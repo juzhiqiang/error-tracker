@@ -14,7 +14,7 @@ import { api, type AiAnalysis, type PerformanceSummary, type Project } from '@/l
 import { compactNumber, formatMetricValue, toNumber } from '@/lib/format'
 import { useI18n } from '@/lib/i18n'
 
-const metricNames = ['LCP', 'FID', 'CLS', 'INP', 'TTFB'] as const
+const metricNames = ['LCP', 'FCP', 'FID', 'CLS', 'INP', 'TTFB'] as const
 const ratingColor: Record<string, string> = {
   good: '#22c55e',
   'needs-improvement': '#f59e0b',
@@ -180,6 +180,7 @@ export default function PerformancePage() {
         <Panel title={t('performance.threshold.title')} description={t('performance.threshold.description')}>
           <div className="space-y-3">
             <Threshold icon={<Gauge className="h-4 w-4 text-indigo-300" />} name="LCP" good="< 2500 ms" poor="> 4000 ms" />
+            <Threshold icon={<Gauge className="h-4 w-4 text-sky-300" />} name="FCP" good="< 1800 ms" poor="> 3000 ms" />
             <Threshold icon={<Zap className="h-4 w-4 text-amber-300" />} name="INP" good="< 200 ms" poor="> 500 ms" />
             <Threshold icon={<TimerReset className="h-4 w-4 text-emerald-300" />} name="CLS" good="< 0.1" poor="> 0.25" />
             <Threshold icon={<Activity className="h-4 w-4 text-sky-300" />} name="TTFB" good="< 800 ms" poor="> 1800 ms" />

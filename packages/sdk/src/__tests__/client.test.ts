@@ -31,6 +31,27 @@ describe('ErrorTrackerClient', () => {
     expect(body.events[0].message).toBe('t0 crash')
   })
 
+  it('capturePerformance flushes collected performance events immediately', async () => {
+    const client = new ErrorTrackerClient({
+      dsn: 'http://localhost:3002/ingest/p1/t1',
+    })
+
+    client.capturePerformance({
+      eventId: 'perf-1',
+      timestamp: Date.now(),
+      type: 'performance',
+      kind: 'web-vital',
+      name: 'LCP',
+      value: 1200,
+      rating: 'good',
+    })
+    await new Promise((r) => setTimeout(r, 10))
+
+    expect(fetchMock().mock.calls).toHaveLength(1)
+    const body = JSON.parse(fetchMock().mock.calls[0][1]?.body as string)
+    expect(body.events[0]).toMatchObject({ type: 'performance', kind: 'web-vital', name: 'LCP' })
+  })
+
   it('captureException returns the queued event id', async () => {
     const client = new ErrorTrackerClient({
       dsn: 'http://localhost:3002/ingest/p1/t1',

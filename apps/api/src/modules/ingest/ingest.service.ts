@@ -148,7 +148,7 @@ export class IngestService {
         projectId,
         kind: m.kind ?? 'web-vital',
         name: m.name,
-        value: Math.round(m.value),
+        value: m.value,
         rating: m.rating,
         url: m.url ? scrubPii(m.url) : undefined,
         method: m.method,

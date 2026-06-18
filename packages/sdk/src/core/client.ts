@@ -87,6 +87,7 @@ export class ErrorTrackerClient {
 
   capturePerformance(event: TrackerEvent): void {
     this.queue.enqueue({ ...event, context: event.context ?? this.getContext() })
+    void this.queue.flush().catch(() => undefined)
   }
 
   async flush(isUnloading = false): Promise<void> {

@@ -46,7 +46,7 @@ export interface WebVitalPerformanceEvent {
   timestamp: number
   type: 'performance'
   kind?: 'web-vital'
-  name: 'LCP' | 'FID' | 'CLS' | 'INP' | 'TTFB'
+  name: 'LCP' | 'FID' | 'CLS' | 'INP' | 'TTFB' | 'FCP'
   value: number
   rating: 'good' | 'needs-improvement' | 'poor'
   url?: string
