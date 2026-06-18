@@ -50,6 +50,40 @@ describe('StatsService', () => {
     expect(calls[0]).toContain('slowest')
   })
 
+  it('uses the requested performance summary window', async () => {
+    const calls: string[] = []
+    const db = {
+      execute: mock(async (query: unknown) => {
+        calls.push(sqlText(query))
+        return { rows: [] }
+      }),
+    }
+    const service = new StatsService(db as never)
+
+    await service.performanceSummary('project-1', 7)
+
+    expect(calls[0]).toContain("7 * interval '1 day'")
+  })
+
+  it('falls back to legacy performance metric columns when expanded telemetry columns are missing', async () => {
+    const calls: string[] = []
+    const rows = [{ kind: 'web-vital', name: 'LCP', rating: 'good', method: null, status: null, initiator_type: null, count: '3', avg_value: '1200', slowest: '1600' }]
+    const db = {
+      execute: mock(async (query: unknown) => {
+        calls.push(sqlText(query))
+        if (calls.length === 1) throw new Error('column "kind" does not exist')
+        return { rows }
+      }),
+    }
+    const service = new StatsService(db as never)
+
+    await expect(service.performanceSummary('project-1')).resolves.toEqual(rows)
+    expect(calls).toHaveLength(2)
+    expect(calls[0]).toContain('kind')
+    expect(calls[1]).toContain("'web-vital' as kind")
+    expect(calls[1]).toContain('GROUP BY name, rating')
+  })
+
   it('returns geo distribution inferred from event context', async () => {
     const calls: string[] = []
     const rows = [{ country_code: 'CN', country_name: 'China', count: '8' }]

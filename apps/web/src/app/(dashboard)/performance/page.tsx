@@ -15,6 +15,11 @@ import { compactNumber, formatMetricValue, toNumber } from '@/lib/format'
 import { useI18n } from '@/lib/i18n'
 
 const metricNames = ['LCP', 'FCP', 'FID', 'CLS', 'INP', 'TTFB'] as const
+const timeWindows = [
+  { label: '24h', days: 1 },
+  { label: '7d', days: 7 },
+  { label: '30d', days: 30 },
+] as const
 const ratingColor: Record<string, string> = {
   good: '#22c55e',
   'needs-improvement': '#f59e0b',
@@ -26,6 +31,7 @@ export default function PerformancePage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [projectId, setProjectId] = useState('')
   const [data, setData] = useState<PerformanceSummary[]>([])
+  const [timeWindow, setTimeWindow] = useState<(typeof timeWindows)[number]['days']>(7)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [aiAnalysis, setAiAnalysis] = useState<AiAnalysis | null>(null)
@@ -52,7 +58,7 @@ export default function PerformancePage() {
     setAiAnalysis(null)
     setAiError('')
     api.stats
-      .performance(projectId)
+      .performance(projectId, timeWindow)
       .then((result) => {
         setData(result)
         setError('')
@@ -62,7 +68,7 @@ export default function PerformancePage() {
         setError(t('performance.loadError'))
       })
       .finally(() => setLoading(false))
-  }, [projectId, t])
+  }, [projectId, timeWindow, t])
 
   const webVitalRows = useMemo(() => data.filter((item) => (item.kind ?? 'web-vital') === 'web-vital'), [data])
   const networkRows = useMemo(() => data.filter((item) => ['resource', 'http'].includes(item.kind ?? '')), [data])
@@ -100,6 +106,7 @@ export default function PerformancePage() {
   const longTaskTotal = longTaskRows.reduce((sum, item) => sum + toNumber(item.count), 0)
   const longTaskAvg = weightedAverage(longTaskRows)
   const longTaskSlowest = Math.max(0, ...longTaskRows.map((item) => toNumber(item.slowest ?? item.avg_value)))
+  const telemetryTotal = totalSamples + networkTotal + longTaskTotal
 
   async function generateAiAnalysis() {
     if (!projectId) return
@@ -123,7 +130,27 @@ export default function PerformancePage() {
         eyebrow={t('performance.eyebrow')}
         title={t('performance.title')}
         description={t('performance.description')}
-        action={<ProjectSelect projects={projects} value={projectId} onChange={setProjectId} />}
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex min-h-[44px] rounded-md border border-line bg-slate-950/40 p-1">
+              {timeWindows.map((item) => (
+                <button
+                  key={item.days}
+                  type="button"
+                  onClick={() => setTimeWindow(item.days)}
+                  className={`min-h-9 rounded px-3 text-sm transition ${
+                    timeWindow === item.days
+                      ? 'bg-primary text-white'
+                      : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            <ProjectSelect projects={projects} value={projectId} onChange={setProjectId} />
+          </div>
+        }
       />
 
       {error && (
@@ -132,24 +159,14 @@ export default function PerformancePage() {
         </div>
       )}
 
-      <section className="grid gap-3 md:grid-cols-3">
-        <MetricCard icon={<Activity className="h-5 w-5 text-indigo-300" />} label={t('performance.metric.total')} value={loading ? '...' : compactNumber(totalSamples)} tone="primary" />
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+        <MetricCard icon={<Activity className="h-5 w-5 text-indigo-300" />} label={t('performance.metric.total')} value={loading ? '...' : compactNumber(telemetryTotal)} tone="primary" />
+        <MetricCard icon={<Gauge className="h-5 w-5 text-sky-300" />} label={t('performance.metric.webVitals')} value={loading ? '...' : compactNumber(totalSamples)} tone="primary" />
         <MetricCard icon={<SignalHigh className="h-5 w-5 text-red-300" />} label={t('performance.metric.poor')} value={loading ? '...' : compactNumber(poorSamples)} tone="danger" />
         <MetricCard icon={<MonitorDot className="h-5 w-5 text-emerald-300" />} label={t('performance.metric.covered')} value={`${coveredMetrics} / ${metricNames.length}`} tone="success" />
+        <MetricCard icon={<SignalHigh className="h-5 w-5 text-indigo-300" />} label={t('performance.metric.network')} value={loading ? '...' : compactNumber(networkTotal)} tone="primary" />
+        <MetricCard icon={<TimerReset className="h-5 w-5 text-amber-300" />} label={t('performance.metric.longTasks')} value={loading ? '...' : compactNumber(longTaskTotal)} tone="warning" />
       </section>
-
-      <AiAnalysisPanel
-        title={t('performance.ai.title')}
-        description={t('performance.ai.description')}
-        analyzeLabel={t('performance.ai.action')}
-        emptyTitle={t('performance.ai.emptyTitle')}
-        emptyDescription={t('performance.ai.emptyDescription')}
-        analysis={aiAnalysis}
-        loading={aiLoading}
-        error={aiError}
-        disabled={!projectId}
-        onAnalyze={generateAiAnalysis}
-      />
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
         <Panel title={t('performance.distribution.title')} description={t('performance.distribution.description')}>
@@ -188,7 +205,7 @@ export default function PerformancePage() {
         </Panel>
       </section>
 
-      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
         {metricCards.map((metric) => (
           <div key={metric.name} className="app-panel p-4">
             <div className="flex items-start justify-between gap-3">
@@ -258,6 +275,19 @@ export default function PerformancePage() {
           )}
         </Panel>
       </section>
+
+      <AiAnalysisPanel
+        title={t('performance.ai.title')}
+        description={t('performance.ai.description')}
+        analyzeLabel={t('performance.ai.action')}
+        emptyTitle={t('performance.ai.emptyTitle')}
+        emptyDescription={t('performance.ai.emptyDescription')}
+        analysis={aiAnalysis}
+        loading={aiLoading}
+        error={aiError}
+        disabled={!projectId}
+        onAnalyze={generateAiAnalysis}
+      />
     </div>
   )
 }

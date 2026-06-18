@@ -19,25 +19,48 @@ export class StatsService {
     return sqlRows(result)
   }
 
-  async performanceSummary(projectId: string) {
-    const result = await this.db.execute(sql`
-      SELECT
-        kind,
-        name,
-        rating,
-        method,
-        status,
-        initiator_type,
-        count(*) as count,
-        avg(value) as avg_value,
-        max(COALESCE(duration, value)) as slowest
-      FROM performance_metrics
-      WHERE project_id = ${projectId}
-        AND timestamp >= now() - interval '24 hours'
-      GROUP BY kind, name, rating, method, status, initiator_type
-      ORDER BY kind, name, rating, method, status, initiator_type
-    `)
-    return sqlRows(result)
+  async performanceSummary(projectId: string, days = 7) {
+    const windowDays = clampDays(days)
+    try {
+      const result = await this.db.execute(sql`
+        SELECT
+          kind,
+          name,
+          rating,
+          method,
+          status,
+          initiator_type,
+          count(*) as count,
+          avg(value) as avg_value,
+          max(COALESCE(duration::double precision, value)) as slowest
+        FROM performance_metrics
+        WHERE project_id = ${projectId}
+          AND timestamp >= now() - (${windowDays} * interval '1 day')
+        GROUP BY kind, name, rating, method, status, initiator_type
+        ORDER BY kind, name, rating, method, status, initiator_type
+      `)
+      return sqlRows(result)
+    } catch (error) {
+      if (!isMissingPerformanceTelemetryColumn(error)) throw error
+      const legacyResult = await this.db.execute(sql`
+        SELECT
+          'web-vital' as kind,
+          name,
+          rating,
+          NULL::text as method,
+          NULL::integer as status,
+          NULL::text as initiator_type,
+          count(*) as count,
+          avg(value) as avg_value,
+          max(value) as slowest
+        FROM performance_metrics
+        WHERE project_id = ${projectId}
+          AND timestamp >= now() - (${windowDays} * interval '1 day')
+        GROUP BY name, rating
+        ORDER BY name, rating
+      `)
+      return sqlRows(legacyResult)
+    }
   }
 
   async geoDistribution(projectId: string) {
@@ -133,4 +156,14 @@ export class StatsService {
 function sqlRows(result: unknown): unknown[] {
   if (Array.isArray(result)) return result
   return (result as { rows?: unknown[] } | null)?.rows ?? []
+}
+
+function isMissingPerformanceTelemetryColumn(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error)
+  return /column "(kind|method|status|duration|initiator_type)" does not exist/i.test(message)
+}
+
+function clampDays(days: number): number {
+  if (!Number.isFinite(days)) return 7
+  return Math.min(30, Math.max(1, Math.floor(days)))
 }

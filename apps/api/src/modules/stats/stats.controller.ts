@@ -14,8 +14,8 @@ export class StatsController {
   }
 
   @Get('performance')
-  performance(@Query('projectId') pId: string) {
-    return this.statsService.performanceSummary(pId)
+  performance(@Query('projectId') pId: string, @Query('days') days: string) {
+    return this.statsService.performanceSummary(pId, Number(days) || 7)
   }
 
   @Get('geo')

@@ -286,8 +286,8 @@ export const api = {
   stats: {
     issues: (projectId: string, days = 7) =>
       apiFetch<TrendPoint[]>(`/api/stats/issues?projectId=${projectId}&days=${days}`),
-    performance: (projectId: string) =>
-      apiFetch<PerformanceSummary[]>(`/api/stats/performance?projectId=${projectId}`),
+    performance: (projectId: string, days = 7) =>
+      apiFetch<PerformanceSummary[]>(`/api/stats/performance?${new URLSearchParams({ projectId, days: String(days) })}`),
     geo: (projectId: string) =>
       apiFetch<GeoDistributionPoint[]>(`/api/stats/geo?${new URLSearchParams({ projectId })}`),
     aiPerformance: (projectId: string) =>

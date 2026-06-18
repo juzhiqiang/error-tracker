@@ -59,12 +59,15 @@ describe('api AI advisor', () => {
 
 describe('api performance stats', () => {
   it('loads expanded performance summaries', async () => {
-    global.fetch = mock(async () =>
-      Response.json([{ kind: 'longtask', name: 'longtask', count: '1', avg_value: '90', slowest: '90' }]),
-    ) as typeof fetch
+    let capturedUrl = ''
+    global.fetch = mock(async (input) => {
+      capturedUrl = String(input)
+      return Response.json([{ kind: 'longtask', name: 'longtask', count: '1', avg_value: '90', slowest: '90' }])
+    }) as typeof fetch
 
-    const result = await api.stats.performance('project-1')
+    const result = await api.stats.performance('project-1', 7)
 
+    expect(capturedUrl).toBe('http://localhost:3002/api/stats/performance?projectId=project-1&days=7')
     expect(result[0]).toMatchObject({ kind: 'longtask', name: 'longtask', slowest: '90' })
   })
 
