@@ -18,6 +18,19 @@ describe('ErrorTrackerClient', () => {
     expect(fetchMock().mock.calls).toHaveLength(1)
   })
 
+  it('captureException flushes T0 error events immediately', async () => {
+    const client = new ErrorTrackerClient({
+      dsn: 'http://localhost:3002/ingest/p1/t1',
+    })
+
+    client.captureException(new Error('t0 crash'))
+    await new Promise((r) => setTimeout(r, 10))
+
+    expect(fetchMock().mock.calls).toHaveLength(1)
+    const body = JSON.parse(fetchMock().mock.calls[0][1]?.body as string)
+    expect(body.events[0].message).toBe('t0 crash')
+  })
+
   it('captureException returns the queued event id', async () => {
     const client = new ErrorTrackerClient({
       dsn: 'http://localhost:3002/ingest/p1/t1',

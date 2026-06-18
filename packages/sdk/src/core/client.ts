@@ -64,6 +64,7 @@ export class ErrorTrackerClient {
     }
 
     this.queue.enqueue(event)
+    void this.queue.flush().catch(() => undefined)
     return event.eventId
   }
 
