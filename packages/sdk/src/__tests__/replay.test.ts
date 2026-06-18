@@ -71,6 +71,7 @@ describe('ReplayPlugin', () => {
     const body = JSON.parse(fetchBodies[0])
     expect(fetchUrls[0]).toBe('http://localhost:3002/ingest/p1/replay')
     expect(new Headers(fetchInits[0].headers).get('x-error-tracker-token')).toBe('t1')
+    expect(fetchInits[0].credentials).toBe('omit')
     expect(fetchInits[0].keepalive).toBeUndefined()
     expect(body.eventId).toBe('evt_123')
   })

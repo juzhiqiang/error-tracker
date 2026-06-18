@@ -29,6 +29,7 @@ describe('HttpTransport', () => {
     expect(fetchCalls).toHaveLength(1)
     expect(fetchCalls[0].url).toBe('http://localhost:3002/ingest/proj1')
     expect(fetchCalls[0].init.method).toBe('POST')
+    expect(fetchCalls[0].init.credentials).toBe('omit')
     expect(new Headers(fetchCalls[0].init.headers).get('x-error-tracker-token')).toBe('token1')
   })
 
@@ -87,6 +88,7 @@ describe('HttpTransport', () => {
 
     expect(fetchCalls).toHaveLength(1)
     expect(fetchCalls[0].init.keepalive).toBe(true)
+    expect(fetchCalls[0].init.credentials).toBe('omit')
     expect(fetchCalls[0].url).toBe('http://localhost:3002/ingest/proj1')
     expect(new Headers(fetchCalls[0].init.headers).get('x-error-tracker-token')).toBe('token1')
   })

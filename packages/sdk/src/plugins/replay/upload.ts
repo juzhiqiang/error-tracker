@@ -16,6 +16,7 @@ export function uploadReplay(ingestBase: string, eventId: string, events: RrwebE
       ...(token ?? dsn.token ? { 'x-error-tracker-token': token ?? dsn.token } : {}),
     },
     body,
+    credentials: 'omit',
   }).catch(() => {
     // 静默失败
   })

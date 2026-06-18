@@ -22,6 +22,7 @@ export class HttpTransport {
       method: 'POST',
       headers: this.headers(),
       body,
+      credentials: 'omit',
       keepalive: isUnloading,
     })
   }
