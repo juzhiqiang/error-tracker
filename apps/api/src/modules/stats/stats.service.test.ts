@@ -49,6 +49,28 @@ describe('StatsService', () => {
     expect(calls[0]).toContain('kind')
     expect(calls[0]).toContain('slowest')
   })
+
+  it('returns geo distribution inferred from event context', async () => {
+    const calls: string[] = []
+    const rows = [{ country_code: 'CN', country_name: 'China', count: '8' }]
+    const db = {
+      execute: mock(async (query: unknown) => {
+        calls.push(sqlText(query))
+        return { rows }
+      }),
+    }
+    const service = new StatsService(db as never)
+
+    await expect(service.geoDistribution('project-1')).resolves.toEqual([
+      { countryCode: 'CN', countryName: 'China', count: 8 },
+    ])
+    expect(calls[0]).toContain('country_code')
+    expect(calls[0]).toContain('environment')
+    expect(calls[0]).toContain('locale')
+    expect(calls[0]).toContain('timezone')
+    expect(calls[0]).toContain('united states')
+    expect(calls[0]).toContain('south korea')
+  })
 })
 
 function sqlText(query: unknown): string {

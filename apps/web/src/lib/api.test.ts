@@ -67,6 +67,19 @@ describe('api performance stats', () => {
 
     expect(result[0]).toMatchObject({ kind: 'longtask', name: 'longtask', slowest: '90' })
   })
+
+  it('loads project geo distribution summaries', async () => {
+    let capturedUrl = ''
+    global.fetch = mock(async (input) => {
+      capturedUrl = String(input)
+      return Response.json([{ countryCode: 'CN', countryName: 'China', count: 8 }])
+    }) as typeof fetch
+
+    const result = await api.stats.geo('project-1')
+
+    expect(capturedUrl).toBe('http://localhost:3002/api/stats/geo?projectId=project-1')
+    expect(result[0]).toMatchObject({ countryCode: 'CN', countryName: 'China', count: 8 })
+  })
 })
 
 describe('api project privacy settings', () => {

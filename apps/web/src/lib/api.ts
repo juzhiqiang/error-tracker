@@ -156,6 +156,12 @@ export interface PerformanceSummary {
   slowest?: number | string | null
 }
 
+export interface GeoDistributionPoint {
+  countryCode: string
+  countryName: string
+  count: number | string
+}
+
 export type AiPriority = 'low' | 'medium' | 'high'
 export type AiConfidence = 'low' | 'medium' | 'high'
 
@@ -282,6 +288,8 @@ export const api = {
       apiFetch<TrendPoint[]>(`/api/stats/issues?projectId=${projectId}&days=${days}`),
     performance: (projectId: string) =>
       apiFetch<PerformanceSummary[]>(`/api/stats/performance?projectId=${projectId}`),
+    geo: (projectId: string) =>
+      apiFetch<GeoDistributionPoint[]>(`/api/stats/geo?${new URLSearchParams({ projectId })}`),
     aiPerformance: (projectId: string) =>
       apiFetch<AiAnalysis>(`/api/stats/performance/ai-analysis?${new URLSearchParams({ projectId })}`, { method: 'POST' }),
   },

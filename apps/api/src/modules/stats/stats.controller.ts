@@ -17,4 +17,9 @@ export class StatsController {
   performance(@Query('projectId') pId: string) {
     return this.statsService.performanceSummary(pId)
   }
+
+  @Get('geo')
+  geo(@Query('projectId') pId: string) {
+    return this.statsService.geoDistribution(pId)
+  }
 }
