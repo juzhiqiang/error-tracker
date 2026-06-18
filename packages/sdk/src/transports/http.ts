@@ -12,19 +12,22 @@ export class HttpTransport {
   }
 
   async send(events: TrackerEvent[], isUnloading = false): Promise<void> {
-    const body = JSON.stringify({ events, sentAt: new Date().toISOString() })
-    if (isUnloading && !this.token && typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
-      const accepted = navigator.sendBeacon(this.ingestUrl, new Blob([body], { type: 'application/json' }))
-      if (accepted) return
+    if (!this.token) {
+      this.warnMissingToken()
+      return
     }
 
-    await fetch(this.ingestUrl, {
+    const body = JSON.stringify({ events, sentAt: new Date().toISOString() })
+    const response = await fetch(this.ingestUrl, {
       method: 'POST',
       headers: this.headers(),
       body,
       credentials: 'omit',
       keepalive: isUnloading,
     })
+    if (!response.ok) {
+      throw new Error(`Ingest request failed with status ${response.status}`)
+    }
   }
 
   private headers(): HeadersInit {
@@ -32,5 +35,10 @@ export class HttpTransport {
       'Content-Type': 'application/json',
       ...(this.token ? { 'x-error-tracker-token': this.token } : {}),
     }
+  }
+
+  private warnMissingToken(): void {
+    if (typeof console === 'undefined' || typeof console.warn !== 'function') return
+    console.warn('[ErrorTracker] Missing DSN token. Pass init({ dsn, token }) or use /ingest/<projectId>/<token>.')
   }
 }

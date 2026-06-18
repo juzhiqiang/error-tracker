@@ -53,4 +53,24 @@ describe('DsnAuthGuard', () => {
 
     await expect(guard.canActivate(makeContext(req) as never)).rejects.toThrow(UnauthorizedException)
   })
+
+  it('rejects ingest requests that omit the DSN token', async () => {
+    const db = {
+      select: mock(() => ({
+        from: () => ({
+          where: () => ({
+            limit: () => [],
+          }),
+        }),
+      })),
+    }
+    const guard = new DsnAuthGuard(db as never)
+    const req = {
+      params: { projectId: 'project-1' },
+      headers: {},
+    }
+
+    await expect(guard.canActivate(makeContext(req) as never)).rejects.toThrow(UnauthorizedException)
+    expect(db.select.mock.calls).toHaveLength(0)
+  })
 })

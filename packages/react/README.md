@@ -17,7 +17,8 @@ import { init } from '@error-tracker/sdk'
 import { ErrorBoundary } from '@error-tracker/react'
 
 const client = init({
-  dsn: 'https://tracker.example.com/ingest/<projectId>/<token>',
+  dsn: 'https://tracker.example.com/ingest/<projectId>',
+  token: '<token>',
 })
 
 export function App() {

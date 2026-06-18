@@ -98,6 +98,28 @@ describe('ReplayPlugin', () => {
     expect(new Headers(fetchInits[0].headers).get('x-error-tracker-token')).toBe('t1')
   })
 
+  it('does not upload replay when no DSN token is configured', async () => {
+    const warn = console.warn
+    console.warn = mock(() => undefined) as unknown as typeof console.warn
+    const fetchMock = mock(async () => new Response(null, { status: 202 }))
+    try {
+      globalThis.fetch = fetchMock as unknown as typeof fetch
+      const client = {
+        captureException: () => 'evt_123',
+        options: { dsn: 'http://localhost:3002/ingest/p1' },
+      } as unknown as ErrorTrackerClient
+
+      const plugin = new ReplayPlugin({ sampleRate: 1 })
+      plugin.setup(client)
+      client.captureException(new Error('boom'))
+      await new Promise((r) => setTimeout(r, 10))
+
+      expect(fetchMock.mock.calls).toHaveLength(0)
+    } finally {
+      console.warn = warn
+    }
+  })
+
   it('masks visible text and blocks sensitive replay regions by default', () => {
     const client = {
       captureException: () => 'evt_123',

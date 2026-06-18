@@ -59,7 +59,7 @@ describe('HttpTransport', () => {
     expect(fetchCalls[0].init.keepalive).toBe(true)
   })
 
-  it('uses sendBeacon for unloading requests that do not need a token header', async () => {
+  it('does not use sendBeacon for unloading requests because ingest requires a token header', async () => {
     const beaconCalls: Array<{ url: string; data: BodyInit | null }> = []
     setNavigator({
       sendBeacon: (url: string, data: BodyInit | null) => {
@@ -68,13 +68,15 @@ describe('HttpTransport', () => {
       },
     })
 
-    const t = new HttpTransport('http://localhost:3002/ingest/proj1')
+    const t = new HttpTransport('http://localhost:3002/ingest/proj1/token1')
     await t.send([{ eventId: 'e1', timestamp: 1, level: 'error', message: 'test', fingerprint: 'fp1' }], true)
 
-    expect(fetchCalls).toHaveLength(0)
-    expect(beaconCalls).toHaveLength(1)
-    expect(beaconCalls[0].url).toBe('http://localhost:3002/ingest/proj1')
-    const body = JSON.parse(await (beaconCalls[0].data as Blob).text())
+    expect(beaconCalls).toHaveLength(0)
+    expect(fetchCalls).toHaveLength(1)
+    expect(fetchCalls[0].url).toBe('http://localhost:3002/ingest/proj1')
+    expect(fetchCalls[0].init.keepalive).toBe(true)
+    expect(new Headers(fetchCalls[0].init.headers).get('x-error-tracker-token')).toBe('token1')
+    const body = JSON.parse(fetchCalls[0].init.body as string)
     expect(body.events[0].eventId).toBe('e1')
   })
 
@@ -91,6 +93,32 @@ describe('HttpTransport', () => {
     expect(fetchCalls[0].init.credentials).toBe('omit')
     expect(fetchCalls[0].url).toBe('http://localhost:3002/ingest/proj1')
     expect(new Headers(fetchCalls[0].init.headers).get('x-error-tracker-token')).toBe('token1')
+  })
+
+  it('does not send ingest requests when no DSN token is configured', async () => {
+    const warn = console.warn
+    console.warn = mock(() => undefined) as unknown as typeof console.warn
+    try {
+      const t = new HttpTransport('http://localhost:3002/ingest/proj1')
+
+      await t.send([{ eventId: 'e1', timestamp: 1, level: 'error', message: 'test', fingerprint: 'fp1' }])
+
+      expect(fetchCalls).toHaveLength(0)
+    } finally {
+      console.warn = warn
+    }
+  })
+
+  it('treats non-accepted ingest responses as send failures', async () => {
+    globalThis.fetch = mock(async (url: string, init: RequestInit) => {
+      fetchCalls.push({ url, init })
+      return new Response(null, { status: 401 })
+    }) as unknown as typeof fetch
+    const t = new HttpTransport('http://localhost:3002/ingest/proj1/token1')
+
+    await expect(t.send([{ eventId: 'e1', timestamp: 1, level: 'error', message: 'test', fingerprint: 'fp1' }])).rejects.toThrow(
+      'Ingest request failed with status 401',
+    )
   })
 })
 
