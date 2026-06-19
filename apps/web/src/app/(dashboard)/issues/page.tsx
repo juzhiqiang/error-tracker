@@ -10,6 +10,7 @@ import { LevelBadge, StatusBadge } from '@/components/status-badge'
 import { api, type Issue, type IssueLevel, type IssueStatus, type Project, type TimeRange } from '@/lib/api'
 import { compactNumber, formatDateTime } from '@/lib/format'
 import { useI18n } from '@/lib/i18n'
+import { DEFAULT_ISSUES_TIME_RANGE } from '@/lib/issues-ui'
 
 const timeRanges: Array<{ value: TimeRange; labelKey: string }> = [
   { value: '1h', labelKey: 'issues.time.1h' },
@@ -39,7 +40,7 @@ export default function IssuesPage() {
   const [projectId, setProjectId] = useState('')
   const [issues, setIssues] = useState<Issue[]>([])
   const [q, setQ] = useState('')
-  const [timeRange, setTimeRange] = useState<TimeRange>('24h')
+  const [timeRange, setTimeRange] = useState<TimeRange>(DEFAULT_ISSUES_TIME_RANGE)
   const [status, setStatus] = useState<'' | IssueStatus>('')
   const [level, setLevel] = useState<'' | IssueLevel>('')
   const [page, setPage] = useState(1)

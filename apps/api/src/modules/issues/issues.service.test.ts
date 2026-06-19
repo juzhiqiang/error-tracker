@@ -20,6 +20,41 @@ function rows<T>(rows: T[]) {
 }
 
 describe('IssuesService collaboration workflow', () => {
+  it('lists only issues with real event samples and uses event-derived counters', async () => {
+    const calls: string[] = []
+    const responses = [
+      rows([
+        {
+          id: 'issue-1',
+          title: 'Crash',
+          count: '3',
+          userCount: '2',
+          firstSeen: '2026-06-16T08:00:00Z',
+          lastSeen: '2026-06-16T09:00:00Z',
+        },
+      ]),
+      rows([{ total: '1' }]),
+    ]
+    const execute = mock(async (query: unknown) => {
+      calls.push(sqlText(query))
+      return responses[calls.length - 1]
+    })
+    const service = new IssuesService({ execute } as never)
+
+    await expect(service.list({ projectId: 'project-1', timeRange: '30d' })).resolves.toEqual({
+      rows: responses[0].rows,
+      total: 1,
+      page: 1,
+      limit: 25,
+    })
+
+    expect(calls[0]).toContain('JOIN events')
+    expect(calls[0]).toContain('count(e.id)::int as "count"')
+    expect(calls[0]).toContain('max(e.timestamp) as "lastSeen"')
+    expect(calls[1]).toContain('JOIN events')
+    expect(calls[1]).toContain('count(DISTINCT i.id)')
+  })
+
   it('assigns an issue and stores assignment audit fields', async () => {
     const updatedIssue = { id: 'issue-1', assigneeUserId: 'user-2', assignedByUserId: 'user-1' }
     const setValues: Record<string, unknown>[] = []

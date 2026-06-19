@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Inject } from '@nestjs/common'
 import { createHash } from 'crypto'
-import { eq, and, ilike, sql } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { DB } from '../../db/db.module'
 import { issues } from '../../db/schema'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
@@ -54,28 +54,55 @@ export class IssuesService {
 
   async list(query: IssuesQuery) {
     const { projectId, status, level, q, timeRange, page = 1, limit = 25 } = query
-    const conditions = [eq(issues.projectId, projectId)]
-    if (status) conditions.push(eq(issues.status, status))
-    if (level) conditions.push(eq(issues.level, level as never))
-    if (q) conditions.push(ilike(issues.title, `%${q}%`))
-    if (timeRange) {
-      conditions.push(sql`${issues.lastSeen} >= now() - interval '${sql.raw(timeRangeMap[timeRange])}'`)
-    }
-
-    const [rows, countResult] = await Promise.all([
-      this.db
-        .select()
-        .from(issues)
-        .where(and(...conditions))
-        .orderBy(sql`${issues.lastSeen} desc`)
-        .limit(limit)
-        .offset((page - 1) * limit),
-      this.db
-        .select({ total: sql<number>`count(*)` })
-        .from(issues)
-        .where(and(...conditions)),
+    const conditions = [
+      sql`i.project_id = ${projectId}`,
+      ...(status ? [sql`i.status = ${status}`] : []),
+      ...(level ? [sql`i.level = ${level}`] : []),
+      ...(q ? [sql`i.title ILIKE ${`%${q}%`}`] : []),
+      ...(timeRange ? [sql`i.last_seen >= now() - interval '${sql.raw(timeRangeMap[timeRange])}'`] : []),
+    ]
+    const whereSql = sql.join(conditions, sql` AND `)
+    const [rowsResult, countResult] = await Promise.all([
+      this.db.execute(sql`
+        SELECT
+          i.id,
+          i.project_id as "projectId",
+          i.fingerprint,
+          i.title,
+          i.level,
+          i.status,
+          min(e.timestamp) as "firstSeen",
+          max(e.timestamp) as "lastSeen",
+          count(e.id)::int as "count",
+          ${issueUserCountForIssueAliasSql()} as "userCount",
+          i.assignee_user_id as "assigneeUserId",
+          i.assigned_at as "assignedAt",
+          i.assigned_by_user_id as "assignedByUserId",
+          i.resolved_at as "resolvedAt",
+          i.resolved_by_user_id as "resolvedByUserId",
+          i.fixed_in_release as "fixedInRelease",
+          i.regressed_at as "regressedAt",
+          i.regressed_in_release as "regressedInRelease",
+          i.merged_into_issue_id as "mergedIntoIssueId",
+          i.split_from_issue_id as "splitFromIssueId"
+        FROM issues i
+        JOIN events e ON e.issue_id = i.id
+        WHERE ${whereSql}
+        GROUP BY i.id
+        ORDER BY max(e.timestamp) DESC
+        LIMIT ${limit}
+        OFFSET ${(page - 1) * limit}
+      `),
+      this.db.execute(sql`
+        SELECT count(DISTINCT i.id)::int as total
+        FROM issues i
+        JOIN events e ON e.issue_id = i.id
+        WHERE ${whereSql}
+      `),
     ])
-    return { rows, total: Number(countResult[0]?.total ?? 0), page, limit }
+    const rows = rowsFrom<typeof issues.$inferSelect>(rowsResult)
+    const countRows = rowsFrom<{ total: number | string }>(countResult)
+    return { rows, total: Number(countRows[0]?.total ?? 0), page, limit }
   }
 
   async findById(id: string) {
@@ -409,6 +436,16 @@ function issueUserCountForNewIssueSql() {
     SELECT count(DISTINCT ${eventUserKeySql()})::int
     FROM events
     WHERE issue_id = (SELECT id FROM new_issue)
+      AND "user" IS NOT NULL
+      AND ${eventUserKeySql()} IS NOT NULL
+  )`
+}
+
+function issueUserCountForIssueAliasSql() {
+  return sql`(
+    SELECT count(DISTINCT ${eventUserKeySql()})::int
+    FROM events
+    WHERE issue_id = i.id
       AND "user" IS NOT NULL
       AND ${eventUserKeySql()} IS NOT NULL
   )`
