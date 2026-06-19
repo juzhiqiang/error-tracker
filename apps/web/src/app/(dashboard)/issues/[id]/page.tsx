@@ -426,7 +426,7 @@ export default function IssueDetailPage() {
                 value={targetIssueId}
                 onChange={(event) => setTargetIssueId(event.target.value)}
                 className="app-control w-full px-3 font-mono text-sm"
-                placeholder="target issue id"
+                placeholder={t('detail.ops.mergePlaceholder')}
               />
               <button
                 disabled={workflowAction !== null || !targetIssueId.trim()}
