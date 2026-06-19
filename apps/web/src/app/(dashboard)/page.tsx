@@ -27,6 +27,7 @@ import {
   type GeoDistributionPoint,
   type HealthReport,
   type Issue,
+  type PerformanceDeviceSummary,
   type PerformanceSummary,
   type Project,
   type QueueOperationsReport,
@@ -43,6 +44,7 @@ export default function OverviewPage() {
   const [total, setTotal] = useState(0)
   const [trend, setTrend] = useState<TrendPoint[]>([])
   const [performance, setPerformance] = useState<PerformanceSummary[]>([])
+  const [devices, setDevices] = useState<PerformanceDeviceSummary[]>([])
   const [geo, setGeo] = useState<GeoDistributionPoint[]>([])
   const [health, setHealth] = useState<HealthReport | null>(null)
   const [operations, setOperations] = useState<QueueOperationsReport | null>(null)
@@ -70,15 +72,17 @@ export default function OverviewPage() {
       api.issues.list({ projectId, timeRange: '30d', page: '1' }),
       api.stats.issues(projectId, 14).catch(() => []),
       api.stats.performance(projectId).catch(() => []),
+      api.stats.performanceDevices(projectId).catch(() => []),
       api.stats.geo(projectId).catch(() => []),
       api.health().catch(() => null),
       api.operations.queues(projectId).catch(() => null),
     ])
-      .then(([issueResult, trendResult, performanceResult, geoResult, healthResult, operationsResult]) => {
+      .then(([issueResult, trendResult, performanceResult, deviceResult, geoResult, healthResult, operationsResult]) => {
         setIssues(issueResult.rows)
         setTotal(issueResult.total)
         setTrend(trendResult)
         setPerformance(performanceResult)
+        setDevices(deviceResult)
         setGeo(geoResult)
         setHealth(healthResult)
         setOperations(operationsResult)
@@ -89,6 +93,7 @@ export default function OverviewPage() {
         setTotal(0)
         setTrend([])
         setPerformance([])
+        setDevices([])
         setGeo([])
         setHealth(null)
         setOperations(null)
@@ -259,6 +264,50 @@ export default function OverviewPage() {
         <WorldAccessMap data={geo} emptyText={t('overview.geo.empty')} totalLabel={t('overview.geo.total')} />
       </Panel>
 
+      <Panel
+        title={t('overview.devices.title')}
+        description={t('overview.devices.description')}
+        action={
+          <Link href={`/performance?${new URLSearchParams({ projectId })}`} className="app-button inline-flex items-center gap-2 px-3 text-sm text-indigo-300 hover:bg-primary/10">
+            {t('nav.performance')}
+            <ArrowUpRight className="h-4 w-4" />
+          </Link>
+        }
+      >
+        {loading ? (
+          <div className="grid gap-3 md:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="h-24 animate-pulse rounded-md bg-slate-800/70" />
+            ))}
+          </div>
+        ) : devices.length === 0 ? (
+          <EmptyState title={t('overview.devices.emptyTitle')} description={t('overview.devices.emptyDescription')} />
+        ) : (
+          <div className="grid gap-3 md:grid-cols-3">
+            {devices.slice(0, 3).map((device) => (
+              <Link
+                key={device.deviceId ?? `${device.browser}-${device.lastSeen}`}
+                href={`/performance?${new URLSearchParams({ projectId, ...(device.deviceId ? { deviceId: device.deviceId } : {}) })}`}
+                className="app-panel-muted block p-4 hover:bg-slate-800/60"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium text-slate-100">{[device.browser, device.os, device.deviceType].filter(Boolean).join(' / ') || t('common.unknown')}</div>
+                    <div className="mt-1 truncate font-mono text-xs text-slate-500">{device.deviceId ?? '-'}</div>
+                  </div>
+                  <ArrowUpRight className="h-4 w-4 shrink-0 text-slate-500" />
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
+                  <DeviceStat label={t('performance.devices.poor')} value={compactNumber(device.poorCount)} tone={device.poorCount > 0 ? 'danger' : 'neutral'} />
+                  <DeviceStat label={t('performance.devices.samples')} value={compactNumber(device.sampleCount)} />
+                  <DeviceStat label={t('performance.devices.errors')} value={compactNumber(device.relatedErrorCount)} tone={device.relatedErrorCount > 0 ? 'warning' : 'neutral'} />
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </Panel>
+
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
         <Panel
           title={t('overview.recent.title')}
@@ -385,6 +434,21 @@ function ActionItem({
         <span className="truncate">{label}</span>
       </div>
       <span className={`font-mono text-sm ${toneClass}`}>{compactNumber(value)}</span>
+    </div>
+  )
+}
+
+function DeviceStat({ label, value, tone = 'neutral' }: { label: string; value: string; tone?: 'neutral' | 'danger' | 'warning' }) {
+  const toneClass =
+    tone === 'danger'
+      ? 'text-red-200'
+      : tone === 'warning'
+        ? 'text-amber-200'
+        : 'text-slate-200'
+  return (
+    <div className="rounded-md border border-slate-800 bg-slate-950/40 p-2">
+      <div className="text-[11px] text-slate-500">{label}</div>
+      <div className={`mt-1 font-mono text-sm ${toneClass}`}>{value}</div>
     </div>
   )
 }

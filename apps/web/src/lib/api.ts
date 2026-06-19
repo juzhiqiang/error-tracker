@@ -194,6 +194,25 @@ export interface RelatedPerformanceSample {
   timestamp: string
 }
 
+export interface RelatedIssueSample {
+  id: string
+  title: string
+  level: IssueLevel
+  status: IssueStatus
+  event_id: string
+  session_id?: string | null
+  device_id?: string | null
+  timestamp: string
+  message: string
+}
+
+export interface PerformanceDeviceDetail {
+  deviceId: string
+  sessionId?: string
+  samples: RelatedPerformanceSample[]
+  relatedErrors: RelatedIssueSample[]
+}
+
 export interface GeoDistributionPoint {
   countryCode: string
   countryName: string
@@ -328,6 +347,10 @@ export const api = {
       apiFetch<PerformanceSummary[]>(`/api/stats/performance?${new URLSearchParams({ projectId, days: String(days) })}`),
     performanceDevices: (projectId: string, days = 7) =>
       apiFetch<PerformanceDeviceSummary[]>(`/api/stats/performance/devices?${new URLSearchParams({ projectId, days: String(days) })}`),
+    performanceDevice: (projectId: string, deviceId: string, days = 7, sessionId?: string) =>
+      apiFetch<PerformanceDeviceDetail>(
+        `/api/stats/performance/devices/${encodeURIComponent(deviceId)}?${searchParams({ projectId, days, sessionId })}`,
+      ),
     issuePerformance: (issueId: string) =>
       apiFetch<RelatedPerformanceSample[]>(`/api/stats/performance/issues/${encodeURIComponent(issueId)}`),
     geo: (projectId: string) =>

@@ -837,6 +837,14 @@ function RelatedPerformance({ samples, selectedEvent }: { samples: RelatedPerfor
                   </span>
                   {sample.session_id === selectedSession && <span className="rounded-md border border-primary/35 bg-primary/10 px-2 py-0.5 text-xs text-indigo-200">{t('detail.relatedPerformance.currentSession')}</span>}
                   {sample.device_id === selectedDevice && <span className="rounded-md border border-success/35 bg-success/10 px-2 py-0.5 text-xs text-emerald-200">{t('detail.relatedPerformance.currentDevice')}</span>}
+                  {sample.device_id && (
+                    <Link
+                      href={`/performance?${new URLSearchParams({ projectId: selectedEvent?.projectId ?? '', deviceId: sample.device_id, ...(sample.session_id ? { sessionId: sample.session_id } : {}) })}`}
+                      className="rounded-md border border-slate-700 bg-slate-900 px-2 py-0.5 text-xs text-slate-300 hover:bg-slate-800"
+                    >
+                      {t('detail.relatedPerformance.openDevice')}
+                    </Link>
+                  )}
                 </div>
                 <div className="mt-2 truncate font-mono text-xs text-slate-500">{sample.route || sample.page_url || sample.url || '-'}</div>
                 <div className="mt-1 font-mono text-xs text-slate-600">{formatFullDateTime(sample.timestamp)}</div>

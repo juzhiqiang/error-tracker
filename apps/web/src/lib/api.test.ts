@@ -79,10 +79,12 @@ describe('api performance stats', () => {
     }) as typeof fetch
 
     await api.stats.performanceDevices('project-1', 7)
+    await api.stats.performanceDevice('project-1', 'device-1', 7, 'session-1')
     await api.stats.issuePerformance('issue-1')
 
     expect(calls).toEqual([
       'http://localhost:3002/api/stats/performance/devices?projectId=project-1&days=7',
+      'http://localhost:3002/api/stats/performance/devices/device-1?projectId=project-1&days=7&sessionId=session-1',
       'http://localhost:3002/api/stats/performance/issues/issue-1',
     ])
   })

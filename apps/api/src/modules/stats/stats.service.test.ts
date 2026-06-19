@@ -146,6 +146,59 @@ describe('StatsService', () => {
     expect(calls[0]).toContain('session_id')
   })
 
+  it('returns device performance details with samples and related errors', async () => {
+    const calls: string[] = []
+    const responses = [
+      {
+        rows: [
+          {
+            id: 1,
+            kind: 'web-vital',
+            name: 'LCP',
+            rating: 'poor',
+            value: '4200',
+            duration: null,
+            session_id: 'session-1',
+            device_id: 'device-1',
+            timestamp: '2026-06-18T00:00:00Z',
+          },
+        ],
+      },
+      {
+        rows: [
+          {
+            id: 'issue-1',
+            title: 'Crash',
+            level: 'error',
+            status: 'unresolved',
+            event_id: 'event-1',
+            session_id: 'session-1',
+            timestamp: '2026-06-18T00:01:00Z',
+            message: 'boom',
+          },
+        ],
+      },
+    ]
+    const db = {
+      execute: mock(async (query: unknown) => {
+        calls.push(sqlText(query))
+        return responses[calls.length - 1]
+      }),
+    }
+    const service = new StatsService(db as never)
+
+    await expect(service.performanceDeviceDetail('project-1', 'device-1', 7, 'session-1')).resolves.toEqual({
+      deviceId: 'device-1',
+      sessionId: 'session-1',
+      samples: responses[0].rows,
+      relatedErrors: responses[1].rows,
+    })
+    expect(calls[0]).toContain('performance_metrics')
+    expect(calls[0]).toContain('device_id =')
+    expect(calls[0]).toContain('session_id =')
+    expect(calls[1]).toContain('JOIN issues')
+  })
+
   it('returns geo distribution inferred from event context', async () => {
     const calls: string[] = []
     const rows = [{ country_code: 'CN', country_name: 'China', count: '8' }]

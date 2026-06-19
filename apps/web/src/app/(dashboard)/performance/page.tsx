@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Activity, AlertTriangle, Gauge, MonitorDot, SignalHigh, Smartphone, TimerReset, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
@@ -10,7 +12,7 @@ import { MetricCard } from '@/components/metric-card'
 import { PageHeader, Panel } from '@/components/panel'
 import { ProjectSelect } from '@/components/project-select'
 import { RatingBadge } from '@/components/status-badge'
-import { api, type AiAnalysis, type PerformanceDeviceSummary, type PerformanceSummary, type Project } from '@/lib/api'
+import { api, type AiAnalysis, type PerformanceDeviceDetail, type PerformanceDeviceSummary, type PerformanceSummary, type Project, type RelatedPerformanceSample } from '@/lib/api'
 import { compactNumber, formatDateTime, formatMetricValue, toNumber } from '@/lib/format'
 import { useI18n } from '@/lib/i18n'
 
@@ -28,10 +30,16 @@ const ratingColor: Record<string, string> = {
 
 export default function PerformancePage() {
   const { t } = useI18n()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [projects, setProjects] = useState<Project[]>([])
   const [projectId, setProjectId] = useState('')
   const [data, setData] = useState<PerformanceSummary[]>([])
   const [devices, setDevices] = useState<PerformanceDeviceSummary[]>([])
+  const [selectedDeviceId, setSelectedDeviceId] = useState(searchParams.get('deviceId') ?? '')
+  const [selectedSessionId, setSelectedSessionId] = useState(searchParams.get('sessionId') ?? '')
+  const [deviceDetail, setDeviceDetail] = useState<PerformanceDeviceDetail | null>(null)
+  const [deviceLoading, setDeviceLoading] = useState(false)
   const [timeWindow, setTimeWindow] = useState<(typeof timeWindows)[number]['days']>(7)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -44,14 +52,14 @@ export default function PerformancePage() {
       .list()
       .then((items) => {
         setProjects(items)
-        setProjectId((current) => current || items[items.length - 1]?.id || '')
+        setProjectId((current) => current || searchParams.get('projectId') || items[items.length - 1]?.id || '')
         if (items.length === 0) setLoading(false)
       })
       .catch(() => {
         setError(t('common.projectListError'))
         setLoading(false)
       })
-  }, [t])
+  }, [searchParams, t])
 
   useEffect(() => {
     if (!projectId) return
@@ -71,6 +79,19 @@ export default function PerformancePage() {
       })
       .finally(() => setLoading(false))
   }, [projectId, timeWindow, t])
+
+  useEffect(() => {
+    if (!projectId || !selectedDeviceId) {
+      setDeviceDetail(null)
+      return
+    }
+    setDeviceLoading(true)
+    api.stats
+      .performanceDevice(projectId, selectedDeviceId, timeWindow, selectedSessionId || undefined)
+      .then(setDeviceDetail)
+      .catch(() => setDeviceDetail(null))
+      .finally(() => setDeviceLoading(false))
+  }, [projectId, selectedDeviceId, selectedSessionId, timeWindow])
 
   const webVitalRows = useMemo(() => data.filter((item) => (item.kind ?? 'web-vital') === 'web-vital'), [data])
   const networkRows = useMemo(() => data.filter((item) => ['resource', 'http'].includes(item.kind ?? '')), [data])
@@ -126,6 +147,28 @@ export default function PerformancePage() {
     }
   }
 
+  function selectDevice(deviceId?: string, sessionId = '') {
+    if (!deviceId || !projectId) return
+    setSelectedDeviceId(deviceId)
+    setSelectedSessionId(sessionId)
+    router.replace(`/performance?${new URLSearchParams({ projectId, deviceId, ...(sessionId ? { sessionId } : {}) })}`)
+  }
+
+  function clearDeviceSelection() {
+    setSelectedDeviceId('')
+    setSelectedSessionId('')
+    setDeviceDetail(null)
+    if (projectId) router.replace(`/performance?${new URLSearchParams({ projectId })}`)
+  }
+
+  function changeProject(nextProjectId: string) {
+    setProjectId(nextProjectId)
+    setSelectedDeviceId('')
+    setSelectedSessionId('')
+    setDeviceDetail(null)
+    if (nextProjectId) router.replace(`/performance?${new URLSearchParams({ projectId: nextProjectId })}`)
+  }
+
   return (
     <div className="space-y-5">
       <PageHeader
@@ -150,7 +193,7 @@ export default function PerformancePage() {
                 </button>
               ))}
             </div>
-            <ProjectSelect projects={projects} value={projectId} onChange={setProjectId} />
+            <ProjectSelect projects={projects} value={projectId} onChange={changeProject} />
           </div>
         }
       />
@@ -233,6 +276,7 @@ export default function PerformancePage() {
         ))}
       </section>
 
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
       <Panel title={t('performance.devices.title')} description={t('performance.devices.description')}>
         {loading ? (
           <div className="h-[260px] animate-pulse rounded-md bg-slate-800/70" />
@@ -249,9 +293,11 @@ export default function PerformancePage() {
               <span>{t('performance.devices.errors')}</span>
             </div>
             {devices.map((device) => (
-              <div
+              <button
                 key={device.deviceId ?? `${device.browser}-${device.os}-${device.lastSeen}`}
-                className="grid grid-cols-[minmax(180px,1.1fr)_repeat(5,minmax(80px,0.55fr))] gap-3 border-b border-slate-800 px-3 py-3 text-sm last:border-b-0 hover:bg-slate-800/60"
+                type="button"
+                onClick={() => selectDevice(device.deviceId)}
+                className={`grid w-full grid-cols-[minmax(180px,1.1fr)_repeat(5,minmax(80px,0.55fr))] gap-3 border-b border-slate-800 px-3 py-3 text-left text-sm last:border-b-0 hover:bg-slate-800/60 ${selectedDeviceId === device.deviceId ? 'bg-primary/10 ring-1 ring-primary/40' : ''}`}
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 text-slate-100">
@@ -266,11 +312,26 @@ export default function PerformancePage() {
                 <Cell tone={device.poorCount > 0 ? 'danger' : 'neutral'}>{compactNumber(device.poorCount)}</Cell>
                 <Cell>{formatMetricValue('LCP', device.slowest)}</Cell>
                 <Cell tone={device.relatedErrorCount > 0 ? 'warning' : 'neutral'}>{compactNumber(device.relatedErrorCount)}</Cell>
-              </div>
+              </button>
             ))}
           </div>
         )}
       </Panel>
+
+      <Panel
+        title={t('performance.deviceDetail.title')}
+        description={selectedDeviceId ? selectedDeviceId : t('performance.deviceDetail.description')}
+        action={
+          selectedDeviceId ? (
+            <button type="button" onClick={clearDeviceSelection} className="app-button px-3 text-sm text-slate-300 hover:bg-slate-800">
+              {t('common.clear')}
+            </button>
+          ) : undefined
+        }
+      >
+        <DeviceDetailPanel detail={deviceDetail} loading={deviceLoading} />
+      </Panel>
+      </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
         <Panel title={t('performance.network.title')} description={t('performance.network.description')}>
@@ -329,6 +390,65 @@ export default function PerformancePage() {
         disabled={!projectId}
         onAnalyze={generateAiAnalysis}
       />
+    </div>
+  )
+}
+
+function DeviceDetailPanel({ detail, loading }: { detail: PerformanceDeviceDetail | null; loading: boolean }) {
+  const { t } = useI18n()
+  if (loading) return <div className="h-[260px] animate-pulse rounded-md bg-slate-800/70" />
+  if (!detail) return <EmptyState title={t('performance.deviceDetail.emptyTitle')} description={t('performance.deviceDetail.emptyDescription')} />
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 md:grid-cols-3">
+        <MetricCard icon={<Gauge className="h-5 w-5 text-indigo-300" />} label={t('performance.deviceDetail.samples')} value={compactNumber(detail.samples.length)} tone="primary" />
+        <MetricCard icon={<AlertTriangle className="h-5 w-5 text-red-300" />} label={t('performance.deviceDetail.errors')} value={compactNumber(detail.relatedErrors.length)} tone="danger" />
+        <MetricCard icon={<Smartphone className="h-5 w-5 text-emerald-300" />} label={t('performance.deviceDetail.session')} value={detail.sessionId ? '1' : '-'} tone="success" />
+      </div>
+      <div className="space-y-2">
+        <div className="text-xs font-medium text-slate-400">{t('performance.deviceDetail.samplesTitle')}</div>
+        {detail.samples.length === 0 ? (
+          <div className="text-sm text-slate-500">{t('performance.deviceDetail.noSamples')}</div>
+        ) : (
+          detail.samples.slice(0, 8).map((sample, index) => <SampleRow key={`${sample.id ?? index}-${sample.timestamp}`} sample={sample} />)
+        )}
+      </div>
+      <div className="space-y-2 border-t border-line pt-4">
+        <div className="text-xs font-medium text-slate-400">{t('performance.deviceDetail.errorsTitle')}</div>
+        {detail.relatedErrors.length === 0 ? (
+          <div className="text-sm text-slate-500">{t('performance.deviceDetail.noErrors')}</div>
+        ) : (
+          detail.relatedErrors.slice(0, 6).map((issue) => (
+            <Link key={`${issue.id}-${issue.event_id}`} href={`/issues/${issue.id}`} className="block rounded-md border border-line bg-slate-950/30 p-3 hover:bg-slate-800/60">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0 truncate font-mono text-sm text-slate-100">{issue.title}</div>
+                <span className="font-mono text-xs text-slate-500">{formatDateTime(issue.timestamp)}</span>
+              </div>
+              <div className="mt-1 truncate text-xs text-slate-500">{issue.message}</div>
+            </Link>
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
+function SampleRow({ sample }: { sample: RelatedPerformanceSample }) {
+  const value = toNumber(sample.duration ?? sample.value)
+  const poor = sample.rating === 'poor' || value >= 2500
+  return (
+    <div className="rounded-md border border-line bg-slate-950/30 p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-sm font-semibold text-slate-100">{sample.name}</span>
+            <span className={`rounded-md border px-2 py-0.5 text-xs ${poor ? 'border-danger/35 bg-danger/10 text-red-200' : 'border-slate-700 text-slate-300'}`}>{sample.rating ?? sample.kind ?? '-'}</span>
+          </div>
+          <div className="mt-1 truncate font-mono text-xs text-slate-500">{sample.route || sample.page_url || sample.url || '-'}</div>
+        </div>
+        <div className={`font-mono text-sm ${poor ? 'text-red-200' : 'text-slate-100'}`}>{formatMetricValue(sample.name, value)}</div>
+      </div>
     </div>
   )
 }

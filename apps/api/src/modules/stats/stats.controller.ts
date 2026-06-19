@@ -32,6 +32,17 @@ export class StatsController {
     return this.statsService.performanceDevices(pId, Number(days) || 7)
   }
 
+  @Get('performance/devices/:deviceId')
+  @UseGuards(ProjectAccessGuard)
+  performanceDevice(
+    @Query('projectId') pId: string,
+    @Param('deviceId') deviceId: string,
+    @Query('days') days: string,
+    @Query('sessionId') sessionId?: string,
+  ) {
+    return this.statsService.performanceDeviceDetail(pId, deviceId, Number(days) || 7, sessionId)
+  }
+
   @Get('performance/issues/:issueId')
   async issuePerformance(@Param('issueId') issueId: string, @Req() req: SessionRequest) {
     const userId = req.session?.user?.id

@@ -174,6 +174,64 @@ export class StatsService {
     return sqlRows(result)
   }
 
+  async performanceDeviceDetail(projectId: string, deviceId: string, days = 7, sessionId?: string) {
+    const windowDays = clampDays(days)
+    const normalizedSessionId = sessionId?.trim() || null
+    const samples = sqlRows(
+      await this.db.execute(sql`
+        SELECT
+          id,
+          kind,
+          name,
+          rating,
+          value,
+          duration,
+          url,
+          method,
+          status,
+          initiator_type,
+          session_id,
+          device_id,
+          user_id,
+          page_url,
+          route,
+          timestamp
+        FROM performance_metrics
+        WHERE project_id = ${projectId}
+          AND device_id = ${deviceId}
+          AND (${normalizedSessionId}::text IS NULL OR session_id = ${normalizedSessionId})
+          AND timestamp >= now() - (${windowDays} * interval '1 day')
+        ORDER BY timestamp DESC
+        LIMIT 80
+      `),
+    )
+
+    const relatedErrors = sqlRows(
+      await this.db.execute(sql`
+        SELECT
+          i.id,
+          i.title,
+          i.level,
+          i.status,
+          e.id as event_id,
+          e.session_id,
+          e.device_id,
+          e.timestamp,
+          e.message
+        FROM events e
+        JOIN issues i ON i.id = e.issue_id
+        WHERE e.project_id = ${projectId}
+          AND e.device_id = ${deviceId}
+          AND (${normalizedSessionId}::text IS NULL OR e.session_id = ${normalizedSessionId})
+          AND e.timestamp >= now() - (${windowDays} * interval '1 day')
+        ORDER BY e.timestamp DESC
+        LIMIT 30
+      `),
+    )
+
+    return { deviceId, sessionId: normalizedSessionId ?? undefined, samples, relatedErrors }
+  }
+
   async geoDistribution(projectId: string) {
     const result = await this.db.execute(sql`
       WITH event_context AS (
