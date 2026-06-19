@@ -232,12 +232,19 @@ export const events = pgTable(
     user: jsonb('user'),
     tags: jsonb('tags'),
     context: jsonb('context'),
+    sessionId: text('session_id'),
+    deviceId: text('device_id'),
+    userId: text('user_id'),
+    pageUrl: text('page_url'),
+    route: text('route'),
     environment: text('environment'),
     release: text('release'),
   },
   (table) => ({
     issueIdIdx: index('events_issue_id_idx').on(table.issueId),
     projectTimestampIdx: index('events_project_timestamp_idx').on(table.projectId, table.timestamp),
+    projectSessionTimestampIdx: index('events_project_session_timestamp_idx').on(table.projectId, table.sessionId, table.timestamp),
+    projectDeviceTimestampIdx: index('events_project_device_timestamp_idx').on(table.projectId, table.deviceId, table.timestamp),
   }),
 )
 
@@ -268,6 +275,11 @@ export const performanceMetrics = pgTable(
     duration: integer('duration'),
     initiatorType: text('initiator_type'),
     traceId: text('trace_id'),
+    sessionId: text('session_id'),
+    deviceId: text('device_id'),
+    userId: text('user_id'),
+    pageUrl: text('page_url'),
+    route: text('route'),
     metadata: jsonb('metadata'),
     timestamp: timestamp('timestamp').defaultNow().notNull(),
   },
@@ -280,6 +292,16 @@ export const performanceMetrics = pgTable(
     projectNameTimestampIdx: index('performance_metrics_project_name_timestamp_idx').on(
       table.projectId,
       table.name,
+      table.timestamp,
+    ),
+    projectDeviceTimestampIdx: index('performance_metrics_project_device_timestamp_idx').on(
+      table.projectId,
+      table.deviceId,
+      table.timestamp,
+    ),
+    projectSessionTimestampIdx: index('performance_metrics_project_session_timestamp_idx').on(
+      table.projectId,
+      table.sessionId,
       table.timestamp,
     ),
   }),

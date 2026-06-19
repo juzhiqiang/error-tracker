@@ -23,6 +23,11 @@ interface IncomingEvent {
   level: string
   message: string
   fingerprint: string
+  sessionId?: string
+  deviceId?: string
+  userId?: string
+  pageUrl?: string
+  route?: string
   stacktrace?: StackFrame[]
   breadcrumbs?: unknown[]
   request?: Record<string, unknown>
@@ -46,6 +51,11 @@ interface PerformancePayload {
   duration?: number
   initiatorType?: string
   traceId?: string
+  sessionId?: string
+  deviceId?: string
+  userId?: string
+  pageUrl?: string
+  route?: string
   timestamp: number
   [key: string]: unknown
 }
@@ -123,6 +133,11 @@ export class IngestService {
           user: payload.user ? scrubPii(payload.user) : null,
           tags: payload.tags ? scrubPii(payload.tags) : null,
           context: payload.context ? scrubPii(payload.context) : null,
+          sessionId: cleanString(payload.sessionId),
+          deviceId: cleanString(payload.deviceId),
+          userId: cleanString(payload.userId) ?? this.publicUserId(payload.user),
+          pageUrl: payload.pageUrl ? scrubPii(payload.pageUrl) : null,
+          route: cleanString(payload.route),
           environment: payload.environment,
           release: payload.release,
         })
@@ -156,6 +171,11 @@ export class IngestService {
         duration: typeof m.duration === 'number' ? Math.round(m.duration) : undefined,
         initiatorType: m.initiatorType,
         traceId: m.traceId,
+        sessionId: cleanString(m.sessionId),
+        deviceId: cleanString(m.deviceId),
+        userId: cleanString(m.userId),
+        pageUrl: m.pageUrl ? scrubPii(m.pageUrl) : undefined,
+        route: cleanString(m.route),
         metadata: scrubPii(performanceMetadata(m)),
         timestamp: new Date(m.timestamp),
       })),
@@ -226,6 +246,11 @@ export class IngestService {
     return anonymousId ? `anonymousId:${anonymousId}` : null
   }
 
+  private publicUserId(user?: Record<string, unknown>): string | null {
+    if (!user) return null
+    return this.stringUserValue(user.id) ?? this.stringUserValue(user.userId) ?? this.stringUserValue(user.anonymousId)
+  }
+
   private stringUserValue(value: unknown): string | null {
     if (typeof value !== 'string' && typeof value !== 'number') return null
     const normalized = String(value).trim()
@@ -265,7 +290,18 @@ function performanceMetadata(metric: PerformancePayload): Record<string, unknown
     'duration',
     'initiatorType',
     'traceId',
+    'sessionId',
+    'deviceId',
+    'userId',
+    'pageUrl',
+    'route',
     'timestamp',
   ])
   return Object.fromEntries(Object.entries(metric).filter(([key]) => !reserved.has(key)))
+}
+
+function cleanString(value: unknown): string | null {
+  if (typeof value !== 'string' && typeof value !== 'number') return null
+  const normalized = String(value).trim()
+  return normalized.length > 0 ? normalized : null
 }

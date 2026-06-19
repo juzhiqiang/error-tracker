@@ -7,6 +7,7 @@ const DEFAULT_SENSITIVE_VALUE_PATTERNS: SensitiveValuePattern[] = [
   [/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, '[Jwt]'],
   [/\b(?:sk|pk)_(?:live|test)_[A-Za-z0-9]{10,}\b/g, '[SecretKey]'],
   [/\b(?:\d[ -]*?){13,19}\b/g, '[CardNumber]'],
+  [/([?&](?:password|token|secret|authorization|cookie)=)[^&#]*/gi, '$1[Filtered]'],
 ]
 
 export interface PiiScrubberOptions {

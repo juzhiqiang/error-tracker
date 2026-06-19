@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Activity, Gauge, MonitorDot, SignalHigh, TimerReset, Zap } from 'lucide-react'
+import { Activity, AlertTriangle, Gauge, MonitorDot, SignalHigh, Smartphone, TimerReset, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { AiAnalysisPanel } from '@/components/ai-analysis-panel'
@@ -10,8 +10,8 @@ import { MetricCard } from '@/components/metric-card'
 import { PageHeader, Panel } from '@/components/panel'
 import { ProjectSelect } from '@/components/project-select'
 import { RatingBadge } from '@/components/status-badge'
-import { api, type AiAnalysis, type PerformanceSummary, type Project } from '@/lib/api'
-import { compactNumber, formatMetricValue, toNumber } from '@/lib/format'
+import { api, type AiAnalysis, type PerformanceDeviceSummary, type PerformanceSummary, type Project } from '@/lib/api'
+import { compactNumber, formatDateTime, formatMetricValue, toNumber } from '@/lib/format'
 import { useI18n } from '@/lib/i18n'
 
 const metricNames = ['LCP', 'FCP', 'FID', 'CLS', 'INP', 'TTFB'] as const
@@ -31,6 +31,7 @@ export default function PerformancePage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [projectId, setProjectId] = useState('')
   const [data, setData] = useState<PerformanceSummary[]>([])
+  const [devices, setDevices] = useState<PerformanceDeviceSummary[]>([])
   const [timeWindow, setTimeWindow] = useState<(typeof timeWindows)[number]['days']>(7)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -57,14 +58,15 @@ export default function PerformancePage() {
     setLoading(true)
     setAiAnalysis(null)
     setAiError('')
-    api.stats
-      .performance(projectId, timeWindow)
-      .then((result) => {
+    Promise.all([api.stats.performance(projectId, timeWindow), api.stats.performanceDevices(projectId, timeWindow)])
+      .then(([result, deviceResult]) => {
         setData(result)
+        setDevices(deviceResult)
         setError('')
       })
       .catch(() => {
         setData([])
+        setDevices([])
         setError(t('performance.loadError'))
       })
       .finally(() => setLoading(false))
@@ -231,6 +233,45 @@ export default function PerformancePage() {
         ))}
       </section>
 
+      <Panel title={t('performance.devices.title')} description={t('performance.devices.description')}>
+        {loading ? (
+          <div className="h-[260px] animate-pulse rounded-md bg-slate-800/70" />
+        ) : devices.length === 0 ? (
+          <EmptyState title={t('performance.devices.emptyTitle')} description={t('performance.devices.emptyDescription')} />
+        ) : (
+          <div className="overflow-hidden rounded-md border border-slate-800">
+            <div className="grid grid-cols-[minmax(180px,1.1fr)_repeat(5,minmax(80px,0.55fr))] gap-3 border-b border-slate-800 bg-slate-950/40 px-3 py-2 text-xs text-slate-500">
+              <span>{t('performance.devices.device')}</span>
+              <span>{t('performance.devices.sessions')}</span>
+              <span>{t('performance.devices.samples')}</span>
+              <span>{t('performance.devices.poor')}</span>
+              <span>{t('performance.devices.slowest')}</span>
+              <span>{t('performance.devices.errors')}</span>
+            </div>
+            {devices.map((device) => (
+              <div
+                key={device.deviceId ?? `${device.browser}-${device.os}-${device.lastSeen}`}
+                className="grid grid-cols-[minmax(180px,1.1fr)_repeat(5,minmax(80px,0.55fr))] gap-3 border-b border-slate-800 px-3 py-3 text-sm last:border-b-0 hover:bg-slate-800/60"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 text-slate-100">
+                    <Smartphone className="h-4 w-4 text-indigo-300" />
+                    <span className="truncate">{[device.browser, device.os, device.deviceType].filter(Boolean).join(' / ') || t('common.unknown')}</span>
+                  </div>
+                  <div className="mt-1 truncate font-mono text-xs text-slate-500">{device.deviceId ?? '-'}</div>
+                  <div className="mt-1 text-xs text-slate-500">{formatDateTime(device.lastSeen)}</div>
+                </div>
+                <Cell>{compactNumber(device.sessionCount)}</Cell>
+                <Cell>{compactNumber(device.sampleCount)}</Cell>
+                <Cell tone={device.poorCount > 0 ? 'danger' : 'neutral'}>{compactNumber(device.poorCount)}</Cell>
+                <Cell>{formatMetricValue('LCP', device.slowest)}</Cell>
+                <Cell tone={device.relatedErrorCount > 0 ? 'warning' : 'neutral'}>{compactNumber(device.relatedErrorCount)}</Cell>
+              </div>
+            ))}
+          </div>
+        )}
+      </Panel>
+
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
         <Panel title={t('performance.network.title')} description={t('performance.network.description')}>
           {loading ? (
@@ -290,6 +331,16 @@ export default function PerformancePage() {
       />
     </div>
   )
+}
+
+function Cell({ children, tone = 'neutral' }: { children: React.ReactNode; tone?: 'neutral' | 'danger' | 'warning' }) {
+  const className =
+    tone === 'danger'
+      ? 'text-red-200'
+      : tone === 'warning'
+        ? 'text-amber-200'
+        : 'text-slate-200'
+  return <div className={`flex items-center gap-1 font-mono text-sm ${className}`}>{tone !== 'neutral' && <AlertTriangle className="h-3.5 w-3.5" />}{children}</div>
 }
 
 function Threshold({ icon, name, good, poor }: { icon: React.ReactNode; name: string; good: string; poor: string }) {

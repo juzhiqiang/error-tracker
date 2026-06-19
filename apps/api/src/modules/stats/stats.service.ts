@@ -63,6 +63,117 @@ export class StatsService {
     }
   }
 
+  async performanceDevices(projectId: string, days = 7) {
+    const windowDays = clampDays(days)
+    const result = await this.db.execute(sql`
+      WITH latest_events AS (
+        SELECT DISTINCT ON (device_id)
+          device_id,
+          context,
+          timestamp
+        FROM events
+        WHERE project_id = ${projectId}
+          AND device_id IS NOT NULL
+        ORDER BY device_id, timestamp DESC
+      ),
+      device_metrics AS (
+        SELECT
+          pm.device_id,
+          count(DISTINCT pm.session_id) as session_count,
+          count(*) as sample_count,
+          count(*) FILTER (WHERE pm.rating = 'poor' OR COALESCE(pm.duration::double precision, pm.value) >= 2500) as poor_count,
+          avg(pm.value) as avg_value,
+          max(COALESCE(pm.duration::double precision, pm.value)) as slowest,
+          max(pm.timestamp) as last_seen
+        FROM performance_metrics pm
+        WHERE pm.project_id = ${projectId}
+          AND pm.timestamp >= now() - (${windowDays} * interval '1 day')
+          AND pm.device_id IS NOT NULL
+        GROUP BY pm.device_id
+      ),
+      related_errors AS (
+        SELECT device_id, count(*) as related_error_count
+        FROM events
+        WHERE project_id = ${projectId}
+          AND timestamp >= now() - (${windowDays} * interval '1 day')
+          AND device_id IS NOT NULL
+        GROUP BY device_id
+      )
+      SELECT
+        dm.device_id,
+        dm.session_count,
+        dm.sample_count,
+        dm.poor_count,
+        dm.avg_value,
+        dm.slowest,
+        dm.last_seen,
+        le.context->'environment'->'userAgent'->'browser'->>'name' as browser,
+        le.context->'environment'->'userAgent'->'os'->>'name' as os,
+        le.context->'environment'->'userAgent'->'device'->>'type' as device_type,
+        COALESCE(re.related_error_count, 0) as related_error_count
+      FROM device_metrics dm
+      LEFT JOIN latest_events le ON le.device_id = dm.device_id
+      LEFT JOIN related_errors re ON re.device_id = dm.device_id
+      ORDER BY dm.poor_count DESC, dm.sample_count DESC, dm.last_seen DESC
+      LIMIT 20
+    `)
+
+    return sqlRows(result).map((row) => {
+      const item = row as Record<string, unknown>
+      return {
+        deviceId: textValue(item.device_id),
+        sessionCount: numberValue(item.session_count),
+        sampleCount: numberValue(item.sample_count),
+        poorCount: numberValue(item.poor_count),
+        avgValue: numberValue(item.avg_value),
+        slowest: numberValue(item.slowest),
+        browser: textValue(item.browser),
+        os: textValue(item.os),
+        deviceType: textValue(item.device_type),
+        lastSeen: textValue(item.last_seen),
+        relatedErrorCount: numberValue(item.related_error_count),
+      }
+    })
+  }
+
+  async issueRelatedPerformance(issueId: string) {
+    const result = await this.db.execute(sql`
+      WITH issue_events AS (
+        SELECT project_id, session_id, device_id, user_id, timestamp
+        FROM events
+        WHERE issue_id = ${issueId}
+      )
+      SELECT DISTINCT ON (pm.id)
+        pm.id,
+        pm.kind,
+        pm.name,
+        pm.rating,
+        pm.value,
+        pm.duration,
+        pm.url,
+        pm.method,
+        pm.status,
+        pm.initiator_type,
+        pm.session_id,
+        pm.device_id,
+        pm.user_id,
+        pm.page_url,
+        pm.route,
+        pm.timestamp
+      FROM performance_metrics pm
+      JOIN issue_events ie ON ie.project_id = pm.project_id
+        AND (
+          (ie.session_id IS NOT NULL AND ie.session_id = pm.session_id)
+          OR (ie.device_id IS NOT NULL AND ie.device_id = pm.device_id)
+          OR (ie.user_id IS NOT NULL AND ie.user_id = pm.user_id)
+          OR pm.timestamp BETWEEN ie.timestamp - interval '5 minutes' AND ie.timestamp + interval '5 minutes'
+        )
+      ORDER BY pm.id, pm.timestamp DESC
+      LIMIT 30
+    `)
+    return sqlRows(result)
+  }
+
   async geoDistribution(projectId: string) {
     const result = await this.db.execute(sql`
       WITH event_context AS (
@@ -166,4 +277,16 @@ function isMissingPerformanceTelemetryColumn(error: unknown): boolean {
 function clampDays(days: number): number {
   if (!Number.isFinite(days)) return 7
   return Math.min(30, Math.max(1, Math.floor(days)))
+}
+
+function numberValue(value: unknown): number {
+  const number = typeof value === 'number' ? value : Number(value ?? 0)
+  return Number.isFinite(number) ? number : 0
+}
+
+function textValue(value: unknown): string | undefined {
+  if (value instanceof Date) return value.toISOString()
+  if (typeof value === 'string' && value.length > 0) return value
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+  return undefined
 }

@@ -23,6 +23,11 @@ export interface ErrorEvent {
   level: Level
   message: string
   fingerprint: string
+  sessionId?: string
+  deviceId?: string
+  userId?: string
+  pageUrl?: string
+  route?: string
   environment?: string
   release?: string
   stacktrace?: StackFrame[]
@@ -49,6 +54,11 @@ export interface WebVitalPerformanceEvent {
   name: 'LCP' | 'FID' | 'CLS' | 'INP' | 'TTFB' | 'FCP'
   value: number
   rating: 'good' | 'needs-improvement' | 'poor'
+  sessionId?: string
+  deviceId?: string
+  userId?: string
+  pageUrl?: string
+  route?: string
   url?: string
   context?: EventContext
 }
@@ -67,6 +77,11 @@ export interface ResourcePerformanceEvent {
   encodedBodySize?: number
   decodedBodySize?: number
   traceId?: string
+  sessionId?: string
+  deviceId?: string
+  userId?: string
+  pageUrl?: string
+  route?: string
   context?: EventContext
 }
 
@@ -79,6 +94,11 @@ export interface LongTaskPerformanceEvent {
   value: number
   duration: number
   startTime?: number
+  sessionId?: string
+  deviceId?: string
+  userId?: string
+  pageUrl?: string
+  route?: string
   context?: EventContext
 }
 

@@ -99,6 +99,13 @@
       "when": 1781803800000,
       "tag": "0013_performance_value_double_precision",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1781830300000,
+      "tag": "0014_device_session_correlation",
+      "breakpoints": true
     }
   ]
 }

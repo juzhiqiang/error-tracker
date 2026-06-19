@@ -44,9 +44,10 @@ import {
   type IssueLevel,
   type IssueStatus,
   type ProjectMember,
+  type RelatedPerformanceSample,
   type StackFrame,
 } from '@/lib/api'
-import { compactNumber, formatFullDateTime, formatTime, stringifyRecord } from '@/lib/format'
+import { compactNumber, formatFullDateTime, formatMetricValue, formatTime, stringifyRecord, toNumber } from '@/lib/format'
 import { useI18n } from '@/lib/i18n'
 
 const statusActions: Array<{ status: IssueStatus; labelKey: string; icon: ReactNode }> = [
@@ -75,6 +76,7 @@ export default function IssueDetailPage() {
   const [members, setMembers] = useState<ProjectMember[]>([])
   const [comments, setComments] = useState<IssueComment[]>([])
   const [facets, setFacets] = useState<IssueFacets>(emptyFacets)
+  const [relatedPerformance, setRelatedPerformance] = useState<RelatedPerformanceSample[]>([])
   const [assigneeUserId, setAssigneeUserId] = useState('')
   const [fixedRelease, setFixedRelease] = useState('')
   const [commentBody, setCommentBody] = useState('')
@@ -89,10 +91,11 @@ export default function IssueDetailPage() {
     Promise.all([api.issues.get(issueId), api.issues.events(issueId)])
       .then(async ([issueResult, eventResult]) => {
         const ordered = [...eventResult].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-        const [memberRows, commentRows, facetRows] = await Promise.all([
+        const [memberRows, commentRows, facetRows, performanceRows] = await Promise.all([
           api.projects.members(issueResult.projectId).catch(() => []),
           api.issues.comments(issueResult.id).catch(() => []),
           api.issues.facets(issueResult.id).catch(() => emptyFacets),
+          api.stats.issuePerformance(issueResult.id).catch(() => []),
         ])
         if (cancelled) return
         setIssue(issueResult)
@@ -102,6 +105,7 @@ export default function IssueDetailPage() {
         setMembers(memberRows)
         setComments(commentRows)
         setFacets(facetRows)
+        setRelatedPerformance(performanceRows)
         setAssigneeUserId(issueResult.assigneeUserId ?? '')
         setFixedRelease(issueResult.fixedInRelease ?? '')
         setAiAnalysis(null)
@@ -532,6 +536,10 @@ export default function IssueDetailPage() {
             {selectedEvent ? <SdkSignals event={selectedEvent} /> : <EmptyState title={t('detail.sdkSignals.emptyTitle')} description={t('detail.sdkSignals.emptyDescription')} />}
           </Panel>
 
+          <Panel title={t('detail.relatedPerformance.title')} description={t('detail.relatedPerformance.description')}>
+            <RelatedPerformance samples={relatedPerformance} selectedEvent={selectedEvent} />
+          </Panel>
+
           <Panel title={t('detail.context.title')} description={t('detail.context.description')}>
             {selectedEvent ? <EventContext event={selectedEvent} issue={issue} /> : <EmptyState title={t('detail.context.emptyTitle')} description={t('detail.context.emptyDescription')} />}
           </Panel>
@@ -790,6 +798,56 @@ function SdkSignalList({ title, items, empty }: { title: string; items: Breadcru
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+function RelatedPerformance({ samples, selectedEvent }: { samples: RelatedPerformanceSample[]; selectedEvent?: EventRow }) {
+  const { t } = useI18n()
+  if (samples.length === 0) {
+    return <EmptyState title={t('detail.relatedPerformance.emptyTitle')} description={t('detail.relatedPerformance.emptyDescription')} />
+  }
+
+  const selectedSession = selectedEvent?.sessionId
+  const selectedDevice = selectedEvent?.deviceId
+  const prioritized = [...samples].sort((a, b) => {
+    const aMatch = Number(a.session_id === selectedSession || a.device_id === selectedDevice)
+    const bMatch = Number(b.session_id === selectedSession || b.device_id === selectedDevice)
+    return bMatch - aMatch || new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  })
+
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-2 md:grid-cols-3">
+        <ContextBlock icon={<Gauge className="h-4 w-4" />} label={t('detail.relatedPerformance.samples')} value={compactNumber(samples.length)} />
+        <ContextBlock icon={<Smartphone className="h-4 w-4" />} label={t('detail.relatedPerformance.sameDevice')} value={compactNumber(samples.filter((item) => item.device_id && item.device_id === selectedDevice).length)} />
+        <ContextBlock icon={<Clock3 className="h-4 w-4" />} label={t('detail.relatedPerformance.sameSession')} value={compactNumber(samples.filter((item) => item.session_id && item.session_id === selectedSession).length)} />
+      </div>
+      <div className="overflow-hidden rounded-md border border-slate-800">
+        {prioritized.slice(0, 10).map((sample, index) => {
+          const value = toNumber(sample.duration ?? sample.value)
+          const isPoor = sample.rating === 'poor' || value >= 2500
+          return (
+            <div key={`${sample.id ?? index}-${sample.timestamp}`} className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b border-slate-800 px-3 py-3 last:border-b-0 hover:bg-slate-800/60">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-sm font-semibold text-slate-100">{sample.name}</span>
+                  <span className={`rounded-md border px-2 py-0.5 text-xs ${isPoor ? 'border-danger/35 bg-danger/10 text-red-200' : 'border-slate-700 bg-slate-900 text-slate-300'}`}>
+                    {sample.rating ?? sample.kind ?? t('common.unknown')}
+                  </span>
+                  {sample.session_id === selectedSession && <span className="rounded-md border border-primary/35 bg-primary/10 px-2 py-0.5 text-xs text-indigo-200">{t('detail.relatedPerformance.currentSession')}</span>}
+                  {sample.device_id === selectedDevice && <span className="rounded-md border border-success/35 bg-success/10 px-2 py-0.5 text-xs text-emerald-200">{t('detail.relatedPerformance.currentDevice')}</span>}
+                </div>
+                <div className="mt-2 truncate font-mono text-xs text-slate-500">{sample.route || sample.page_url || sample.url || '-'}</div>
+                <div className="mt-1 font-mono text-xs text-slate-600">{formatFullDateTime(sample.timestamp)}</div>
+              </div>
+              <div className={`self-center font-mono text-sm ${isPoor ? 'text-red-200' : 'text-slate-100'}`}>
+                {formatMetricValue(sample.name, value)}
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

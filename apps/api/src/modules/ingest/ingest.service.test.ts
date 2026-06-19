@@ -359,6 +359,33 @@ describe('IngestService', () => {
     expect(issueFingerprint(firstDb.issueUpserts[0])).toBe(issueFingerprint(secondDb.issueUpserts[0]))
   })
 
+  it('persists event correlation fields for device and session drilldown', async () => {
+    const db = makeIngestDb()
+    const queue = { add: mock(async () => undefined) }
+    const service = new IngestService(db.db as never, queue as never, {} as never)
+
+    await service.ingestEvent('project-1', {
+      eventId: 'event-1',
+      timestamp: Date.now(),
+      level: 'error',
+      message: 'boom',
+      fingerprint: 'client-fp',
+      sessionId: 'session-1',
+      deviceId: 'device-1',
+      pageUrl: 'https://app.example.com/orders/123?token=secret',
+      route: '/orders/[id]',
+      user: { id: 'user-1' },
+    } as never)
+
+    expect(db.insertedValues[0]).toMatchObject({
+      sessionId: 'session-1',
+      deviceId: 'device-1',
+      userId: 'user-1',
+      pageUrl: 'https://app.example.com/orders/123?token=[Filtered]',
+      route: '/orders/[id]',
+    })
+  })
+
   it('stores expanded performance metrics with telemetry fields', async () => {
     const insertedValues: unknown[] = []
     const db = {
@@ -392,6 +419,43 @@ describe('IngestService', () => {
       duration: 42,
       url: 'https://cdn.example.com/app.js',
       initiatorType: 'script',
+    })
+  })
+
+  it('stores performance correlation fields for device and session drilldown', async () => {
+    const insertedValues: unknown[] = []
+    const db = {
+      insert: mock(() => ({
+        values: mock(async (rows: unknown[]) => {
+          insertedValues.push(...rows)
+        }),
+      })),
+    }
+    const service = new IngestService(db as never, {} as never, {} as never)
+
+    await service.ingestPerformance('project-1', [
+      {
+        eventId: 'lcp-1',
+        type: 'performance',
+        kind: 'web-vital',
+        name: 'LCP',
+        value: 3200,
+        rating: 'needs-improvement',
+        timestamp: 1_700_000_000_000,
+        sessionId: 'session-1',
+        deviceId: 'device-1',
+        userId: 'user-1',
+        pageUrl: 'https://app.example.com/orders/123?token=secret',
+        route: '/orders/[id]',
+      } as never,
+    ])
+
+    expect(insertedValues[0]).toMatchObject({
+      sessionId: 'session-1',
+      deviceId: 'device-1',
+      userId: 'user-1',
+      pageUrl: 'https://app.example.com/orders/123?token=[Filtered]',
+      route: '/orders/[id]',
     })
   })
 

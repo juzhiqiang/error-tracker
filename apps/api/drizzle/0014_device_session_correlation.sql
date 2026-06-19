@@ -1,0 +1,14 @@
+ALTER TABLE "events" ADD COLUMN IF NOT EXISTS "session_id" text;
+ALTER TABLE "events" ADD COLUMN IF NOT EXISTS "device_id" text;
+ALTER TABLE "events" ADD COLUMN IF NOT EXISTS "user_id" text;
+ALTER TABLE "events" ADD COLUMN IF NOT EXISTS "page_url" text;
+ALTER TABLE "events" ADD COLUMN IF NOT EXISTS "route" text;
+ALTER TABLE "performance_metrics" ADD COLUMN IF NOT EXISTS "session_id" text;
+ALTER TABLE "performance_metrics" ADD COLUMN IF NOT EXISTS "device_id" text;
+ALTER TABLE "performance_metrics" ADD COLUMN IF NOT EXISTS "user_id" text;
+ALTER TABLE "performance_metrics" ADD COLUMN IF NOT EXISTS "page_url" text;
+ALTER TABLE "performance_metrics" ADD COLUMN IF NOT EXISTS "route" text;
+CREATE INDEX IF NOT EXISTS "events_project_session_timestamp_idx" ON "events" USING btree ("project_id","session_id","timestamp");
+CREATE INDEX IF NOT EXISTS "events_project_device_timestamp_idx" ON "events" USING btree ("project_id","device_id","timestamp");
+CREATE INDEX IF NOT EXISTS "performance_metrics_project_device_timestamp_idx" ON "performance_metrics" USING btree ("project_id","device_id","timestamp");
+CREATE INDEX IF NOT EXISTS "performance_metrics_project_session_timestamp_idx" ON "performance_metrics" USING btree ("project_id","session_id","timestamp");

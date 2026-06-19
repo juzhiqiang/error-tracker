@@ -101,6 +101,11 @@ export interface EventRow {
   user: Record<string, unknown> | null
   tags: Record<string, string> | null
   context: Record<string, unknown> | null
+  sessionId?: string | null
+  deviceId?: string | null
+  userId?: string | null
+  pageUrl?: string | null
+  route?: string | null
   environment: string | null
   release: string | null
 }
@@ -154,6 +159,39 @@ export interface PerformanceSummary {
   count: number | string
   avg_value: number | string
   slowest?: number | string | null
+}
+
+export interface PerformanceDeviceSummary {
+  deviceId?: string
+  sessionCount: number
+  sampleCount: number
+  poorCount: number
+  avgValue: number
+  slowest: number
+  browser?: string
+  os?: string
+  deviceType?: string
+  lastSeen?: string
+  relatedErrorCount: number
+}
+
+export interface RelatedPerformanceSample {
+  id?: number
+  kind?: PerformanceKind
+  name: string
+  rating?: 'good' | 'needs-improvement' | 'poor' | null
+  value: number | string
+  duration?: number | string | null
+  url?: string | null
+  method?: string | null
+  status?: number | string | null
+  initiator_type?: string | null
+  session_id?: string | null
+  device_id?: string | null
+  user_id?: string | null
+  page_url?: string | null
+  route?: string | null
+  timestamp: string
 }
 
 export interface GeoDistributionPoint {
@@ -288,6 +326,10 @@ export const api = {
       apiFetch<TrendPoint[]>(`/api/stats/issues?projectId=${projectId}&days=${days}`),
     performance: (projectId: string, days = 7) =>
       apiFetch<PerformanceSummary[]>(`/api/stats/performance?${new URLSearchParams({ projectId, days: String(days) })}`),
+    performanceDevices: (projectId: string, days = 7) =>
+      apiFetch<PerformanceDeviceSummary[]>(`/api/stats/performance/devices?${new URLSearchParams({ projectId, days: String(days) })}`),
+    issuePerformance: (issueId: string) =>
+      apiFetch<RelatedPerformanceSample[]>(`/api/stats/performance/issues/${encodeURIComponent(issueId)}`),
     geo: (projectId: string) =>
       apiFetch<GeoDistributionPoint[]>(`/api/stats/geo?${new URLSearchParams({ projectId })}`),
     aiPerformance: (projectId: string) =>

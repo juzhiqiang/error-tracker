@@ -7,6 +7,14 @@ import { HttpTransport } from '../transports/http'
 import { Scope } from './scope'
 import { randomId } from './utils'
 
+interface CorrelationContext {
+  sessionId: string
+  deviceId: string
+  userId?: string
+  pageUrl: string
+  route: string
+}
+
 export class ErrorTrackerClient {
   readonly breadcrumbs: BreadcrumbManager
   private readonly dedupe: DedupeFilter
@@ -15,6 +23,8 @@ export class ErrorTrackerClient {
   readonly scope: Scope
   private readonly options: Required<Pick<SdkOptions, 'dsn' | 'sampleRate'>> & SdkOptions
   private readonly context: EventContext = {}
+  private readonly sessionId = readOrCreateBrowserId('error-tracker-session-id', 'sessionStorage')
+  private readonly deviceId = readOrCreateBrowserId('error-tracker-device-id', 'localStorage')
 
   constructor(options: SdkOptions) {
     this.options = { sampleRate: 1.0, ...options }
@@ -48,6 +58,7 @@ export class ErrorTrackerClient {
       level: 'error',
       message: error.message,
       fingerprint,
+      ...this.correlationContext(),
       environment: this.options.environment,
       release: this.options.release,
       stacktrace: parseStackFrames(error.stack ?? ''),
@@ -75,6 +86,7 @@ export class ErrorTrackerClient {
       level,
       message,
       fingerprint: options.fingerprint ?? randomId(),
+      ...this.correlationContext(),
       environment: this.options.environment,
       release: this.options.release,
       user: this.scope.getUser() as ErrorEvent['user'],
@@ -86,7 +98,7 @@ export class ErrorTrackerClient {
   }
 
   capturePerformance(event: TrackerEvent): void {
-    this.queue.enqueue({ ...event, context: event.context ?? this.getContext() })
+    this.queue.enqueue({ ...this.correlationContext(), ...event, context: event.context ?? this.getContext() })
     void this.queue.flush().catch(() => undefined)
   }
 
@@ -110,4 +122,46 @@ export class ErrorTrackerClient {
   getContext(): EventContext {
     return { ...this.context }
   }
+
+  private correlationContext(): CorrelationContext {
+    const user = this.scope.getUser()
+    return {
+      sessionId: this.sessionId,
+      deviceId: this.deviceId,
+      userId: user.id,
+      pageUrl: currentPageUrl(),
+      route: currentRoute(),
+    }
+  }
+}
+
+function readOrCreateBrowserId(key: string, storageName: 'localStorage' | 'sessionStorage'): string {
+  const storage = safeStorage(storageName)
+  const existing = storage?.getItem(key)
+  if (existing) return existing
+
+  const id = randomId()
+  try {
+    storage?.setItem(key, id)
+  } catch {
+    // Storage may be blocked; the in-memory id still links events from this client instance.
+  }
+  return id
+}
+
+function safeStorage(storageName: 'localStorage' | 'sessionStorage'): Storage | undefined {
+  try {
+    if (typeof window === 'undefined') return undefined
+    return window[storageName]
+  } catch {
+    return undefined
+  }
+}
+
+function currentPageUrl(): string {
+  return typeof location !== 'undefined' ? location.href : ''
+}
+
+function currentRoute(): string {
+  return typeof location !== 'undefined' ? location.pathname || '/' : ''
 }

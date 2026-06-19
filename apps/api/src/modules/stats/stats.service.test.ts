@@ -84,6 +84,68 @@ describe('StatsService', () => {
     expect(calls[1]).toContain('GROUP BY name, rating')
   })
 
+  it('returns performance device breakdowns with session and error evidence', async () => {
+    const calls: string[] = []
+    const rows = [
+      {
+        device_id: 'device-1',
+        session_count: '2',
+        sample_count: '8',
+        poor_count: '3',
+        avg_value: '1800',
+        slowest: '4200',
+        browser: 'Chrome',
+        os: 'Windows',
+        device_type: 'desktop',
+        last_seen: '2026-06-18T00:00:00Z',
+        related_error_count: '1',
+      },
+    ]
+    const db = {
+      execute: mock(async (query: unknown) => {
+        calls.push(sqlText(query))
+        return { rows }
+      }),
+    }
+    const service = new StatsService(db as never)
+
+    await expect(service.performanceDevices('project-1', 7)).resolves.toEqual([
+      {
+        deviceId: 'device-1',
+        sessionCount: 2,
+        sampleCount: 8,
+        poorCount: 3,
+        avgValue: 1800,
+        slowest: 4200,
+        browser: 'Chrome',
+        os: 'Windows',
+        deviceType: 'desktop',
+        lastSeen: '2026-06-18T00:00:00Z',
+        relatedErrorCount: 1,
+      },
+    ])
+    expect(calls[0]).toContain('device_id')
+    expect(calls[0]).toContain('LEFT JOIN')
+    expect(calls[0]).toContain("7 * interval '1 day'")
+  })
+
+  it('returns performance samples related to a selected issue event context', async () => {
+    const calls: string[] = []
+    const rows = [{ name: 'LCP', rating: 'poor', value: '4200', session_id: 'session-1' }]
+    const db = {
+      execute: mock(async (query: unknown) => {
+        calls.push(sqlText(query))
+        return { rows }
+      }),
+    }
+    const service = new StatsService(db as never)
+
+    await expect(service.issueRelatedPerformance('issue-1')).resolves.toEqual(rows)
+    expect(calls[0]).toContain('performance_metrics')
+    expect(calls[0]).toContain('events')
+    expect(calls[0]).toContain('session_id')
+  })
+
   it('returns geo distribution inferred from event context', async () => {
     const calls: string[] = []
     const rows = [{ country_code: 'CN', country_name: 'China', count: '8' }]

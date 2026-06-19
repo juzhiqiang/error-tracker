@@ -71,6 +71,22 @@ describe('api performance stats', () => {
     expect(result[0]).toMatchObject({ kind: 'longtask', name: 'longtask', slowest: '90' })
   })
 
+  it('loads device breakdown and issue related performance samples', async () => {
+    const calls: string[] = []
+    global.fetch = mock(async (input) => {
+      calls.push(String(input))
+      return Response.json([])
+    }) as typeof fetch
+
+    await api.stats.performanceDevices('project-1', 7)
+    await api.stats.issuePerformance('issue-1')
+
+    expect(calls).toEqual([
+      'http://localhost:3002/api/stats/performance/devices?projectId=project-1&days=7',
+      'http://localhost:3002/api/stats/performance/issues/issue-1',
+    ])
+  })
+
   it('loads project geo distribution summaries', async () => {
     let capturedUrl = ''
     global.fetch = mock(async (input) => {
