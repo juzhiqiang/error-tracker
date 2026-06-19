@@ -237,20 +237,20 @@ export class StatsService {
       WITH event_context AS (
         SELECT
           coalesce(
-            user->>'countryCode',
-            user->>'country',
-            request->>'countryCode',
-            request->>'country',
-            context->>'countryCode',
-            context->>'country',
-            context->'environment'->'locale'->>'countryCode',
-            context->'environment'->'locale'->>'country'
+            e."user"->>'countryCode',
+            e."user"->>'country',
+            e.request->>'countryCode',
+            e.request->>'country',
+            e.context->>'countryCode',
+            e.context->>'country',
+            e.context->'environment'->'locale'->>'countryCode',
+            e.context->'environment'->'locale'->>'country'
           ) as raw_country,
-          context->'environment'->'locale'->>'timezone' as timezone,
-          context->'environment'->'locale'->>'language' as language
-        FROM events
-        WHERE project_id = ${projectId}
-          AND timestamp >= now() - interval '30 days'
+          e.context->'environment'->'locale'->>'timezone' as timezone,
+          e.context->'environment'->'locale'->>'language' as language
+        FROM events e
+        WHERE e.project_id = ${projectId}
+          AND e.timestamp >= now() - interval '30 days'
       ),
       event_geo AS (
         SELECT

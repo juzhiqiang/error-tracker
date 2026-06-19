@@ -220,6 +220,25 @@ describe('StatsService', () => {
     expect(calls[0]).toContain('united states')
     expect(calls[0]).toContain('south korea')
   })
+
+  it('quotes geo JSON event columns so Postgres does not treat user as current_user', async () => {
+    const calls: string[] = []
+    const db = {
+      execute: mock(async (query: unknown) => {
+        calls.push(sqlText(query))
+        return { rows: [] }
+      }),
+    }
+    const service = new StatsService(db as never)
+
+    await service.geoDistribution('project-1')
+
+    expect(calls[0]).toContain('FROM events e')
+    expect(calls[0]).toContain('e."user"->>')
+    expect(calls[0]).toContain('e.request->>')
+    expect(calls[0]).toContain('e.context->')
+    expect(calls[0]).not.toContain('\n            user->>')
+  })
 })
 
 function sqlText(query: unknown): string {
