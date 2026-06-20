@@ -306,244 +306,260 @@ export default function IssueDetailPage() {
         <Fact label={t('detail.fact.lastSeen')} value={formatFullDateTime(issue.lastSeen)} icon={<Clock3 className="h-4 w-4 text-emerald-300" />} />
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="app-panel p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-sm font-semibold text-slate-100">{t('detail.workflow.title')}</h2>
-              <p className="mt-1 text-xs text-slate-400">{t('detail.workflow.description')}</p>
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <main className="space-y-4">
+          <div className="rounded-md border border-line bg-slate-950/30 px-4 py-3">
+            <div className="flex items-center gap-2 text-xs font-medium text-indigo-300">
+              <Fingerprint className="h-4 w-4" />
+              {t('detail.evidence.title')}
             </div>
-            <div className="flex flex-wrap gap-2">
-              {statusActions.map((action) => (
+            <p className="mt-1 text-xs leading-5 text-slate-400">{t('detail.evidence.description')}</p>
+          </div>
+
+          <section className="grid gap-4 2xl:grid-cols-[360px_minmax(0,1fr)]">
+            <Panel title={t('detail.timeline.title')} description={t('detail.timeline.description', { count: events.length })} bodyClassName="2xl:max-h-[720px] 2xl:overflow-y-auto">
+              {events.length === 0 ? (
+                <EmptyState title={t('detail.timeline.emptyTitle')} description={t('detail.timeline.emptyDescription')} />
+              ) : (
+                <div className="space-y-2">
+                  {events.map((event) => {
+                    const active = event.id === selectedEvent?.id
+                    return (
+                      <button
+                        key={event.id}
+                        onClick={() => setSelectedEventId(event.id)}
+                        className={`w-full rounded-md border p-3 text-left transition ${
+                          active ? 'border-primary/50 bg-primary/10' : 'border-line bg-slate-950/35 hover:bg-slate-800/55'
+                        }`}
+                      >
+                        <div className="flex min-h-[28px] items-center justify-between gap-2">
+                          <LevelBadge level={asIssueLevel(event.level)} />
+                          <span className="font-mono text-xs text-slate-500">{formatFullDateTime(event.timestamp)}</span>
+                        </div>
+                        <div className="mt-2 line-clamp-2 font-mono text-xs leading-5 text-slate-300">{event.message}</div>
+                        <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
+                          {event.environment && <span>{event.environment}</span>}
+                          {event.release && <span>{event.release}</span>}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </Panel>
+
+            <div className="space-y-4">
+              <Panel title={t('detail.stack.title')} description={t('detail.stack.description')}>
+                <StackTrace frames={selectedEvent?.stacktrace ?? []} />
+              </Panel>
+
+              <Panel title={t('detail.breadcrumbs.title')} description={t('detail.breadcrumbs.description')}>
+                <BreadcrumbTimeline items={selectedEvent?.breadcrumbs ?? []} />
+              </Panel>
+
+              <Panel title={t('detail.sdkSignals.title')} description={t('detail.sdkSignals.description')}>
+                {selectedEvent ? <SdkSignals event={selectedEvent} /> : <EmptyState title={t('detail.sdkSignals.emptyTitle')} description={t('detail.sdkSignals.emptyDescription')} />}
+              </Panel>
+
+              <Panel title={t('detail.context.title')} description={t('detail.context.description')}>
+                {selectedEvent ? <EventContext event={selectedEvent} issue={issue} /> : <EmptyState title={t('detail.context.emptyTitle')} description={t('detail.context.emptyDescription')} />}
+              </Panel>
+
+              <Panel title={t('detail.facets.title')} description={t('detail.facets.description')}>
+                <FacetDistribution facets={facets} />
+              </Panel>
+
+              <Panel title={t('detail.relatedPerformance.title')} description={t('detail.relatedPerformance.description')}>
+                <RelatedPerformance samples={relatedPerformance} selectedEvent={selectedEvent} />
+              </Panel>
+            </div>
+          </section>
+        </main>
+
+        <aside className="space-y-4 xl:sticky xl:top-20 xl:max-h-[calc(100vh-6rem)] xl:self-start xl:overflow-y-auto xl:pr-1">
+          <Panel title={t('detail.workflow.railTitle')} description={t('detail.workflow.railDescription')}>
+            <div className="space-y-4">
+              <div>
+                <div className="mb-2 text-xs font-medium text-slate-400">{t('detail.workflow.statusTitle')}</div>
+                <div className="grid gap-2">
+                  {statusActions.map((action) => (
+                    <button
+                      key={action.status}
+                      disabled={issue.status === action.status || updating !== null}
+                      onClick={() => updateStatus(action.status)}
+                      className="app-button inline-flex items-center justify-center gap-2 border border-slate-700 px-3 text-sm text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      {action.icon}
+                      {updating === action.status ? t('detail.action.updating') : t(action.labelKey)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="border-t border-line pt-4">
+                <div className="mb-2 text-xs font-medium text-slate-400">{t('detail.workflow.ownerTitle')}</div>
+                <div className="grid gap-2">
+                  <label className="grid gap-2">
+                    <span className="sr-only">{t('detail.workflow.assignee')}</span>
+                    <select
+                      value={assigneeUserId}
+                      onChange={(event) => setAssigneeUserId(event.target.value)}
+                      className="app-control w-full px-3 text-sm"
+                    >
+                      <option value="">{t('detail.workflow.unassigned')}</option>
+                      {members.map((member) => (
+                        <option key={member.userId} value={member.userId}>
+                          {member.name || member.email}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    disabled={workflowAction !== null}
+                    onClick={assignIssue}
+                    className="app-button inline-flex items-center justify-center gap-2 border border-slate-700 px-3 text-sm text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    <User className="h-4 w-4" />
+                    {workflowAction === 'assign' ? t('detail.action.updating') : t('detail.workflow.saveAssignee')}
+                  </button>
+                </div>
+              </div>
+
+              <div className="border-t border-line pt-4">
+                <div className="mb-2 text-xs font-medium text-slate-400">{t('detail.workflow.fixTitle')}</div>
+                <div className="grid gap-2">
+                  <label className="grid gap-2">
+                    <span className="sr-only">{t('detail.workflow.fixedRelease')}</span>
+                    <input
+                      value={fixedRelease}
+                      onChange={(event) => setFixedRelease(event.target.value)}
+                      placeholder={t('detail.workflow.releasePlaceholder')}
+                      className="app-control w-full px-3 font-mono text-sm"
+                    />
+                  </label>
+                  <button
+                    disabled={workflowAction !== null || !fixedRelease.trim()}
+                    onClick={markFixed}
+                    className="app-button inline-flex items-center justify-center gap-2 border border-success/35 bg-success/10 px-3 text-sm text-emerald-200 hover:bg-success/15 disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    {workflowAction === 'fix' ? t('detail.action.updating') : t('detail.workflow.markFixed')}
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid gap-2 border-t border-line pt-4">
+                <WorkflowMeta label={t('detail.workflow.assignedTo')} value={assigneeLabel(members, issue.assigneeUserId) || t('detail.workflow.unassigned')} />
+                <WorkflowMeta label={t('detail.workflow.fixedIn')} value={issue.fixedInRelease || '-'} />
+                <WorkflowMeta label={t('detail.workflow.resolvedAt')} value={issue.resolvedAt ? formatFullDateTime(issue.resolvedAt) : '-'} />
+                <WorkflowMeta
+                  label={t('detail.workflow.regression')}
+                  value={issue.regressedAt ? t('detail.workflow.regressionMeta', { release: issue.regressedInRelease || '-', time: formatFullDateTime(issue.regressedAt) }) : '-'}
+                  tone={issue.regressedAt ? 'danger' : 'neutral'}
+                />
+              </div>
+            </div>
+          </Panel>
+
+          <Panel title={t('detail.comments.title')} description={t('detail.comments.description')}>
+            <div className="grid gap-3">
+              <textarea
+                value={commentBody}
+                onChange={(event) => setCommentBody(event.target.value)}
+                placeholder={t('detail.comments.placeholder')}
+                className="app-control min-h-24 w-full resize-y px-3 py-2 text-sm leading-6"
+              />
+              <div className="flex justify-end">
                 <button
-                  key={action.status}
-                  disabled={issue.status === action.status || updating !== null}
-                  onClick={() => updateStatus(action.status)}
+                  disabled={workflowAction !== null || !commentBody.trim()}
+                  onClick={addComment}
                   className="app-button inline-flex items-center gap-2 border border-slate-700 px-3 text-sm text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-45"
                 >
-                  {action.icon}
-                  {updating === action.status ? t('detail.action.updating') : t(action.labelKey)}
+                  <Code2 className="h-4 w-4" />
+                  {workflowAction === 'comment' ? t('detail.comments.adding') : t('detail.comments.add')}
                 </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-3 lg:grid-cols-2">
-            <label className="grid gap-2">
-              <span className="text-xs font-medium text-slate-400">{t('detail.workflow.assignee')}</span>
-              <select
-                value={assigneeUserId}
-                onChange={(event) => setAssigneeUserId(event.target.value)}
-                className="app-control w-full px-3 text-sm"
-              >
-                <option value="">{t('detail.workflow.unassigned')}</option>
-                {members.map((member) => (
-                  <option key={member.userId} value={member.userId}>
-                    {member.name || member.email}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="grid content-end">
-              <button
-                disabled={workflowAction !== null}
-                onClick={assignIssue}
-                className="app-button inline-flex items-center justify-center gap-2 border border-slate-700 px-3 text-sm text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-45"
-              >
-                <User className="h-4 w-4" />
-                {workflowAction === 'assign' ? t('detail.action.updating') : t('detail.workflow.saveAssignee')}
-              </button>
-            </div>
-            <label className="grid gap-2">
-              <span className="text-xs font-medium text-slate-400">{t('detail.workflow.fixedRelease')}</span>
-              <input
-                value={fixedRelease}
-                onChange={(event) => setFixedRelease(event.target.value)}
-                placeholder={t('detail.workflow.releasePlaceholder')}
-                className="app-control w-full px-3 font-mono text-sm"
-              />
-            </label>
-            <div className="grid content-end">
-              <button
-                disabled={workflowAction !== null || !fixedRelease.trim()}
-                onClick={markFixed}
-                className="app-button inline-flex items-center justify-center gap-2 border border-success/35 bg-success/10 px-3 text-sm text-emerald-200 hover:bg-success/15 disabled:cursor-not-allowed disabled:opacity-45"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                {workflowAction === 'fix' ? t('detail.action.updating') : t('detail.workflow.markFixed')}
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-2 md:grid-cols-2">
-            <WorkflowMeta label={t('detail.workflow.assignedTo')} value={assigneeLabel(members, issue.assigneeUserId) || t('detail.workflow.unassigned')} />
-            <WorkflowMeta label={t('detail.workflow.fixedIn')} value={issue.fixedInRelease || '-'} />
-            <WorkflowMeta label={t('detail.workflow.resolvedAt')} value={issue.resolvedAt ? formatFullDateTime(issue.resolvedAt) : '-'} />
-            <WorkflowMeta
-              label={t('detail.workflow.regression')}
-              value={issue.regressedAt ? t('detail.workflow.regressionMeta', { release: issue.regressedInRelease || '-', time: formatFullDateTime(issue.regressedAt) }) : '-'}
-              tone={issue.regressedAt ? 'danger' : 'neutral'}
-            />
-          </div>
-        </div>
-
-        <Panel title={t('detail.facets.title')} description={t('detail.facets.description')}>
-          <FacetDistribution facets={facets} />
-        </Panel>
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <Panel title={t('detail.comments.title')} description={t('detail.comments.description')}>
-          <div className="grid gap-3">
-            <textarea
-              value={commentBody}
-              onChange={(event) => setCommentBody(event.target.value)}
-              placeholder={t('detail.comments.placeholder')}
-              className="app-control min-h-24 w-full resize-y px-3 py-2 text-sm leading-6"
-            />
-            <div className="flex justify-end">
-              <button
-                disabled={workflowAction !== null || !commentBody.trim()}
-                onClick={addComment}
-                className="app-button inline-flex items-center gap-2 border border-slate-700 px-3 text-sm text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-45"
-              >
-                <Code2 className="h-4 w-4" />
-                {workflowAction === 'comment' ? t('detail.comments.adding') : t('detail.comments.add')}
-              </button>
-            </div>
-            <CommentList comments={comments} />
-          </div>
-        </Panel>
-
-        <Panel title={t('detail.ops.title')} description={t('detail.ops.description')}>
-          <div className="space-y-4">
-            <div className="grid gap-2">
-              <label className="text-xs font-medium text-slate-400" htmlFor="merge-target">
-                {t('detail.ops.mergeTarget')}
-              </label>
-              <input
-                id="merge-target"
-                value={targetIssueId}
-                onChange={(event) => setTargetIssueId(event.target.value)}
-                className="app-control w-full px-3 font-mono text-sm"
-                placeholder={t('detail.ops.mergePlaceholder')}
-              />
-              <button
-                disabled={workflowAction !== null || !targetIssueId.trim()}
-                onClick={mergeIssue}
-                className="app-button inline-flex items-center justify-center gap-2 border border-warning/35 bg-warning/10 px-3 text-sm text-amber-200 hover:bg-warning/15 disabled:cursor-not-allowed disabled:opacity-45"
-              >
-                <GitBranch className="h-4 w-4" />
-                {workflowAction === 'merge' ? t('detail.ops.merging') : t('detail.ops.merge')}
-              </button>
-            </div>
-
-            <div className="border-t border-line pt-4">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <div className="text-xs font-medium text-slate-400">{t('detail.ops.splitSamples')}</div>
-                <div className="font-mono text-xs text-slate-500">{t('detail.ops.selected', { count: selectedSplitIds.length })}</div>
               </div>
-              <div className="max-h-52 space-y-2 overflow-y-auto pr-1">
-                {events.slice(0, 8).map((event) => {
-                  const checked = selectedSplitIds.includes(event.id)
-                  return (
-                    <label key={event.id} className="flex min-h-11 cursor-pointer items-start gap-2 rounded-md border border-line bg-slate-950/30 p-2 hover:bg-slate-800/55">
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() =>
-                          setSelectedSplitIds((current) =>
-                            checked ? current.filter((id) => id !== event.id) : [...current, event.id],
-                          )
-                        }
-                        className="mt-1 h-4 w-4 accent-primary"
-                      />
-                      <span className="min-w-0">
-                        <span className="block truncate font-mono text-xs text-slate-300">{event.id}</span>
-                        <span className="mt-1 block line-clamp-1 text-xs text-slate-500">{event.message}</span>
-                      </span>
-                    </label>
-                  )
-                })}
+              <div className="max-h-80 overflow-y-auto pr-1">
+                <CommentList comments={comments} />
               </div>
-              <button
-                disabled={workflowAction !== null || selectedSplitIds.length === 0}
-                onClick={splitIssue}
-                className="app-button mt-3 inline-flex w-full items-center justify-center gap-2 border border-primary/40 bg-primary/10 px-3 text-sm text-indigo-200 hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-45"
-              >
-                <GitBranch className="h-4 w-4" />
-                {workflowAction === 'split' ? t('detail.ops.splitting') : t('detail.ops.split')}
-              </button>
             </div>
-          </div>
-        </Panel>
-      </section>
+          </Panel>
 
-      <AiAnalysisPanel
-        title={t('detail.ai.title')}
-        description={t('detail.ai.description')}
-        analyzeLabel={t('detail.ai.action')}
-        emptyTitle={t('detail.ai.emptyTitle')}
-        emptyDescription={t('detail.ai.emptyDescription')}
-        analysis={aiAnalysis}
-        loading={aiLoading}
-        error={aiError}
-        onAnalyze={generateAiAnalysis}
-      />
+          <AiAnalysisPanel
+            title={t('detail.ai.title')}
+            description={t('detail.ai.description')}
+            analyzeLabel={t('detail.ai.action')}
+            emptyTitle={t('detail.ai.emptyTitle')}
+            emptyDescription={t('detail.ai.emptyDescription')}
+            analysis={aiAnalysis}
+            loading={aiLoading}
+            error={aiError}
+            onAnalyze={generateAiAnalysis}
+          />
 
-      <section className="grid gap-4 xl:grid-cols-[380px_minmax(0,1fr)]">
-        <Panel title={t('detail.timeline.title')} description={t('detail.timeline.description', { count: events.length })}>
-          {events.length === 0 ? (
-            <EmptyState title={t('detail.timeline.emptyTitle')} description={t('detail.timeline.emptyDescription')} />
-          ) : (
-            <div className="space-y-2">
-              {events.map((event) => {
-                const active = event.id === selectedEvent?.id
-                return (
-                  <button
-                    key={event.id}
-                    onClick={() => setSelectedEventId(event.id)}
-                    className={`w-full rounded-md border p-3 text-left transition ${
-                      active ? 'border-primary/50 bg-primary/10' : 'border-line bg-slate-950/35 hover:bg-slate-800/55'
-                    }`}
-                  >
-                    <div className="flex min-h-[28px] items-center justify-between gap-2">
-                      <LevelBadge level={asIssueLevel(event.level)} />
-                      <span className="font-mono text-xs text-slate-500">{formatFullDateTime(event.timestamp)}</span>
-                    </div>
-                    <div className="mt-2 line-clamp-2 font-mono text-xs leading-5 text-slate-300">{event.message}</div>
-                    <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
-                      {event.environment && <span>{event.environment}</span>}
-                      {event.release && <span>{event.release}</span>}
-                    </div>
-                  </button>
-                )
-              })}
+          <Panel title={t('detail.ops.title')} description={t('detail.ops.description')}>
+            <div className="space-y-4">
+              <div className="grid gap-2">
+                <label className="text-xs font-medium text-slate-400" htmlFor="merge-target">
+                  {t('detail.ops.mergeTarget')}
+                </label>
+                <input
+                  id="merge-target"
+                  value={targetIssueId}
+                  onChange={(event) => setTargetIssueId(event.target.value)}
+                  className="app-control w-full px-3 font-mono text-sm"
+                  placeholder={t('detail.ops.mergePlaceholder')}
+                />
+                <button
+                  disabled={workflowAction !== null || !targetIssueId.trim()}
+                  onClick={mergeIssue}
+                  className="app-button inline-flex items-center justify-center gap-2 border border-warning/35 bg-warning/10 px-3 text-sm text-amber-200 hover:bg-warning/15 disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  <GitBranch className="h-4 w-4" />
+                  {workflowAction === 'merge' ? t('detail.ops.merging') : t('detail.ops.merge')}
+                </button>
+              </div>
+
+              <div className="border-t border-line pt-4">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <div className="text-xs font-medium text-slate-400">{t('detail.ops.splitSamples')}</div>
+                  <div className="font-mono text-xs text-slate-500">{t('detail.ops.selected', { count: selectedSplitIds.length })}</div>
+                </div>
+                <div className="max-h-52 space-y-2 overflow-y-auto pr-1">
+                  {events.slice(0, 8).map((event) => {
+                    const checked = selectedSplitIds.includes(event.id)
+                    return (
+                      <label key={event.id} className="flex min-h-11 cursor-pointer items-start gap-2 rounded-md border border-line bg-slate-950/30 p-2 hover:bg-slate-800/55">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() =>
+                            setSelectedSplitIds((current) =>
+                              checked ? current.filter((id) => id !== event.id) : [...current, event.id],
+                            )
+                          }
+                          className="mt-1 h-4 w-4 accent-primary"
+                        />
+                        <span className="min-w-0">
+                          <span className="block truncate font-mono text-xs text-slate-300">{event.id}</span>
+                          <span className="mt-1 block line-clamp-1 text-xs text-slate-500">{event.message}</span>
+                        </span>
+                      </label>
+                    )
+                  })}
+                </div>
+                <button
+                  disabled={workflowAction !== null || selectedSplitIds.length === 0}
+                  onClick={splitIssue}
+                  className="app-button mt-3 inline-flex w-full items-center justify-center gap-2 border border-primary/40 bg-primary/10 px-3 text-sm text-indigo-200 hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  <GitBranch className="h-4 w-4" />
+                  {workflowAction === 'split' ? t('detail.ops.splitting') : t('detail.ops.split')}
+                </button>
+              </div>
             </div>
-          )}
-        </Panel>
-
-        <div className="space-y-4">
-          <Panel title={t('detail.stack.title')} description={t('detail.stack.description')}>
-            <StackTrace frames={selectedEvent?.stacktrace ?? []} />
           </Panel>
-
-          <Panel title={t('detail.breadcrumbs.title')} description={t('detail.breadcrumbs.description')}>
-            <BreadcrumbTimeline items={selectedEvent?.breadcrumbs ?? []} />
-          </Panel>
-
-          <Panel title={t('detail.sdkSignals.title')} description={t('detail.sdkSignals.description')}>
-            {selectedEvent ? <SdkSignals event={selectedEvent} /> : <EmptyState title={t('detail.sdkSignals.emptyTitle')} description={t('detail.sdkSignals.emptyDescription')} />}
-          </Panel>
-
-          <Panel title={t('detail.relatedPerformance.title')} description={t('detail.relatedPerformance.description')}>
-            <RelatedPerformance samples={relatedPerformance} selectedEvent={selectedEvent} />
-          </Panel>
-
-          <Panel title={t('detail.context.title')} description={t('detail.context.description')}>
-            {selectedEvent ? <EventContext event={selectedEvent} issue={issue} /> : <EmptyState title={t('detail.context.emptyTitle')} description={t('detail.context.emptyDescription')} />}
-          </Panel>
-        </div>
+        </aside>
       </section>
     </div>
   )
