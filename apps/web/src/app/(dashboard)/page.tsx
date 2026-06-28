@@ -6,9 +6,12 @@ import {
   Activity,
   AlertTriangle,
   ArrowUpRight,
+  CheckCircle2,
   Clock3,
   Database,
+  FileCode2,
   Globe2,
+  PackageCheck,
   RadioTower,
   Server,
   ShieldAlert,
@@ -70,12 +73,12 @@ export default function OverviewPage() {
     setLoading(true)
     Promise.all([
       api.issues.list({ projectId, timeRange: '30d', page: '1' }),
-      api.stats.issues(projectId, 14).catch(() => []),
-      api.stats.performance(projectId).catch(() => []),
-      api.stats.performanceDevices(projectId).catch(() => []),
-      api.stats.geo(projectId).catch(() => []),
-      api.health().catch(() => null),
-      api.operations.queues(projectId).catch(() => null),
+      api.stats.issues(projectId, 14),
+      api.stats.performance(projectId),
+      api.stats.performanceDevices(projectId),
+      api.stats.geo(projectId),
+      api.health(),
+      api.operations.queues(projectId),
     ])
       .then(([issueResult, trendResult, performanceResult, deviceResult, geoResult, healthResult, operationsResult]) => {
         setIssues(issueResult.rows)
@@ -89,19 +92,12 @@ export default function OverviewPage() {
         setError('')
       })
       .catch(() => {
-        setIssues([])
-        setTotal(0)
-        setTrend([])
-        setPerformance([])
-        setDevices([])
-        setGeo([])
-        setHealth(null)
-        setOperations(null)
         setError(t('overview.loadError'))
       })
       .finally(() => setLoading(false))
   }, [projectId, t])
 
+  const hasLoadError = Boolean(error)
   const selectedProject = projects.find((item) => item.id === projectId)
   const unresolved = issues.filter((issue) => issue.status === 'unresolved').length
   const severe = issues.filter((issue) => issue.status === 'unresolved' && ['fatal', 'error'].includes(issue.level)).length
@@ -125,6 +121,7 @@ export default function OverviewPage() {
     return ratingWeight[b.rating ?? 'good'] - ratingWeight[a.rating ?? 'good'] || toNumber(b.count) - toNumber(a.count)
   })[0]
   const topVitalRating = topVital?.rating ?? 'good'
+  const webVitalCount = webVitals.reduce((sum, item) => sum + toNumber(item.count), 0)
 
   return (
     <div className="space-y-5">
@@ -144,33 +141,77 @@ export default function OverviewPage() {
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label={t('overview.metric.total')}
-          value={loading ? '...' : compactNumber(total)}
+          value={loading ? '...' : hasLoadError ? '-' : compactNumber(total)}
           hint={selectedProject ? selectedProject.slug : t('overview.metric.noProject')}
           icon={<AlertTriangle className="h-5 w-5 text-red-300" />}
           tone="danger"
         />
         <MetricCard
           label={t('overview.metric.unresolved')}
-          value={loading ? '...' : unresolved}
+          value={loading ? '...' : hasLoadError ? '-' : unresolved}
           hint={t('overview.metric.window')}
           icon={<Clock3 className="h-5 w-5 text-amber-300" />}
           tone="warning"
         />
         <MetricCard
           label={t('overview.metric.priority')}
-          value={loading ? '...' : severe}
+          value={loading ? '...' : hasLoadError ? '-' : severe}
           hint={t('overview.metric.priorityHint')}
           icon={<RadioTower className="h-5 w-5 text-indigo-300" />}
           tone="primary"
         />
         <MetricCard
           label={t('overview.metric.users')}
-          value={loading ? '...' : compactNumber(affectedUsers)}
+          value={loading ? '...' : hasLoadError ? '-' : compactNumber(affectedUsers)}
           hint={t('overview.metric.usersHint')}
           icon={<Users className="h-5 w-5 text-emerald-300" />}
           tone="success"
         />
       </section>
+
+      <Panel
+        title={t('overview.webSetup.title')}
+        description={t('overview.webSetup.description')}
+        action={
+          <div className="flex flex-wrap gap-2">
+            <Link href="/settings" className="app-button inline-flex items-center gap-2 border border-primary/35 bg-primary/10 px-3 text-sm text-indigo-200 hover:bg-primary/15">
+              <PackageCheck className="h-4 w-4" />
+              {t('overview.webSetup.openSettings')}
+            </Link>
+            <Link href="/docs#verify-ingestion" className="app-button inline-flex items-center gap-2 border border-slate-700 px-3 text-sm text-slate-200 hover:bg-slate-800">
+              <ArrowUpRight className="h-4 w-4" />
+              {t('overview.webSetup.openDocs')}
+            </Link>
+          </div>
+        }
+      >
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <WebSetupItem
+            icon={<PackageCheck className="h-4 w-4" />}
+            label={t('overview.webSetup.projectStep')}
+            value={selectedProject ? t('overview.webSetup.projectReady') : t('overview.webSetup.projectPending')}
+            ready={Boolean(selectedProject)}
+          />
+          <WebSetupItem
+            icon={<AlertTriangle className="h-4 w-4" />}
+            label={t('overview.webSetup.issueStep')}
+            value={hasLoadError ? t('overview.loadError') : total > 0 ? t('overview.webSetup.issueReady', { count: compactNumber(total) }) : t('overview.webSetup.issuePending')}
+            ready={!hasLoadError && total > 0}
+          />
+          <WebSetupItem
+            icon={<Activity className="h-4 w-4" />}
+            label={t('overview.webSetup.performanceStep')}
+            value={hasLoadError ? t('overview.loadError') : webVitalCount > 0 ? t('overview.webSetup.performanceReady', { count: compactNumber(webVitalCount) }) : t('overview.webSetup.performancePending')}
+            ready={!hasLoadError && webVitalCount > 0}
+          />
+          <WebSetupItem
+            icon={<FileCode2 className="h-4 w-4" />}
+            label={t('overview.webSetup.sourcemapStep')}
+            value={t('overview.webSetup.sourcemapHint')}
+            ready={false}
+          />
+        </div>
+      </Panel>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(340px,0.75fr)]">
         <Panel
@@ -183,7 +224,9 @@ export default function OverviewPage() {
             </Link>
           }
         >
-          {trendRows.length === 0 ? (
+          {hasLoadError ? (
+            <EmptyState title={t('overview.trend.emptyTitle')} description={t('overview.loadError')} />
+          ) : trendRows.length === 0 ? (
             <EmptyState title={t('overview.trend.emptyTitle')} description={t('overview.trend.emptyDescription')} />
           ) : (
             <div className="h-[330px]">
@@ -214,30 +257,30 @@ export default function OverviewPage() {
             <RiskBlock
               icon={<ShieldAlert className="h-4 w-4" />}
               label={t('overview.risk.score')}
-              value={loading ? '...' : `${activeSignals} / 4`}
-              detail={activeSignals > 0 ? t('overview.risk.review') : t('overview.risk.clear')}
-              tone={activeSignals > 0 ? 'danger' : 'success'}
+              value={loading ? '...' : hasLoadError ? '-' : `${activeSignals} / 4`}
+              detail={hasLoadError ? t('overview.loadError') : activeSignals > 0 ? t('overview.risk.review') : t('overview.risk.clear')}
+              tone={hasLoadError || activeSignals > 0 ? 'danger' : 'success'}
             />
             <RiskBlock
               icon={<Activity className="h-4 w-4" />}
               label={t('overview.health.title')}
-              value={health?.ok === false ? t('common.check') : t('common.healthy')}
-              detail={`${healthItems.filter(([, item]) => item?.ok === false).length} / ${Math.max(1, healthItems.length)} ${t('overview.risk.failedChecks')}`}
-              tone={health?.ok === false ? 'danger' : 'success'}
+              value={hasLoadError ? '-' : health?.ok === false ? t('common.check') : t('common.healthy')}
+              detail={hasLoadError ? t('overview.loadError') : `${healthItems.filter(([, item]) => item?.ok === false).length} / ${Math.max(1, healthItems.length)} ${t('overview.risk.failedChecks')}`}
+              tone={hasLoadError || health?.ok === false ? 'danger' : 'success'}
             />
             <RiskBlock
               icon={<Server className="h-4 w-4" />}
               label={t('overview.health.ingest')}
-              value={`${compactNumber(health?.ingest?.accepted ?? 0)} / ${compactNumber(rejectedIngest)}`}
-              detail={t('overview.risk.acceptedRejected')}
-              tone={rejectedIngest > 0 ? 'warning' : 'primary'}
+              value={hasLoadError ? '-' : `${compactNumber(health?.ingest?.accepted ?? 0)} / ${compactNumber(rejectedIngest)}`}
+              detail={hasLoadError ? t('overview.loadError') : t('overview.risk.acceptedRejected')}
+              tone={hasLoadError ? 'danger' : rejectedIngest > 0 ? 'warning' : 'primary'}
             />
             <RiskBlock
               icon={<Workflow className="h-4 w-4" />}
               label={t('overview.risk.queue')}
-              value={loading ? '...' : compactNumber(failedQueueJobs)}
-              detail={t('overview.risk.failedJobs')}
-              tone={failedQueueJobs > 0 ? 'danger' : 'success'}
+              value={loading ? '...' : hasLoadError ? '-' : compactNumber(failedQueueJobs)}
+              detail={hasLoadError ? t('overview.loadError') : t('overview.risk.failedJobs')}
+              tone={hasLoadError || failedQueueJobs > 0 ? 'danger' : 'success'}
             />
             {topVital && (
               <div className="app-panel-muted p-4">
@@ -251,7 +294,7 @@ export default function OverviewPage() {
               </div>
             )}
             <div className="grid gap-2 pt-1">
-              <HealthRow label="API" ok={health?.ok} icon={<Activity className="h-4 w-4" />} />
+              <HealthRow label="API" ok={hasLoadError ? false : health?.ok} icon={<Activity className="h-4 w-4" />} />
               {healthItems.slice(0, 4).map(([name, item]) => (
                 <HealthRow key={name} label={name.toUpperCase()} ok={item?.ok !== false} icon={<Database className="h-4 w-4" />} />
               ))}
@@ -261,7 +304,7 @@ export default function OverviewPage() {
       </section>
 
       <Panel title={t('overview.geo.title')} description={t('overview.geo.description')}>
-        <WorldAccessMap data={geo} emptyText={t('overview.geo.empty')} totalLabel={t('overview.geo.total')} />
+        <WorldAccessMap data={hasLoadError ? [] : geo} emptyText={hasLoadError ? t('overview.loadError') : t('overview.geo.empty')} totalLabel={t('overview.geo.total')} />
       </Panel>
 
       <Panel
@@ -280,6 +323,8 @@ export default function OverviewPage() {
               <div key={index} className="h-24 animate-pulse rounded-md bg-slate-800/70" />
             ))}
           </div>
+        ) : hasLoadError ? (
+          <EmptyState title={t('overview.devices.emptyTitle')} description={t('overview.loadError')} />
         ) : devices.length === 0 ? (
           <EmptyState title={t('overview.devices.emptyTitle')} description={t('overview.devices.emptyDescription')} />
         ) : (
@@ -312,7 +357,9 @@ export default function OverviewPage() {
         <Panel
           title={t('overview.recent.title')}
           description={
-            poorVitals > 0
+            hasLoadError
+              ? t('overview.loadError')
+              : poorVitals > 0
               ? t('overview.recent.performancePoor', { count: poorVitals })
               : t('overview.recent.performanceGood')
           }
@@ -329,6 +376,8 @@ export default function OverviewPage() {
                 <div key={index} className="h-14 animate-pulse rounded-md bg-slate-800/70" />
               ))}
             </div>
+          ) : hasLoadError ? (
+            <EmptyState title={t('overview.recent.emptyTitle')} description={t('overview.loadError')} />
           ) : recentIssues.length === 0 ? (
             <EmptyState title={t('overview.recent.emptyTitle')} description={t('overview.recent.emptyDescription')} />
           ) : (
@@ -366,10 +415,10 @@ export default function OverviewPage() {
 
         <Panel title={t('overview.actions.title')} description={t('overview.actions.description')}>
           <div className="space-y-3">
-            <ActionItem icon={<AlertTriangle className="h-4 w-4" />} label={t('overview.metric.priority')} value={severe} tone={severe > 0 ? 'danger' : 'success'} />
-            <ActionItem icon={<Activity className="h-4 w-4" />} label={t('overview.recent.performance')} value={poorVitals} tone={poorVitals > 0 ? 'warning' : 'success'} />
-            <ActionItem icon={<Workflow className="h-4 w-4" />} label={t('overview.risk.queue')} value={failedQueueJobs} tone={failedQueueJobs > 0 ? 'danger' : 'success'} />
-            <ActionItem icon={<Globe2 className="h-4 w-4" />} label={t('overview.geo.visited')} value={geo.length} tone="primary" />
+            <ActionItem icon={<AlertTriangle className="h-4 w-4" />} label={t('overview.metric.priority')} value={hasLoadError ? '-' : severe} tone={hasLoadError || severe > 0 ? 'danger' : 'success'} />
+            <ActionItem icon={<Activity className="h-4 w-4" />} label={t('overview.recent.performance')} value={hasLoadError ? '-' : poorVitals} tone={hasLoadError || poorVitals > 0 ? 'warning' : 'success'} />
+            <ActionItem icon={<Workflow className="h-4 w-4" />} label={t('overview.risk.queue')} value={hasLoadError ? '-' : failedQueueJobs} tone={hasLoadError || failedQueueJobs > 0 ? 'danger' : 'success'} />
+            <ActionItem icon={<Globe2 className="h-4 w-4" />} label={t('overview.geo.visited')} value={hasLoadError ? '-' : geo.length} tone="primary" />
           </div>
         </Panel>
       </section>
@@ -418,7 +467,7 @@ function ActionItem({
 }: {
   icon: ReactNode
   label: string
-  value: number
+  value: number | string
   tone: 'danger' | 'warning' | 'success' | 'primary'
 }) {
   const toneClass = {
@@ -433,7 +482,32 @@ function ActionItem({
         <span className={toneClass}>{icon}</span>
         <span className="truncate">{label}</span>
       </div>
-      <span className={`font-mono text-sm ${toneClass}`}>{compactNumber(value)}</span>
+      <span className={`font-mono text-sm ${toneClass}`}>{typeof value === 'number' ? compactNumber(value) : value}</span>
+    </div>
+  )
+}
+
+function WebSetupItem({
+  icon,
+  label,
+  value,
+  ready,
+}: {
+  icon: ReactNode
+  label: string
+  value: string
+  ready: boolean
+}) {
+  return (
+    <div className={`app-panel-muted min-h-[116px] p-4 ${ready ? 'border-success/35 bg-success/10' : 'border-slate-700 bg-slate-950/35'}`}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
+          {icon}
+          {label}
+        </div>
+        <CheckCircle2 className={`h-4 w-4 ${ready ? 'text-emerald-300' : 'text-slate-600'}`} />
+      </div>
+      <div className={`mt-3 text-sm leading-6 ${ready ? 'text-emerald-100' : 'text-slate-300'}`}>{value}</div>
     </div>
   )
 }

@@ -145,7 +145,7 @@ ErrorTracker.setUser({ id: user.id, email: user.email })
 ErrorTracker.setTag('tenant', tenant.slug)
 ErrorTracker.addBreadcrumb({
   category: 'navigation',
-  message: 'Opened checkout',
+  message: currentRouteName,
 })`,
       },
       'upload-sourcemap': {
@@ -203,8 +203,8 @@ Users affected: 5`,
         ],
         code: `Issue detail -> Workflow status
 
-Assignee: on-call-web
-Fixed in release: web@2.9.3
+Assignee: selectedAssignee
+Fixed in release: APP_RELEASE
 Facets: release / environment / tags
 Manual grouping: merge target id or split selected events`,
       },
@@ -238,10 +238,10 @@ Manual grouping: merge target id or split selected events`,
           'Regression alerts include the release when available, so responders can compare the fixed and regressed versions.',
           'Facets show whether a regression is isolated to one release or environment before you roll back broadly.',
         ],
-        code: `release: 'web@2.9.3'
+        code: `release: process.env.APP_RELEASE
 
-Fix issue -> Fixed in release web@2.9.3
-Next matching event -> status unresolved, regressed in web@2.9.4`,
+Fix issue -> Fixed in release APP_RELEASE
+Next matching event -> status unresolved, regressed in NEXT_RELEASE`,
       },
       'self-monitoring': {
         title: 'Monitor this platform',
@@ -269,7 +269,7 @@ ERROR_TRACKER_RELEASE=api@2.8.1`,
         bullets: [
           'Open an issue detail page and run AI repair guidance after stack trace, breadcrumbs, and runtime context are captured.',
           'Open Performance and run AI optimization guidance for the selected project after Web Vitals samples arrive.',
-          'Leave OPENAI_API_KEY empty to use deterministic local rules for demos and restricted environments.',
+          'Leave OPENAI_API_KEY empty to use deterministic local rules in restricted environments.',
           'Set OPENAI_API_KEY, OPENAI_MODEL, and optionally OPENAI_BASE_URL on the API service, then enable External AI analysis per project in Settings.',
           'Error, request, user, and breadcrumb context is scrubbed before the provider call, and each generation is recorded in audit logs.',
         ],
@@ -375,7 +375,7 @@ init({
 ErrorTracker.setTag('tenant', tenant.slug)
 ErrorTracker.addBreadcrumb({
   category: 'navigation',
-  message: 'Opened checkout',
+  message: currentRouteName,
 })`,
       },
       'upload-sourcemap': {
@@ -435,8 +435,8 @@ Content-Type: application/json
         ],
         code: `问题详情 -> Workflow status
 
-Assignee: on-call-web
-Fixed in release: web@2.9.3
+Assignee: selectedAssignee
+Fixed in release: APP_RELEASE
 Facets: release / environment / tags
 Manual grouping: merge target id or split selected events`,
       },
@@ -470,10 +470,10 @@ Manual grouping: merge target id or split selected events`,
           '回归告警会尽量带上 release，方便响应人比较修复版本和复发版本。',
           'facets 能先判断回归是否只影响某个 release 或 environment，再决定是否扩大回滚范围。',
         ],
-        code: `release: 'web@2.9.3'
+        code: `release: process.env.APP_RELEASE
 
-Fix issue -> Fixed in release web@2.9.3
-Next matching event -> status unresolved, regressed in web@2.9.4`,
+Fix issue -> Fixed in release APP_RELEASE
+Next matching event -> status unresolved, regressed in NEXT_RELEASE`,
       },
       'self-monitoring': {
         title: '监控平台自身',
@@ -501,7 +501,7 @@ ERROR_TRACKER_RELEASE=api@2.8.1`,
         bullets: [
           '进入问题详情页，在调用栈、路径轨迹和运行上下文齐全后生成 AI 修复建议。',
           '进入 Performance 页面，在所选项目有 Web Vitals 样本后生成 AI 优化建议。',
-          'OPENAI_API_KEY 留空时使用确定性的本地规则，适合演示和受限环境。',
+          'OPENAI_API_KEY 留空时使用确定性的本地规则，适合受限环境。',
           '在 API 服务配置 OPENAI_API_KEY、OPENAI_MODEL，也可以配置 OPENAI_BASE_URL，并在 Settings 为对应项目开启外部 AI 分析。',
           '错误、请求、用户和路径轨迹上下文会在调用 provider 前脱敏，每次生成都会记录审计日志。',
         ],

@@ -77,6 +77,8 @@ export default function SettingsPage() {
   )
   const ingestUrl = selectedProject ? `${API_BASE}/ingest/${selectedProject.id}` : ''
   const projectToken = selectedProject?.dsnToken ?? ''
+  const webEnv = webEnvBlock(ingestUrl, projectToken)
+  const smokeSnippet = smokeTestSnippet()
 
   useEffect(() => {
     if (!selectedProject || activeTab !== 'members') return
@@ -579,6 +581,62 @@ export default function SettingsPage() {
               </Panel>
 
               <Panel
+                title={t('settings.webSetup.title')}
+                description={t('settings.webSetup.description')}
+                action={
+                  <Link
+                    href="/docs#verify-ingestion"
+                    className="app-button inline-flex items-center justify-center gap-2 border border-primary/35 bg-primary/10 px-3 text-sm text-indigo-200 hover:bg-primary/15"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                    {t('settings.step.verify')}
+                  </Link>
+                }
+              >
+                <div className="grid gap-4 xl:grid-cols-2">
+                  <div className="app-panel-muted overflow-hidden">
+                    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-4 py-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 text-sm font-medium text-slate-100">
+                          <KeyRound className="h-4 w-4 text-indigo-300" />
+                          {t('settings.webSetup.envTitle')}
+                        </div>
+                        <p className="mt-1 text-xs leading-5 text-slate-500">{t('settings.webSetup.envDescription')}</p>
+                      </div>
+                      <button
+                        onClick={() => copy(webEnv, 'settings.toast.envCopied')}
+                        className="app-button inline-flex items-center gap-2 border border-slate-700 px-3 text-sm text-slate-200 hover:bg-slate-800"
+                      >
+                        <Copy className="h-4 w-4" />
+                        {t('settings.webSetup.copyEnv')}
+                      </button>
+                    </div>
+                    <pre className="app-code overflow-x-auto rounded-none border-0 p-4 text-xs text-slate-300">{webEnv}</pre>
+                  </div>
+
+                  <div className="app-panel-muted overflow-hidden">
+                    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-4 py-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 text-sm font-medium text-slate-100">
+                          <Rocket className="h-4 w-4 text-emerald-300" />
+                          {t('settings.webSetup.smokeTitle')}
+                        </div>
+                        <p className="mt-1 text-xs leading-5 text-slate-500">{t('settings.webSetup.smokeDescription')}</p>
+                      </div>
+                      <button
+                        onClick={() => copy(smokeSnippet, 'settings.toast.smokeCopied')}
+                        className="app-button inline-flex items-center gap-2 border border-slate-700 px-3 text-sm text-slate-200 hover:bg-slate-800"
+                      >
+                        <Clipboard className="h-4 w-4" />
+                        {t('settings.webSetup.copySmoke')}
+                      </button>
+                    </div>
+                    <pre className="app-code overflow-x-auto rounded-none border-0 p-4 text-xs text-slate-300">{smokeSnippet}</pre>
+                  </div>
+                </div>
+              </Panel>
+
+              <Panel
                 title={t('settings.sdk.title')}
                 description={t('settings.sdk.description')}
                 action={
@@ -1042,6 +1100,19 @@ init({
     replay: true,
   },
 })`
+}
+
+function webEnvBlock(dsn: string, token: string): string {
+  return `NEXT_PUBLIC_ERROR_TRACKER_DSN=${dsn}
+NEXT_PUBLIC_ERROR_TRACKER_TOKEN=${token}
+NEXT_PUBLIC_ERROR_TRACKER_ENVIRONMENT=production
+NEXT_PUBLIC_ERROR_TRACKER_RELEASE=web@${new Date().toISOString().slice(0, 10)}`
+}
+
+function smokeTestSnippet(): string {
+  return `setTimeout(() => {
+  throw new Error('error-tracker web smoke')
+}, 1000)`
 }
 
 function normalizeSlug(value: string): string {

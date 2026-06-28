@@ -40,6 +40,7 @@ export default function PerformancePage() {
   const [selectedSessionId, setSelectedSessionId] = useState(searchParams.get('sessionId') ?? '')
   const [deviceDetail, setDeviceDetail] = useState<PerformanceDeviceDetail | null>(null)
   const [deviceLoading, setDeviceLoading] = useState(false)
+  const [deviceError, setDeviceError] = useState('')
   const [timeWindow, setTimeWindow] = useState<(typeof timeWindows)[number]['days']>(7)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -73,8 +74,6 @@ export default function PerformancePage() {
         setError('')
       })
       .catch(() => {
-        setData([])
-        setDevices([])
         setError(t('performance.loadError'))
       })
       .finally(() => setLoading(false))
@@ -83,15 +82,20 @@ export default function PerformancePage() {
   useEffect(() => {
     if (!projectId || !selectedDeviceId) {
       setDeviceDetail(null)
+      setDeviceError('')
       return
     }
     setDeviceLoading(true)
+    setDeviceError('')
     api.stats
       .performanceDevice(projectId, selectedDeviceId, timeWindow, selectedSessionId || undefined)
-      .then(setDeviceDetail)
-      .catch(() => setDeviceDetail(null))
+      .then((detail) => {
+        setDeviceDetail(detail)
+        setDeviceError('')
+      })
+      .catch(() => setDeviceError(t('performance.loadError')))
       .finally(() => setDeviceLoading(false))
-  }, [projectId, selectedDeviceId, selectedSessionId, timeWindow])
+  }, [projectId, selectedDeviceId, selectedSessionId, timeWindow, t])
 
   const webVitalRows = useMemo(() => data.filter((item) => (item.kind ?? 'web-vital') === 'web-vital'), [data])
   const networkRows = useMemo(() => data.filter((item) => ['resource', 'http'].includes(item.kind ?? '')), [data])
@@ -130,6 +134,7 @@ export default function PerformancePage() {
   const longTaskAvg = weightedAverage(longTaskRows)
   const longTaskSlowest = Math.max(0, ...longTaskRows.map((item) => toNumber(item.slowest ?? item.avg_value)))
   const telemetryTotal = totalSamples + networkTotal + longTaskTotal
+  const hasLoadError = Boolean(error)
 
   async function generateAiAnalysis() {
     if (!projectId) return
@@ -158,6 +163,7 @@ export default function PerformancePage() {
     setSelectedDeviceId('')
     setSelectedSessionId('')
     setDeviceDetail(null)
+    setDeviceError('')
     if (projectId) router.replace(`/performance?${new URLSearchParams({ projectId })}`)
   }
 
@@ -166,6 +172,7 @@ export default function PerformancePage() {
     setSelectedDeviceId('')
     setSelectedSessionId('')
     setDeviceDetail(null)
+    setDeviceError('')
     if (nextProjectId) router.replace(`/performance?${new URLSearchParams({ projectId: nextProjectId })}`)
   }
 
@@ -205,18 +212,20 @@ export default function PerformancePage() {
       )}
 
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-        <MetricCard icon={<Activity className="h-5 w-5 text-indigo-300" />} label={t('performance.metric.total')} value={loading ? '...' : compactNumber(telemetryTotal)} tone="primary" />
-        <MetricCard icon={<Gauge className="h-5 w-5 text-sky-300" />} label={t('performance.metric.webVitals')} value={loading ? '...' : compactNumber(totalSamples)} tone="primary" />
-        <MetricCard icon={<SignalHigh className="h-5 w-5 text-red-300" />} label={t('performance.metric.poor')} value={loading ? '...' : compactNumber(poorSamples)} tone="danger" />
-        <MetricCard icon={<MonitorDot className="h-5 w-5 text-emerald-300" />} label={t('performance.metric.covered')} value={`${coveredMetrics} / ${metricNames.length}`} tone="success" />
-        <MetricCard icon={<SignalHigh className="h-5 w-5 text-indigo-300" />} label={t('performance.metric.network')} value={loading ? '...' : compactNumber(networkTotal)} tone="primary" />
-        <MetricCard icon={<TimerReset className="h-5 w-5 text-amber-300" />} label={t('performance.metric.longTasks')} value={loading ? '...' : compactNumber(longTaskTotal)} tone="warning" />
+        <MetricCard icon={<Activity className="h-5 w-5 text-indigo-300" />} label={t('performance.metric.total')} value={loading ? '...' : hasLoadError ? '-' : compactNumber(telemetryTotal)} tone="primary" />
+        <MetricCard icon={<Gauge className="h-5 w-5 text-sky-300" />} label={t('performance.metric.webVitals')} value={loading ? '...' : hasLoadError ? '-' : compactNumber(totalSamples)} tone="primary" />
+        <MetricCard icon={<SignalHigh className="h-5 w-5 text-red-300" />} label={t('performance.metric.poor')} value={loading ? '...' : hasLoadError ? '-' : compactNumber(poorSamples)} tone="danger" />
+        <MetricCard icon={<MonitorDot className="h-5 w-5 text-emerald-300" />} label={t('performance.metric.covered')} value={loading ? '...' : hasLoadError ? '-' : `${coveredMetrics} / ${metricNames.length}`} tone="success" />
+        <MetricCard icon={<SignalHigh className="h-5 w-5 text-indigo-300" />} label={t('performance.metric.network')} value={loading ? '...' : hasLoadError ? '-' : compactNumber(networkTotal)} tone="primary" />
+        <MetricCard icon={<TimerReset className="h-5 w-5 text-amber-300" />} label={t('performance.metric.longTasks')} value={loading ? '...' : hasLoadError ? '-' : compactNumber(longTaskTotal)} tone="warning" />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
         <Panel title={t('performance.distribution.title')} description={t('performance.distribution.description')}>
           {loading ? (
             <div className="h-[320px] animate-pulse rounded-md bg-slate-800/70" />
+          ) : hasLoadError ? (
+            <EmptyState title={t('performance.emptyTitle')} description={t('performance.loadError')} />
           ) : totalSamples === 0 ? (
             <EmptyState title={t('performance.emptyTitle')} description={t('performance.emptyDescription')} />
           ) : (
@@ -280,6 +289,8 @@ export default function PerformancePage() {
       <Panel title={t('performance.devices.title')} description={t('performance.devices.description')}>
         {loading ? (
           <div className="h-[260px] animate-pulse rounded-md bg-slate-800/70" />
+        ) : hasLoadError ? (
+          <EmptyState title={t('performance.devices.emptyTitle')} description={t('performance.loadError')} />
         ) : devices.length === 0 ? (
           <EmptyState title={t('performance.devices.emptyTitle')} description={t('performance.devices.emptyDescription')} />
         ) : (
@@ -329,7 +340,7 @@ export default function PerformancePage() {
           ) : undefined
         }
       >
-        <DeviceDetailPanel detail={deviceDetail} loading={deviceLoading} />
+        <DeviceDetailPanel detail={deviceDetail} loading={deviceLoading} error={deviceError} />
       </Panel>
       </section>
 
@@ -337,6 +348,8 @@ export default function PerformancePage() {
         <Panel title={t('performance.network.title')} description={t('performance.network.description')}>
           {loading ? (
             <div className="h-[260px] animate-pulse rounded-md bg-slate-800/70" />
+          ) : hasLoadError ? (
+            <EmptyState title={t('performance.network.emptyTitle')} description={t('performance.loadError')} />
           ) : networkTotal === 0 ? (
             <EmptyState title={t('performance.network.emptyTitle')} description={t('performance.network.emptyDescription')} />
           ) : (
@@ -366,6 +379,8 @@ export default function PerformancePage() {
         <Panel title={t('performance.longtask.title')} description={t('performance.longtask.description')}>
           {loading ? (
             <div className="h-[180px] animate-pulse rounded-md bg-slate-800/70" />
+          ) : hasLoadError ? (
+            <EmptyState title={t('performance.longtask.emptyTitle')} description={t('performance.loadError')} />
           ) : longTaskTotal === 0 ? (
             <EmptyState title={t('performance.longtask.emptyTitle')} description={t('performance.longtask.emptyDescription')} />
           ) : (
@@ -394,9 +409,10 @@ export default function PerformancePage() {
   )
 }
 
-function DeviceDetailPanel({ detail, loading }: { detail: PerformanceDeviceDetail | null; loading: boolean }) {
+function DeviceDetailPanel({ detail, loading, error }: { detail: PerformanceDeviceDetail | null; loading: boolean; error: string }) {
   const { t } = useI18n()
   if (loading) return <div className="h-[260px] animate-pulse rounded-md bg-slate-800/70" />
+  if (error) return <EmptyState title={t('performance.deviceDetail.emptyTitle')} description={error} />
   if (!detail) return <EmptyState title={t('performance.deviceDetail.emptyTitle')} description={t('performance.deviceDetail.emptyDescription')} />
 
   return (

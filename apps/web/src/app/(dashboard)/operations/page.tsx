@@ -12,11 +12,6 @@ import { api, type OperationsQueueName, type Project, type QueueFailedJob, type 
 import { compactNumber, formatDateTime } from '@/lib/format'
 import { useI18n } from '@/lib/i18n'
 
-const emptySnapshot: QueueOperationsSnapshot = {
-  counts: { waiting: 0, active: 0, failed: 0, delayed: 0 },
-  failedJobs: [],
-}
-
 const queueNames: OperationsQueueName[] = ['events', 'cleanup']
 const countKeys = ['failed', 'waiting', 'active', 'delayed'] as const
 
@@ -85,7 +80,8 @@ export default function OperationsPage() {
   }
 
   const totals = useMemo(() => {
-    const snapshots = queueNames.map((name) => report?.[name] ?? emptySnapshot)
+    if (!report) return null
+    const snapshots = queueNames.map((name) => report[name])
     return countKeys.reduce(
       (acc, key) => ({ ...acc, [key]: snapshots.reduce((sum, snapshot) => sum + count(snapshot, key), 0) }),
       {} as Record<(typeof countKeys)[number], number>,
@@ -108,10 +104,10 @@ export default function OperationsPage() {
       )}
 
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard icon={<AlertTriangle className="h-5 w-5 text-red-300" />} label={t('operations.metric.failed')} value={loading ? '...' : compactNumber(totals.failed)} tone="danger" />
-        <MetricCard icon={<Clock3 className="h-5 w-5 text-amber-300" />} label={t('operations.metric.waiting')} value={loading ? '...' : compactNumber(totals.waiting)} tone="warning" />
-        <MetricCard icon={<PlayCircle className="h-5 w-5 text-emerald-300" />} label={t('operations.metric.active')} value={loading ? '...' : compactNumber(totals.active)} tone="success" />
-        <MetricCard icon={<Workflow className="h-5 w-5 text-indigo-300" />} label={t('operations.metric.delayed')} value={loading ? '...' : compactNumber(totals.delayed)} tone="primary" />
+        <MetricCard icon={<AlertTriangle className="h-5 w-5 text-red-300" />} label={t('operations.metric.failed')} value={loading ? '...' : totals ? compactNumber(totals.failed) : '-'} tone="danger" />
+        <MetricCard icon={<Clock3 className="h-5 w-5 text-amber-300" />} label={t('operations.metric.waiting')} value={loading ? '...' : totals ? compactNumber(totals.waiting) : '-'} tone="warning" />
+        <MetricCard icon={<PlayCircle className="h-5 w-5 text-emerald-300" />} label={t('operations.metric.active')} value={loading ? '...' : totals ? compactNumber(totals.active) : '-'} tone="success" />
+        <MetricCard icon={<Workflow className="h-5 w-5 text-indigo-300" />} label={t('operations.metric.delayed')} value={loading ? '...' : totals ? compactNumber(totals.delayed) : '-'} tone="primary" />
       </section>
 
       {!projectId && !loading ? (
@@ -122,7 +118,7 @@ export default function OperationsPage() {
             <QueuePanel
               key={queueName}
               queueName={queueName}
-              snapshot={report?.[queueName] ?? emptySnapshot}
+              snapshot={report?.[queueName] ?? null}
               loading={loading}
               actionKey={actionKey}
               onRetry={handleRetry}
@@ -144,7 +140,7 @@ function QueuePanel({
   onRemove,
 }: {
   queueName: OperationsQueueName
-  snapshot: QueueOperationsSnapshot
+  snapshot: QueueOperationsSnapshot | null
   loading: boolean
   actionKey: string
   onRetry: (queueName: OperationsQueueName, jobId: string) => void
@@ -160,7 +156,7 @@ function QueuePanel({
     >
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
         {countKeys.map((key) => (
-          <QueueCount key={key} label={t(`operations.count.${key}`)} value={loading ? '...' : compactNumber(count(snapshot, key))} tone={key} />
+          <QueueCount key={key} label={t(`operations.count.${key}`)} value={loading ? '...' : snapshot ? compactNumber(count(snapshot, key)) : '-'} tone={key} />
         ))}
       </div>
 
@@ -170,6 +166,8 @@ function QueuePanel({
             <div key={index} className="h-16 animate-pulse rounded-md bg-slate-800/70" />
           ))}
         </div>
+      ) : !snapshot ? (
+        <EmptyState title={t('operations.unavailableTitle')} description={t('operations.unavailableDescription')} />
       ) : snapshot.failedJobs.length === 0 ? (
         <EmptyState title={t('operations.failed.emptyTitle')} description={t('operations.failed.emptyDescription')} />
       ) : (

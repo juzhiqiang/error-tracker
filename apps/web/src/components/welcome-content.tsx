@@ -28,18 +28,11 @@ import {
 import {
   welcomeCapabilities,
   welcomeHeroStats,
-  welcomePreviewRows,
   welcomeWorkflowSteps,
 } from '@/lib/welcome-tour'
 
 const capabilityIcons = [RadioTower, Fingerprint, MousePointerClick, GitBranch] as const
 const workflowIcons = [BellRing, AlertTriangle, Users, CheckCircle2, Zap] as const
-
-const severityClasses = {
-  fatal: 'welcome-severity-fatal',
-  error: 'welcome-severity-error',
-  warning: 'welcome-severity-warning',
-} as const
 
 const stackKeys = [
   'welcome.stack.errors',
@@ -133,7 +126,7 @@ export function WelcomeContent({ user }: { user?: SessionUserSummary | null }) {
         <div className="welcome-hero-stats" aria-label={t('welcome.hero.statsLabel')}>
           {welcomeHeroStats.map((item) => (
             <div key={item.labelKey}>
-              <strong>{item.value}</strong>
+              <strong>{t(item.valueKey)}</strong>
               <span>{t(item.labelKey)}</span>
             </div>
           ))}
@@ -217,7 +210,7 @@ init({
   dsn: process.env.ERROR_TRACKER_DSN,
   token: process.env.ERROR_TRACKER_TOKEN,
   environment: 'production',
-  release: 'web@2.9.3',
+  release: process.env.APP_RELEASE,
   integrations: {
     performance: true,
     replay: true,
@@ -247,7 +240,7 @@ function DashboardPreview() {
       </div>
       <div className="welcome-preview-topbar">
         <div>
-          <span>{t('welcome.preview.project')}</span>
+          <span>{t('welcome.preview.source')}</span>
           <strong>{t('welcome.preview.title')}</strong>
         </div>
         <span className="welcome-preview-live">
@@ -258,37 +251,33 @@ function DashboardPreview() {
 
       <div className="welcome-preview-metrics">
         <div>
-          <span>{t('welcome.preview.metric.issues')}</span>
-          <strong>24</strong>
+          <span>{t('welcome.preview.signal.errors')}</span>
+          <strong>{t('welcome.preview.ready')}</strong>
         </div>
         <div>
-          <span>{t('welcome.preview.metric.users')}</span>
-          <strong>118</strong>
+          <span>{t('welcome.preview.signal.performance')}</span>
+          <strong>{t('welcome.preview.ready')}</strong>
         </div>
         <div>
-          <span>{t('welcome.preview.metric.release')}</span>
-          <strong>2.9.4</strong>
+          <span>{t('welcome.preview.signal.release')}</span>
+          <strong>{t('welcome.preview.ready')}</strong>
         </div>
       </div>
 
-      <div className="welcome-preview-table">
-        {welcomePreviewRows.map((row) => (
-          <div key={row.titleKey} className="welcome-preview-row">
-            <span className={`welcome-severity ${severityClasses[row.severity]}`}>{row.severity}</span>
-            <div className="welcome-preview-row-main">
-              <strong>{t(row.titleKey)}</strong>
-              <span>{t(row.metaKey)}</span>
-            </div>
-            <span className="welcome-preview-owner">{row.owner}</span>
-            <span className="welcome-preview-status">{t(row.statusKey)}</span>
-          </div>
-        ))}
+      <div className="welcome-preview-empty">
+        <div className="welcome-preview-empty-icon">
+          <RadioTower className="h-5 w-5" />
+        </div>
+        <div>
+          <strong>{t('welcome.preview.empty.title')}</strong>
+          <span>{t('welcome.preview.empty.body')}</span>
+        </div>
       </div>
 
       <div className="welcome-preview-evidence">
         <div>
           <span>{t('welcome.preview.evidence.stack')}</span>
-          <code>CheckoutButton.tsx:84</code>
+          <code>{t('welcome.preview.evidence.stackValue')}</code>
         </div>
         <div>
           <span>{t('welcome.preview.evidence.replay')}</span>

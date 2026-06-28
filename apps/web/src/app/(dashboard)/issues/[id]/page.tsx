@@ -58,8 +58,6 @@ const statusActions: Array<{ status: IssueStatus; labelKey: string; icon: ReactN
 
 type UnknownRecord = Record<string, unknown>
 
-const emptyFacets: IssueFacets = { releases: [], environments: [], tags: [] }
-
 export default function IssueDetailPage() {
   const { t } = useI18n()
   const params = useParams<{ id: string }>()
@@ -75,7 +73,7 @@ export default function IssueDetailPage() {
   const [aiError, setAiError] = useState('')
   const [members, setMembers] = useState<ProjectMember[]>([])
   const [comments, setComments] = useState<IssueComment[]>([])
-  const [facets, setFacets] = useState<IssueFacets>(emptyFacets)
+  const [facets, setFacets] = useState<IssueFacets | null>(null)
   const [relatedPerformance, setRelatedPerformance] = useState<RelatedPerformanceSample[]>([])
   const [assigneeUserId, setAssigneeUserId] = useState('')
   const [fixedRelease, setFixedRelease] = useState('')
@@ -92,10 +90,10 @@ export default function IssueDetailPage() {
       .then(async ([issueResult, eventResult]) => {
         const ordered = [...eventResult].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
         const [memberRows, commentRows, facetRows, performanceRows] = await Promise.all([
-          api.projects.members(issueResult.projectId).catch(() => []),
-          api.issues.comments(issueResult.id).catch(() => []),
-          api.issues.facets(issueResult.id).catch(() => emptyFacets),
-          api.stats.issuePerformance(issueResult.id).catch(() => []),
+          api.projects.members(issueResult.projectId),
+          api.issues.comments(issueResult.id),
+          api.issues.facets(issueResult.id),
+          api.stats.issuePerformance(issueResult.id),
         ])
         if (cancelled) return
         setIssue(issueResult)
@@ -210,8 +208,8 @@ export default function IssueDetailPage() {
       const newIssue = await api.issues.split(issue.id, { eventIds: selectedSplitIds })
       const remainingEvents = events.filter((event) => !selectedSplitIds.includes(event.id))
       const [refreshedIssue, refreshedFacets] = await Promise.all([
-        api.issues.get(issue.id).catch(() => issue),
-        api.issues.facets(issue.id).catch(() => emptyFacets),
+        api.issues.get(issue.id),
+        api.issues.facets(issue.id),
       ])
       setIssue(refreshedIssue)
       setEvents(remainingEvents)
@@ -306,6 +304,36 @@ export default function IssueDetailPage() {
         <Fact label={t('detail.fact.lastSeen')} value={formatFullDateTime(issue.lastSeen)} icon={<Clock3 className="h-4 w-4 text-emerald-300" />} />
       </section>
 
+      <Panel title={t('detail.verify.title')} description={t('detail.verify.description')}>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <EvidenceCheck
+            label={t('detail.verify.stack')}
+            value={selectedEvent?.stacktrace?.length ? `${selectedEvent.stacktrace.length}` : t('detail.verify.missing')}
+            ready={Boolean(selectedEvent?.stacktrace?.length)}
+          />
+          <EvidenceCheck
+            label={t('detail.verify.breadcrumbs')}
+            value={selectedEvent?.breadcrumbs?.length ? `${selectedEvent.breadcrumbs.length}` : t('detail.verify.missing')}
+            ready={Boolean(selectedEvent?.breadcrumbs?.length)}
+          />
+          <EvidenceCheck
+            label={t('detail.verify.release')}
+            value={selectedEvent?.release || t('detail.verify.missing')}
+            ready={Boolean(selectedEvent?.release)}
+          />
+          <EvidenceCheck
+            label={t('detail.verify.sourcemap')}
+            value={t('detail.verify.sourcemapHint')}
+            ready={false}
+          />
+          <EvidenceCheck
+            label={t('detail.verify.performance')}
+            value={relatedPerformance.length ? compactNumber(relatedPerformance.length) : t('detail.verify.missing')}
+            ready={relatedPerformance.length > 0}
+          />
+        </div>
+      </Panel>
+
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
         <main className="space-y-4">
           <div className="rounded-md border border-line bg-slate-950/30 px-4 py-3">
@@ -366,7 +394,7 @@ export default function IssueDetailPage() {
               </Panel>
 
               <Panel title={t('detail.facets.title')} description={t('detail.facets.description')}>
-                <FacetDistribution facets={facets} />
+                {facets ? <FacetDistribution facets={facets} /> : <EmptyState title={t('detail.facets.emptyTitle')} description={t('detail.facets.emptyDescription')} />}
               </Panel>
 
               <Panel title={t('detail.relatedPerformance.title')} description={t('detail.relatedPerformance.description')}>
@@ -573,6 +601,20 @@ function Fact({ label, value, icon }: { label: string; value: string; icon: Reac
         {label}
       </div>
       <div className="mt-2 break-words font-mono text-sm font-semibold text-slate-100">{value}</div>
+    </div>
+  )
+}
+
+function EvidenceCheck({ label, value, ready }: { label: string; value: string; ready: boolean }) {
+  return (
+    <div className={`rounded-md border px-3 py-3 ${ready ? 'border-success/35 bg-success/10' : 'border-slate-800 bg-slate-950/35'}`}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium text-slate-400">{label}</span>
+        <CheckCircle2 className={`h-4 w-4 ${ready ? 'text-emerald-300' : 'text-slate-600'}`} />
+      </div>
+      <div className={`mt-2 break-words font-mono text-xs leading-5 ${ready ? 'text-emerald-100' : 'text-slate-400'}`}>
+        {value}
+      </div>
     </div>
   )
 }

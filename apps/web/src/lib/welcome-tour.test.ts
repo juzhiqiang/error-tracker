@@ -2,7 +2,6 @@ import { describe, expect, it } from 'bun:test'
 import {
   welcomeCapabilities,
   welcomeHeroStats,
-  welcomePreviewRows,
   welcomeWorkflowSteps,
 } from './welcome-tour'
 
@@ -34,14 +33,9 @@ describe('welcome product tour content', () => {
     ])
   })
 
-  it('uses dashboard preview rows with severity, status, and owner context', () => {
-    expect(welcomePreviewRows).toHaveLength(3)
-    expect(welcomePreviewRows[0]).toEqual({
-      titleKey: 'welcome.preview.row.checkout',
-      metaKey: 'welcome.preview.row.checkoutMeta',
-      severity: 'fatal',
-      owner: 'on-call-web',
-      statusKey: 'welcome.preview.status.regressed',
-    })
+  it('does not export fabricated dashboard preview rows', async () => {
+    const tour = await import('./welcome-tour')
+
+    expect('welcomePreviewRows' in tour).toBe(false)
   })
 })

@@ -1,7 +1,7 @@
 export const welcomeHeroStats = [
-  { value: '9pt', labelKey: 'welcome.hero.stat.capture' },
-  { value: '4ch', labelKey: 'welcome.hero.stat.route' },
-  { value: '1rl', labelKey: 'welcome.hero.stat.regression' },
+  { valueKey: 'welcome.hero.stat.capture.value', labelKey: 'welcome.hero.stat.capture' },
+  { valueKey: 'welcome.hero.stat.route.value', labelKey: 'welcome.hero.stat.route' },
+  { valueKey: 'welcome.hero.stat.regression.value', labelKey: 'welcome.hero.stat.regression' },
 ] as const
 
 export const welcomeCapabilities = [
@@ -29,28 +29,4 @@ export const welcomeWorkflowSteps = [
   { labelKey: 'welcome.workflow.owner', detailKey: 'welcome.workflow.ownerDetail' },
   { labelKey: 'welcome.workflow.fix', detailKey: 'welcome.workflow.fixDetail' },
   { labelKey: 'welcome.workflow.regression', detailKey: 'welcome.workflow.regressionDetail' },
-] as const
-
-export const welcomePreviewRows = [
-  {
-    titleKey: 'welcome.preview.row.checkout',
-    metaKey: 'welcome.preview.row.checkoutMeta',
-    severity: 'fatal',
-    owner: 'on-call-web',
-    statusKey: 'welcome.preview.status.regressed',
-  },
-  {
-    titleKey: 'welcome.preview.row.resource',
-    metaKey: 'welcome.preview.row.resourceMeta',
-    severity: 'error',
-    owner: 'frontend-platform',
-    statusKey: 'welcome.preview.status.new',
-  },
-  {
-    titleKey: 'welcome.preview.row.inp',
-    metaKey: 'welcome.preview.row.inpMeta',
-    severity: 'warning',
-    owner: 'checkout-team',
-    statusKey: 'welcome.preview.status.triage',
-  },
 ] as const

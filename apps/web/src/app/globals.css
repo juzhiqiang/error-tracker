@@ -1890,7 +1890,7 @@ textarea {
 
   .welcome-preview-topbar,
   .welcome-preview-metrics,
-  .welcome-preview-table,
+  .welcome-preview-empty,
   .welcome-preview-evidence {
     position: relative;
     z-index: 1;
@@ -1913,7 +1913,7 @@ textarea {
 
   .welcome-preview-topbar span,
   .welcome-preview-metrics span,
-  .welcome-preview-row-main span,
+  .welcome-preview-empty span,
   .welcome-preview-evidence span {
     color: rgb(var(--slate-500-rgb));
     font-size: 12px;
@@ -1968,82 +1968,42 @@ textarea {
     line-height: 1;
   }
 
-  .welcome-preview-table {
-    display: grid;
-    gap: 8px;
-    margin-top: 16px;
-  }
-
-  .welcome-preview-row {
-    display: grid;
-    min-height: 66px;
-    grid-template-columns: 74px minmax(0, 1fr) 132px 104px;
+  .welcome-preview-empty {
+    display: flex;
+    min-height: 116px;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     border: 1px solid rgba(148, 163, 184, 0.16);
     border-radius: 8px;
-    background: rgba(5, 7, 13, 0.5);
-    padding: 10px 12px;
+    background:
+      linear-gradient(90deg, rgba(99, 102, 241, 0.08), transparent 54%, rgba(34, 197, 94, 0.06)),
+      rgba(5, 7, 13, 0.5);
+    margin-top: 16px;
+    padding: 18px;
   }
 
-  .welcome-severity {
+  .welcome-preview-empty-icon {
     display: inline-flex;
-    min-height: 28px;
+    height: 44px;
+    width: 44px;
+    flex: 0 0 auto;
     align-items: center;
     justify-content: center;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 800;
+    border: 1px solid rgba(99, 102, 241, 0.28);
+    border-radius: 8px;
+    background: rgba(99, 102, 241, 0.12);
+    color: rgb(var(--primary-ink-rgb));
   }
 
-  .welcome-severity-fatal {
-    background: rgba(255, 76, 109, 0.12);
-    color: rgb(var(--danger-rgb));
-  }
-
-  .welcome-severity-error {
-    background: rgba(255, 184, 77, 0.12);
-    color: rgb(var(--warning-rgb));
-  }
-
-  .welcome-severity-warning {
-    background: rgba(42, 196, 255, 0.12);
-    color: rgb(var(--info-rgb));
-  }
-
-  .welcome-preview-row-main {
+  .welcome-preview-empty div:last-child {
     display: grid;
     min-width: 0;
-    gap: 5px;
+    gap: 7px;
   }
 
-  .welcome-preview-row-main strong {
-    overflow: hidden;
+  .welcome-preview-empty strong {
     color: rgb(var(--slate-100-rgb));
-    font-size: 13px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .welcome-preview-row-main span,
-  .welcome-preview-owner,
-  .welcome-preview-status {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .welcome-preview-owner {
-    color: rgb(var(--slate-300-rgb));
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-  }
-
-  .welcome-preview-status {
-    color: rgb(var(--primary-ink-rgb));
-    font-size: 12px;
-    font-weight: 700;
-    text-align: right;
+    font-size: 14px;
   }
 
   .welcome-preview-evidence {
@@ -2230,13 +2190,13 @@ textarea {
   }
 
   html[data-theme='light'] .welcome-preview-metrics div,
-  html[data-theme='light'] .welcome-preview-row,
+  html[data-theme='light'] .welcome-preview-empty,
   html[data-theme='light'] .welcome-preview-evidence div {
     border-color: rgba(148, 163, 184, 0.32);
     background: rgba(255, 255, 255, 0.72);
   }
 
-  html[data-theme='light'] .welcome-preview-row-main strong,
+  html[data-theme='light'] .welcome-preview-empty strong,
   html[data-theme='light'] .welcome-preview-metrics strong,
   html[data-theme='light'] .welcome-preview-evidence code,
   html[data-theme='light'] .welcome-capability h3,
@@ -2558,14 +2518,6 @@ textarea {
     margin-top: 14px;
   }
 
-  .welcome-flagship-hero .welcome-preview-row {
-    min-height: 72px;
-  }
-
-  .welcome-flagship-hero .welcome-preview-row-main strong {
-    font-size: 14px;
-  }
-
   .welcome-workflow-section {
     background:
       radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.14), transparent 38%),
@@ -2768,17 +2720,6 @@ textarea {
 
   .welcome-preview-metrics {
     grid-template-columns: 1fr;
-  }
-
-  .welcome-preview-row {
-    grid-template-columns: 68px minmax(0, 1fr);
-    gap: 10px;
-  }
-
-  .welcome-preview-owner,
-  .welcome-preview-status {
-    grid-column: 2;
-    text-align: left;
   }
 
   .welcome-preview-evidence {
