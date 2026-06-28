@@ -20,6 +20,7 @@ export default function AcceptInvitePage() {
   const token = params.token
   const { t } = useI18n()
   const router = useRouter()
+  const session = authClient.useSession()
   const [invitation, setInvitation] = useState<ProjectInvitation | null>(null)
   const [loading, setLoading] = useState(true)
   const [accepting, setAccepting] = useState(false)
@@ -77,6 +78,7 @@ export default function AcceptInvitePage() {
   }
 
   const unavailable = invitation && invitation.status !== 'pending'
+  const signedInEmail = session.data?.user?.email ?? ''
 
   return (
     <div className="relative flex min-h-screen items-center justify-center px-4 py-10">
@@ -141,64 +143,71 @@ export default function AcceptInvitePage() {
             <div className="space-y-5">
               {error && <InviteAlert message={error} />}
 
-              <button
-                type="button"
-                onClick={acceptInvitation}
-                disabled={accepting}
-                className="app-button inline-flex w-full items-center justify-center gap-2 bg-primary px-4 font-medium text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <CheckCircle2 className="h-4 w-4" />
-                {accepting ? t('invite.accepting') : t('invite.accept')}
-              </button>
+              {signedInEmail ? (
+                <div className="space-y-3">
+                  <InviteFact label={t('invite.signedInAs')} value={signedInEmail} />
+                  <button
+                    type="button"
+                    onClick={acceptInvitation}
+                    disabled={accepting}
+                    className="app-button inline-flex w-full items-center justify-center gap-2 bg-primary px-4 font-medium text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    {accepting ? t('invite.accepting') : t('invite.acceptSignedIn')}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAuthMode('sign-in')}
+                      className={`app-button border px-3 text-sm ${authMode === 'sign-in' ? 'border-primary/45 bg-primary/15 text-indigo-100' : 'border-slate-700 text-slate-300 hover:bg-slate-900'}`}
+                    >
+                      {t('invite.haveAccount')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAuthMode('sign-up')}
+                      className={`app-button border px-3 text-sm ${authMode === 'sign-up' ? 'border-primary/45 bg-primary/15 text-indigo-100' : 'border-slate-700 text-slate-300 hover:bg-slate-900'}`}
+                    >
+                      {t('invite.createAccount')}
+                    </button>
+                  </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setAuthMode('sign-in')}
-                  className={`app-button border px-3 text-sm ${authMode === 'sign-in' ? 'border-primary/45 bg-primary/15 text-indigo-100' : 'border-slate-700 text-slate-300 hover:bg-slate-900'}`}
-                >
-                  {t('invite.haveAccount')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAuthMode('sign-up')}
-                  className={`app-button border px-3 text-sm ${authMode === 'sign-up' ? 'border-primary/45 bg-primary/15 text-indigo-100' : 'border-slate-700 text-slate-300 hover:bg-slate-900'}`}
-                >
-                  {t('invite.createAccount')}
-                </button>
-              </div>
-
-              <form onSubmit={authenticateAndAccept} className="space-y-4">
-                {authMode === 'sign-up' && (
-                  <label className="block">
-                    <span className="mb-1.5 block text-sm text-slate-300">{t('invite.name')}</span>
-                    <input value={name} onChange={(event) => setName(event.target.value)} className="app-control w-full px-3 text-sm" />
-                  </label>
-                )}
-                <label className="block">
-                  <span className="mb-1.5 block text-sm text-slate-300">{t('login.email')}</span>
-                  <input value={invitation.email} readOnly className="app-control w-full px-3 text-sm" />
-                </label>
-                <label className="block">
-                  <span className="mb-1.5 block text-sm text-slate-300">{t('invite.password')}</span>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    className="app-control w-full px-3 text-sm"
-                    required
-                    autoComplete={authMode === 'sign-in' ? 'current-password' : 'new-password'}
-                  />
-                </label>
-                <button
-                  type="submit"
-                  disabled={accepting}
-                  className="app-button inline-flex w-full items-center justify-center gap-2 border border-slate-700 px-4 font-medium text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <KeyRound className="h-4 w-4" />
-                  {accepting ? t('invite.accepting') : authMode === 'sign-in' ? t('invite.signIn') : t('invite.signUp')}
-                </button>
-              </form>
+                  <form onSubmit={authenticateAndAccept} className="space-y-4">
+                    {authMode === 'sign-up' && (
+                      <label className="block">
+                        <span className="mb-1.5 block text-sm text-slate-300">{t('invite.name')}</span>
+                        <input value={name} onChange={(event) => setName(event.target.value)} className="app-control w-full px-3 text-sm" />
+                      </label>
+                    )}
+                    <label className="block">
+                      <span className="mb-1.5 block text-sm text-slate-300">{t('login.email')}</span>
+                      <input value={invitation.email} readOnly className="app-control w-full px-3 text-sm" />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1.5 block text-sm text-slate-300">{t('invite.password')}</span>
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        className="app-control w-full px-3 text-sm"
+                        required
+                        autoComplete={authMode === 'sign-in' ? 'current-password' : 'new-password'}
+                      />
+                    </label>
+                    <button
+                      type="submit"
+                      disabled={accepting}
+                      className="app-button inline-flex w-full items-center justify-center gap-2 border border-slate-700 px-4 font-medium text-slate-200 hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <KeyRound className="h-4 w-4" />
+                      {accepting ? t('invite.accepting') : authMode === 'sign-in' ? t('invite.signIn') : t('invite.signUp')}
+                    </button>
+                  </form>
+                </>
+              )}
             </div>
           ) : null}
         </section>
