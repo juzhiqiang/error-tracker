@@ -2,8 +2,12 @@ node_modules/
 dist/
 backups/
 .env.local
+.env.production
 *.env.local
 *.log
+*.tar
+*.tar.gz
+*.tgz
 .turbo/
 .next/
 .next-dev/
