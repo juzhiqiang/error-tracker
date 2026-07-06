@@ -4,6 +4,7 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { loadAndValidateApiEnv, parseCorsOrigins } from '../../config/env'
 import * as schema from '../../db/schema'
+import { sendPasswordResetEmail } from './password-reset-email'
 
 loadAndValidateApiEnv()
 
@@ -15,7 +16,19 @@ const trustedOrigins = Array.from(
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: 'pg' }),
-  emailAndPassword: { enabled: true },
+  emailAndPassword: {
+    enabled: true,
+    sendResetPassword: async ({ user, url }) => {
+      const delivery = await sendPasswordResetEmail({ user, url })
+      if (delivery.status === 'failed') {
+        console.error(`Password reset email failed: ${delivery.error}`)
+      }
+      if (delivery.status === 'not_configured') {
+        console.warn('Password reset email skipped because SMTP is not configured.')
+      }
+    },
+    revokeSessionsOnPasswordReset: true,
+  },
   secret: process.env.BETTER_AUTH_SECRET!,
   baseURL: process.env.BETTER_AUTH_API_URL ?? 'http://localhost:3002',
   trustedOrigins,

@@ -14,6 +14,7 @@ import {
   ScrollText,
   Settings,
   ShieldCheck,
+  UserRound,
   Workflow,
 } from 'lucide-react'
 import { LanguageToggle } from '@/components/language-toggle'
@@ -34,6 +35,7 @@ const navItems = [
   { href: '/operations', labelKey: 'nav.operations', icon: Workflow },
   { href: '/audit', labelKey: 'nav.audit', icon: ScrollText },
   { href: '/settings', labelKey: 'nav.settings', icon: Settings },
+  { href: '/account', labelKey: 'nav.account', icon: UserRound },
 ]
 
 export function DashboardShell({ user, children }: { user?: SessionUserSummary | null; children: ReactNode }) {
@@ -101,9 +103,13 @@ export function DashboardShell({ user, children }: { user?: SessionUserSummary |
                 {t('app.liveIngestion')}
               </div>
               <div className="flex min-w-0 items-center gap-2">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-700 bg-slate-900 text-xs font-semibold text-slate-200">
+                <Link
+                  href="/account"
+                  title={t('nav.account')}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-700 bg-slate-900 text-xs font-semibold text-slate-200 hover:border-primary/50 hover:bg-primary/10"
+                >
                   {initials}
-                </span>
+                </Link>
                 <div className="min-w-0">
                   <div className="truncate text-xs font-medium text-slate-200">{displayName}</div>
                   <div className="truncate text-xs text-slate-500">{email}</div>
@@ -145,12 +151,16 @@ export function DashboardShell({ user, children }: { user?: SessionUserSummary |
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />
                 {t('app.apiConnected')}
               </div>
-              <div className="hidden min-w-0 items-center gap-2 rounded-md border border-slate-700 bg-slate-950/70 px-2.5 py-1.5 md:flex">
+              <Link
+                href="/account"
+                title={t('nav.account')}
+                className="hidden min-w-0 items-center gap-2 rounded-md border border-slate-700 bg-slate-950/70 px-2.5 py-1.5 hover:border-primary/50 hover:bg-primary/10 md:flex"
+              >
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-800 text-[11px] font-semibold text-slate-200">
                   {initials}
                 </span>
                 <span className="max-w-40 truncate text-xs font-medium text-slate-300">{displayName}</span>
-              </div>
+              </Link>
               <button
                 type="button"
                 onClick={handleSignOut}

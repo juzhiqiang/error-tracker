@@ -126,6 +126,12 @@ export default function LoginPage() {
             {loading ? t('login.submitting') : t('login.submit')}
           </button>
 
+          <div className="mt-4 text-center">
+            <Link href="/forgot-password" className="text-sm font-medium text-indigo-300 hover:text-indigo-200">
+              {t('login.forgotPassword')}
+            </Link>
+          </div>
+
           <p className="mt-5 text-center text-sm text-slate-400">
             {t('login.noAccount')}{' '}
             <Link href="/signup" className="font-medium text-indigo-300 hover:text-indigo-200">
