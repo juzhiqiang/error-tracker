@@ -1,6 +1,8 @@
 $ErrorActionPreference = "Stop"
 
 $root = Resolve-Path (Join-Path $PSScriptRoot "..\..")
+$logsRoot = Join-Path $root "logs"
+New-Item -ItemType Directory -Path $logsRoot -Force | Out-Null
 Set-Location $root
 
 function Import-LocalEnv {
@@ -106,8 +108,8 @@ $started += Start-BackgroundProcess `
   -Name "API" `
   -FilePath "bun" `
   -Arguments @("run", "--cwd", "apps/api", "dev") `
-  -Stdout (Join-Path $root "apps/api/e2e.out.log") `
-  -Stderr (Join-Path $root "apps/api/e2e.err.log")
+  -Stdout (Join-Path $logsRoot "e2e-api.out.log") `
+  -Stderr (Join-Path $logsRoot "e2e-api.err.log")
 Wait-HttpReady "http://localhost:3002/health" 120
 
 Write-Host "Seeding E2E user..."
@@ -117,8 +119,8 @@ $started += Start-BackgroundProcess `
   -Name "Web" `
   -FilePath "bun" `
   -Arguments @("run", "--cwd", "apps/web", "dev") `
-  -Stdout (Join-Path $root "apps/web/e2e.out.log") `
-  -Stderr (Join-Path $root "apps/web/e2e.err.log")
+  -Stdout (Join-Path $logsRoot "e2e-web.out.log") `
+  -Stderr (Join-Path $logsRoot "e2e-web.err.log")
 Wait-HttpReady "http://localhost:3003/login" 120
 
 try {
